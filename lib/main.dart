@@ -1,257 +1,348 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
 
 void main() {
-  runApp(const MyApp());
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ),
+  );
+  runApp(const ExoticApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class ExoticApp extends StatelessWidget {
+  const ExoticApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      title: 'Exotic Gaming & Cafe',
       debugShowCheckedModeBanner: false,
-      home: SuiteDashboard(),
+      theme: ThemeData(brightness: Brightness.dark),
+      home: const SplashScreen(),
     );
   }
 }
 
-class Booking {
-  String name;
-  String date;
-  String start;
-  String end;
-  bool paid;
+const kBlue = Color(0xFF1A5EBF);
+const kWhite = Color(0xFFFFFFFF);
+const kWhiteDim = Color(0xFFDDE8FF);
 
-  Booking(this.name, this.date, this.start, this.end, this.paid);
-}
+// font helper
+TextStyle _serif(
+  double size, {
+  FontWeight weight = FontWeight.w400,
+  double letterSpacing = 0,
+}) => GoogleFonts.playfairDisplay(
+  fontSize: size,
+  color: kWhite,
+  fontWeight: weight,
+  letterSpacing: letterSpacing,
+  height: 1.0,
+);
 
-class SuiteDashboard extends StatefulWidget {
-  const SuiteDashboard({super.key});
+// ─── Splash Screen ────────────────────────────────────────────────────────────
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
 
   @override
-  State<SuiteDashboard> createState() => _SuiteDashboardState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SuiteDashboardState extends State<SuiteDashboard> {
-  List<List<Booking>> suites = List.generate(8, (_) => []);
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _xCtrl;
+  late Animation<double> _xSlide;
+  late Animation<double> _xOpacity;
+  late Animation<double> _xScale;
 
-  Future<String?> pickDate() async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2024),
-      lastDate: DateTime(2030),
+  late AnimationController _eCtrl;
+  late Animation<double> _eSlide;
+  late Animation<double> _eOpacity;
+
+  late AnimationController _oticCtrl;
+  late Animation<double> _oticSlide;
+  late Animation<double> _oticOpacity;
+
+  late AnimationController _subCtrl;
+  late Animation<double> _dividerAnim;
+  late Animation<double> _subtitleAnim;
+
+  late AnimationController _exitCtrl;
+  late Animation<double> _exitAnim;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _xCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
     );
-
-    if (picked == null) return null;
-
-    return "${picked.day}/${picked.month}/${picked.year}";
-  }
-
-  Future<String?> pickTime() async {
-  TimeOfDay? picked = await showTimePicker(
-    context: context,
-    initialTime: const TimeOfDay(hour: 10, minute: 0),
-  );
-
-
-    if (picked == null) return null;
-
-    return picked.format(context);
-  }
-
-  void addBooking(int suiteIndex) {
-    final name = TextEditingController();
-    String date = "";
-    String start = "";
-    String end = "";
-    bool paid = false;
-
-    showDialog(
-      context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setDialog) => AlertDialog(
-          title: Text("Tambah Booking Suite ${suiteIndex + 1}"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: name,
-                decoration: const InputDecoration(labelText: "Nama Pemesan"),
-              ),
-
-              ListTile(
-                title: Text(date.isEmpty ? "Pilih Tanggal" : date),
-                leading: const Icon(Icons.calendar_today),
-                onTap: () async {
-                  final d = await pickDate();
-                  if (d != null) setDialog(() => date = d);
-                },
-              ),
-
-              ListTile(
-                title: Text(start.isEmpty ? "Jam Mulai" : start),
-                leading: const Icon(Icons.access_time),
-                onTap: () async {
-                  final t = await pickTime();
-                  if (t != null) setDialog(() => start = t);
-                },
-              ),
-
-              ListTile(
-                title: Text(end.isEmpty ? "Jam Selesai" : end),
-                leading: const Icon(Icons.access_time_filled),
-                onTap: () async {
-                  final t = await pickTime();
-                  if (t != null) setDialog(() => end = t);
-                },
-              ),
-
-              SwitchListTile(
-                title: const Text("Sudah Bayar"),
-                value: paid,
-                onChanged: (v) => setDialog(() => paid = v),
-              )
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
-            ElevatedButton(
-              onPressed: () {
-                if (name.text.isNotEmpty && date.isNotEmpty && start.isNotEmpty && end.isNotEmpty) {
-                  setState(() {
-                    suites[suiteIndex].add(Booking(name.text, date, start, end, paid));
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text("Simpan"),
-            )
-          ],
-        ),
+    _xSlide = Tween<double>(
+      begin: -80,
+      end: 0,
+    ).animate(CurvedAnimation(parent: _xCtrl, curve: Curves.easeOutBack));
+    _xOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _xCtrl,
+        curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
       ),
     );
+    _xScale = Tween<double>(
+      begin: 1.2,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _xCtrl, curve: Curves.easeOutBack));
+
+    _eCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 480),
+    );
+    _eSlide = Tween<double>(
+      begin: -36,
+      end: 0,
+    ).animate(CurvedAnimation(parent: _eCtrl, curve: Curves.easeOut));
+    _eOpacity = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _eCtrl, curve: Curves.easeOut));
+
+    _oticCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 480),
+    );
+    _oticSlide = Tween<double>(
+      begin: 36,
+      end: 0,
+    ).animate(CurvedAnimation(parent: _oticCtrl, curve: Curves.easeOut));
+    _oticOpacity = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _oticCtrl, curve: Curves.easeOut));
+
+    _subCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _dividerAnim = CurvedAnimation(
+      parent: _subCtrl,
+      curve: const Interval(0.0, 0.55, curve: Curves.easeOut),
+    );
+    _subtitleAnim = CurvedAnimation(
+      parent: _subCtrl,
+      curve: const Interval(0.45, 1.0, curve: Curves.easeOut),
+    );
+
+    _exitCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _exitAnim = CurvedAnimation(parent: _exitCtrl, curve: Curves.easeInCubic);
+
+    _runSequence();
   }
 
-  void pilihSuite() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Pilih Suite"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(8, (i) {
-            return ListTile(
-              title: Text("Suite ${i + 1}"),
-              onTap: () {
-                Navigator.pop(context);
-                addBooking(i);
-              },
-            );
-          }),
+  Future<void> _runSequence() async {
+    await Future.delayed(const Duration(milliseconds: 350));
+    _xCtrl.forward();
+    await Future.delayed(const Duration(milliseconds: 560));
+    _eCtrl.forward();
+    _oticCtrl.forward();
+    await Future.delayed(const Duration(milliseconds: 580));
+    _subCtrl.forward();
+    await Future.delayed(const Duration(milliseconds: 2000));
+    _exitCtrl.forward();
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const DashboardPlaceholder(),
+          transitionDuration: Duration.zero,
         ),
-      ),
-    );
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _xCtrl.dispose();
+    _eCtrl.dispose();
+    _oticCtrl.dispose();
+    _subCtrl.dispose();
+    _exitCtrl.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Suite Dashboard"), centerTitle: true),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(10),
-        itemCount: 8,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => SuiteDetail(
-                    suite: index + 1,
-                    bookings: suites[index],
-                    onDelete: (i) {
-                      setState(() => suites[index].removeAt(i));
-                    },
+      backgroundColor: kBlue,
+      body: AnimatedBuilder(
+        animation: Listenable.merge([
+          _xCtrl,
+          _eCtrl,
+          _oticCtrl,
+          _subCtrl,
+          _exitCtrl,
+        ]),
+        builder: (context, _) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              Container(color: kBlue),
+
+              Center(
+                child: Opacity(
+                  opacity: 1 - _exitAnim.value,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // ── eXOTIC wordmark
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          // "e"
+                          Opacity(
+                            opacity: _eOpacity.value,
+                            child: Transform.translate(
+                              offset: Offset(_eSlide.value, 0),
+                              child: Text('E', style: _serif(36)),
+                            ),
+                          ),
+
+                          // "X" — hanya X lebih besar
+                          Opacity(
+                            opacity: _xOpacity.value,
+                            child: Transform.translate(
+                              offset: Offset(0, _xSlide.value),
+                              child: Transform.scale(
+                                scale: _xScale.value,
+                                alignment: Alignment.bottomCenter,
+                                child: Text(
+                                  'X',
+                                  style: _serif(72, weight: FontWeight.w700),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // "OTIC"
+                          Opacity(
+                            opacity: _oticOpacity.value,
+                            child: Transform.translate(
+                              offset: Offset(_oticSlide.value, 0),
+                              child: Text(
+                                'OTIC',
+                                style: _serif(36, letterSpacing: 1),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // Divider
+                      ClipRect(
+                        child: Align(
+                          widthFactor: _dividerAnim.value,
+                          child: Container(
+                            width: 260,
+                            height: 1.5,
+                            color: kWhite.withOpacity(0.5),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // GAMING & CAFE
+                      Opacity(
+                        opacity: _subtitleAnim.value,
+                        child: Transform.translate(
+                          offset: Offset(0, 8 * (1 - _subtitleAnim.value)),
+                          child: Text(
+                            'GAMING & CAFE',
+                            style: GoogleFonts.playfairDisplay(
+                              fontSize: 15,
+                              color: kWhiteDim,
+                              letterSpacing: 5,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            },
-            child: Card(
-              color: suites[index].isEmpty ? Colors.green.shade200 : Colors.orange.shade200,
-              child: Center(
-                child: Text(
-                  "Suite ${index + 1}\n(${suites[index].length} booking)",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
               ),
-            ),
+
+              if (_exitAnim.value > 0)
+                Opacity(
+                  opacity: _exitAnim.value,
+                  child: Container(color: Colors.black),
+                ),
+            ],
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: pilihSuite,
-      ),
     );
   }
 }
 
-class SuiteDetail extends StatelessWidget {
-  final int suite;
-  final List<Booking> bookings;
-  final Function(int) onDelete;
+// ─── Dashboard Placeholder ────────────────────────────────────────────────────
 
-  const SuiteDetail({super.key, required this.suite, required this.bookings, required this.onDelete});
+class DashboardPlaceholder extends StatelessWidget {
+  const DashboardPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
-    Map<String, List<Booking>> grouped = {};
-
-    for (var b in bookings) {
-      grouped.putIfAbsent(b.date, () => []).add(b);
-    }
-
     return Scaffold(
-      appBar: AppBar(title: Text("Suite $suite")),
-      body: ListView(
-        children: grouped.entries.map((entry) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                color: Colors.grey.shade300,
-                child: Text(entry.key, style: const TextStyle(fontWeight: FontWeight.bold)),
-              ),
-              ...entry.value.asMap().entries.map((e) {
-                int idx = bookings.indexOf(e.value);
-                return ListTile(
-                  title: Text(e.value.name),
-                  subtitle: Text("${e.value.start} - ${e.value.end}"),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(e.value.paid ? "PAID" : "UNPAID",
-                          style: TextStyle(color: e.value.paid ? Colors.green : Colors.red)),
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () {
-                          onDelete(idx);
-                          Navigator.pop(context);
-                        },
-                      )
-                    ],
+      backgroundColor: kBlue,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(text: 'E', style: _serif(36)),
+                  TextSpan(
+                    text: 'X',
+                    style: _serif(72, weight: FontWeight.w700),
                   ),
-                );
-              })
-            ],
-          );
-        }).toList(),
+                  TextSpan(text: 'OTIC', style: _serif(36, letterSpacing: 1)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(width: 230, height: 1.5, color: kWhite.withOpacity(0.45)),
+            const SizedBox(height: 8),
+            Text(
+              'GAMING & CAFE',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 15,
+                color: kWhiteDim,
+                letterSpacing: 5,
+              ),
+            ),
+            const SizedBox(height: 60),
+            Text(
+              '— Dashboard —',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 12,
+                color: kWhite.withOpacity(0.35),
+                letterSpacing: 3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
