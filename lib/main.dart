@@ -226,7 +226,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 alignment: Alignment.bottomCenter,
                                 child: Text(
                                   'X',
-                                  style: _serif(72, weight: FontWeight.w700),
+                                  style: _serif(50, weight: FontWeight.w700),
                                 ),
                               ),
                             ),
