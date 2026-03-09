@@ -24,9 +24,16 @@ class _LoginScreenState extends State<LoginScreen>
 
   final _usernameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _scrollCtrl   = ScrollController();
 
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
+
+  double _scrollOffset = 0;
+
+  static const double _headerExpanded  = 120.0;
+  static const double _headerCollapsed = 60.0;
+  static const double _collapseAt      = 70.0;
 
   @override
   void initState() {
@@ -35,15 +42,27 @@ class _LoginScreenState extends State<LoginScreen>
         vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _fadeCtrl.forward();
+
+    _scrollCtrl.addListener(() {
+      setState(() => _scrollOffset = _scrollCtrl.offset);
+    });
   }
 
   @override
   void dispose() {
     _usernameCtrl.dispose();
     _passwordCtrl.dispose();
+    _scrollCtrl.dispose();
     _fadeCtrl.dispose();
     super.dispose();
   }
+
+  double get _collapseProgress =>
+      (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
+
+  double get _headerHeight =>
+      _headerExpanded -
+      (_headerExpanded - _headerCollapsed) * _collapseProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +75,9 @@ class _LoginScreenState extends State<LoginScreen>
             _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                controller: _scrollCtrl,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 28),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -87,13 +108,11 @@ class _LoginScreenState extends State<LoginScreen>
                           color: Colors.grey,
                           size: 20,
                         ),
-                        onPressed: () =>
-                            setState(() => _obscurePassword = !_obscurePassword),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
                       ),
                     ),
                     const SizedBox(height: 14),
-
-                    // Remember me + Lupa password
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -104,32 +123,37 @@ class _LoginScreenState extends State<LoginScreen>
                               height: 22,
                               child: Checkbox(
                                 value: _rememberMe,
-                                onChanged: (v) =>
-                                    setState(() => _rememberMe = v ?? false),
+                                onChanged: (v) => setState(
+                                    () => _rememberMe = v ?? false),
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4)),
+                                    borderRadius:
+                                        BorderRadius.circular(4)),
                                 activeColor: kBlue,
-                                side: const BorderSide(color: Color(0xFFBBBBBB)),
+                                side: const BorderSide(
+                                    color: Color(0xFFBBBBBB)),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Text('ingat saya',
                                 style: GoogleFonts.lato(
-                                    fontSize: 13, color: Colors.black54)),
+                                    fontSize: 13,
+                                    color: Colors.black54)),
                           ],
                         ),
-                        GestureDetector(
-                          onTap: () {},
-                          child: Text('Lupa password?',
-                              style: GoogleFonts.lato(
-                                fontSize: 13,
-                                color: kBlue,
-                                fontWeight: FontWeight.w600,
-                              )),
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTap: () {},
+                            child: Text('Lupa password?',
+                                style: GoogleFonts.lato(
+                                  fontSize: 13,
+                                  color: kBlue,
+                                  fontWeight: FontWeight.w600,
+                                )),
+                          ),
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 28),
                     _buildLoginButton(),
                     const SizedBox(height: 40),
@@ -143,12 +167,14 @@ class _LoginScreenState extends State<LoginScreen>
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                border: Border(
+                    top: BorderSide(color: Colors.grey.shade200)),
               ),
               child: Text(
                 'exotic gaming&caffe - portal manajement',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.lato(fontSize: 12, color: Colors.black38),
+                style: GoogleFonts.lato(
+                    fontSize: 12, color: Colors.black38),
               ),
             ),
           ],
@@ -157,9 +183,50 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // ── Header biru
   Widget _buildHeader() {
-    return Container(
+    final p = _collapseProgress;
+
+    final double eSize    = 24 - (24 - 14) * p;
+    final double xSize    = 40 - (40 - 22) * p;
+    final double oticSize = 24 - (24 - 14) * p;
+    final double subSize  = 11 - (11 - 9) * p;
+    final double padTop   = 36 - (36 - 16) * p;
+    final double padBot   = 16 - (16 - 10) * p;
+    final double subOpacity = (1 - p * 2).clamp(0.0, 1.0);
+
+    final logoWidget = RichText(
+      text: TextSpan(
+        style: GoogleFonts.playfairDisplay(color: kWhite, height: 1.0),
+        children: [
+          TextSpan(
+              text: 'e',
+              style: TextStyle(
+                  fontSize: eSize, fontWeight: FontWeight.w400)),
+          TextSpan(
+              text: 'X',
+              style: TextStyle(
+                  fontSize: xSize, fontWeight: FontWeight.w700)),
+          TextSpan(
+              text: 'OTIC',
+              style: TextStyle(
+                  fontSize: oticSize, fontWeight: FontWeight.w400)),
+        ],
+      ),
+    );
+
+    final subWidget = Text(
+      'GAMING & CAFFE',
+      style: GoogleFonts.playfairDisplay(
+        fontSize: subSize,
+        color: kWhiteDim,
+        letterSpacing: 3,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+
+    return AnimatedContainer(
+      duration: Duration.zero,
+      height: _headerHeight,
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -167,61 +234,29 @@ class _LoginScreenState extends State<LoginScreen>
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+        borderRadius:
+            BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 52, 20, 20),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: const BoxDecoration(
-                    color: kWhite, shape: BoxShape.circle),
-                child: const Center(
-                    child: Text('🤖', style: TextStyle(fontSize: 22))),
-              ),
-              const SizedBox(width: 10),
-              RichText(
-                text: TextSpan(
-                  style: GoogleFonts.playfairDisplay(
-                      color: kWhite, height: 1.0),
-                  children: const [
-                    TextSpan(
-                        text: 'e',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w400)),
-                    TextSpan(
-                        text: 'X',
-                        style: TextStyle(
-                            fontSize: 28, fontWeight: FontWeight.w700)),
-                    TextSpan(
-                        text: 'OTIC ',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w400)),
-                    TextSpan(
-                        text: 'GAMING & CAFFE',
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 1)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Selamat datang!! Silahkan masuk ke sistem',
-            style: GoogleFonts.lato(
-                fontSize: 13, color: kWhite.withOpacity(0.85)),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 4),
-        ],
-      ),
+      padding: EdgeInsets.fromLTRB(20, padTop, 20, padBot),
+      child: p < 0.5
+          // EXPANDED — logo + subtitle di tengah
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                logoWidget,
+                const SizedBox(height: 4),
+                Opacity(opacity: subOpacity, child: subWidget),
+              ],
+            )
+          // COLLAPSED — logo + subtitle sejajar kiri
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                logoWidget,
+                const SizedBox(width: 8),
+                subWidget,
+              ],
+            ),
     );
   }
 
@@ -275,60 +310,70 @@ class _LoginScreenState extends State<LoginScreen>
     required Color labelColor,
   }) {
     final selected = _selectedRole == role;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedRole = role),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
-        decoration: BoxDecoration(
-          color: selected ? cardColor : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: selected ? borderColor : Colors.grey.shade200,
-            width: selected ? 2 : 1,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedRole = role),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(
+              vertical: 18, horizontal: 12),
+          decoration: BoxDecoration(
+            color: selected ? cardColor : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color:
+                  selected ? borderColor : Colors.grey.shade200,
+              width: selected ? 2 : 1,
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                        color: borderColor.withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4))
+                  ]
+                : [],
           ),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                      color: borderColor.withOpacity(0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4))
-                ]
-              : [],
-        ),
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selected ? borderColor : Colors.transparent,
-                  border: Border.all(
-                      color: selected
-                          ? borderColor
-                          : Colors.grey.shade300),
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected
+                        ? borderColor
+                        : Colors.transparent,
+                    border: Border.all(
+                        color: selected
+                            ? borderColor
+                            : Colors.grey.shade300),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(emoji, style: const TextStyle(fontSize: 38)),
-            const SizedBox(height: 8),
-            Text(label,
-                style: GoogleFonts.lato(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: selected ? labelColor : Colors.black54,
-                )),
-            const SizedBox(height: 3),
-            Text(sublabel,
-                style:
-                    GoogleFonts.lato(fontSize: 11, color: Colors.black38),
-                textAlign: TextAlign.center),
-          ],
+              const SizedBox(height: 4),
+              Text(emoji,
+                  style: const TextStyle(fontSize: 38)),
+              const SizedBox(height: 8),
+              Text(label,
+                  style: GoogleFonts.lato(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: selected
+                        ? labelColor
+                        : Colors.black54,
+                  )),
+              const SizedBox(height: 3),
+              Text(sublabel,
+                  style: GoogleFonts.lato(
+                      fontSize: 11, color: Colors.black38),
+                  textAlign: TextAlign.center),
+            ],
+          ),
         ),
       ),
     );
@@ -356,15 +401,18 @@ class _LoginScreenState extends State<LoginScreen>
       child: TextField(
         controller: controller,
         obscureText: obscure,
-        style: GoogleFonts.lato(fontSize: 14, color: Colors.black87),
+        style:
+            GoogleFonts.lato(fontSize: 14, color: Colors.black87),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle:
-              GoogleFonts.lato(fontSize: 14, color: Colors.black26),
-          prefixIcon: Icon(icon, color: Colors.black38, size: 20),
+          hintStyle: GoogleFonts.lato(
+              fontSize: 14, color: Colors.black26),
+          prefixIcon:
+              Icon(icon, color: Colors.black38, size: 20),
           suffixIcon: suffix,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
     );
@@ -372,32 +420,40 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildLoginButton() {
     final isOwner = _selectedRole == 'owner';
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: _handleLogin,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isOwner ? kYellow : kBlue,
-          foregroundColor: isOwner ? Colors.black87 : kWhite,
-          elevation: 3,
-          shadowColor: (isOwner ? kYellow : kBlue).withOpacity(0.4),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14)),
-        ),
-        child: Text(
-          isOwner ? 'Masuk sebagai Owner' : 'Masuk sebagai Karyawan',
-          style: GoogleFonts.lato(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: ElevatedButton(
+          onPressed: _handleLogin,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isOwner ? kYellow : kBlue,
+            foregroundColor:
+                isOwner ? Colors.black87 : kWhite,
+            elevation: 3,
+            shadowColor:
+                (isOwner ? kYellow : kBlue).withOpacity(0.4),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
+          ),
+          child: Text(
+            isOwner
+                ? 'Masuk sebagai Owner'
+                : 'Masuk sebagai Karyawan',
+            style: GoogleFonts.lato(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5),
+          ),
         ),
       ),
     );
   }
 
   void _handleLogin() {
-    if (_usernameCtrl.text.isEmpty || _passwordCtrl.text.isEmpty) {
+    if (_usernameCtrl.text.isEmpty ||
+        _passwordCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Username dan password wajib diisi',
@@ -410,7 +466,6 @@ class _LoginScreenState extends State<LoginScreen>
       );
       return;
     }
-    // TODO: connect ke backend / auth logic
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Login sebagai $_selectedRole...',
