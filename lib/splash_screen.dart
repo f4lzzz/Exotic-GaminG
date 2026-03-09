@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
-
+import 'login.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kWhite = Color(0xFFFFFFFF);
@@ -136,7 +136,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const DashboardPlaceholder(),
+          pageBuilder: (_, __, ___) => const LoginScreen(),
           transitionDuration: Duration.zero,
         ),
       );
@@ -267,58 +267,6 @@ class _SplashScreenState extends State<SplashScreen>
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-// ─── Dashboard Placeholder ────────────────────────────────────────────────────
-
-class DashboardPlaceholder extends StatelessWidget {
-  const DashboardPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kBlue,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(text: 'E', style: _serif(36)),
-                  TextSpan(
-                    text: 'X',
-                    style: _serif(72, weight: FontWeight.w700),
-                  ),
-                  TextSpan(text: 'OTIC', style: _serif(36, letterSpacing: 1)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(width: 230, height: 1.5, color: kWhite.withOpacity(0.45)),
-            const SizedBox(height: 8),
-            Text(
-              'GAMING & CAFE',
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 15,
-                color: kWhiteDim,
-                letterSpacing: 5,
-              ),
-            ),
-            const SizedBox(height: 60),
-            Text(
-              '— Dashboard —',
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 12,
-                color: kWhite.withOpacity(0.35),
-                letterSpacing: 3,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
