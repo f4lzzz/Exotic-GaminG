@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'forgot_password.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -151,7 +152,15 @@ class _LoginScreenState extends State<LoginScreen>
                         MouseRegion(
                           cursor: SystemMouseCursors.click,
                           child: GestureDetector(
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ForgotPasswordScreen(),
+                                ),
+                              );
+                            },
                             child: Text(
                               'Lupa password?',
                               style: GoogleFonts.lato(
@@ -246,7 +255,6 @@ class _LoginScreenState extends State<LoginScreen>
       ),
       padding: EdgeInsets.fromLTRB(20, padTop, 20, padBot),
       child: p < 0.5
-          // EXPANDED — logo + subtitle di tengah
           ? Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -255,7 +263,6 @@ class _LoginScreenState extends State<LoginScreen>
                 Opacity(opacity: subOpacity, child: subWidget),
               ],
             )
-          // COLLAPSED — logo + subtitle sejajar kiri
           : Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [logoWidget, const SizedBox(width: 8), subWidget],
