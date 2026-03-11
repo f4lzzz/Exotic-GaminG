@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'forgot_password.dart';
+import 'owner_dashboard.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -45,10 +46,8 @@ class _LoginScreenState extends State<LoginScreen>
     );
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _fadeCtrl.forward();
-
-    _scrollCtrl.addListener(() {
-      setState(() => _scrollOffset = _scrollCtrl.offset);
-    });
+    _scrollCtrl.addListener(
+        () => setState(() => _scrollOffset = _scrollCtrl.offset));
   }
 
   @override
@@ -60,7 +59,8 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  double get _collapseProgress => (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
+  double get _collapseProgress =>
+      (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
 
   double get _headerHeight =>
       _headerExpanded -
@@ -79,9 +79,7 @@ class _LoginScreenState extends State<LoginScreen>
               child: SingleChildScrollView(
                 controller: _scrollCtrl,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 28,
-                ),
+                    horizontal: 24, vertical: 28),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -113,8 +111,7 @@ class _LoginScreenState extends State<LoginScreen>
                           size: 20,
                         ),
                         onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword,
-                        ),
+                            () => _obscurePassword = !_obscurePassword),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -128,47 +125,36 @@ class _LoginScreenState extends State<LoginScreen>
                               height: 22,
                               child: Checkbox(
                                 value: _rememberMe,
-                                onChanged: (v) =>
-                                    setState(() => _rememberMe = v ?? false),
+                                onChanged: (v) => setState(
+                                    () => _rememberMe = v ?? false),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
+                                    borderRadius: BorderRadius.circular(4)),
                                 activeColor: kBlue,
                                 side: const BorderSide(
-                                  color: Color(0xFFBBBBBB),
-                                ),
+                                    color: Color(0xFFBBBBBB)),
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              'ingat saya',
-                              style: GoogleFonts.lato(
-                                fontSize: 13,
-                                color: Colors.black54,
-                              ),
-                            ),
+                            Text('Ingat saya',
+                                style: GoogleFonts.lato(
+                                    fontSize: 13, color: Colors.black54)),
                           ],
                         ),
                         MouseRegion(
                           cursor: SystemMouseCursors.click,
                           child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const ForgotPasswordScreen(),
-                                ),
-                              );
-                            },
-                            child: Text(
-                              'Lupa password?',
-                              style: GoogleFonts.lato(
-                                fontSize: 13,
-                                color: kBlue,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      const ForgotPasswordScreen()),
                             ),
+                            child: Text('Lupa password?',
+                                style: GoogleFonts.lato(
+                                  fontSize: 13,
+                                  color: kBlue,
+                                  fontWeight: FontWeight.w600,
+                                )),
                           ),
                         ),
                       ],
@@ -180,18 +166,18 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ),
             ),
-
-            // Footer
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                border:
+                    Border(top: BorderSide(color: Colors.grey.shade200)),
               ),
               child: Text(
-                'exotic gaming&caffe - portal manajement',
+                'exotic gaming & cafe - portal management',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.lato(fontSize: 12, color: Colors.black38),
+                style: GoogleFonts.lato(
+                    fontSize: 12, color: Colors.black38),
               ),
             ),
           ],
@@ -202,7 +188,6 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildHeader() {
     final p = _collapseProgress;
-
     final double eSize = 24 - (24 - 14) * p;
     final double xSize = 40 - (40 - 22) * p;
     final double oticSize = 24 - (24 - 14) * p;
@@ -215,31 +200,23 @@ class _LoginScreenState extends State<LoginScreen>
       text: TextSpan(
         style: GoogleFonts.playfairDisplay(color: kWhite, height: 1.0),
         children: [
-          TextSpan(
-            text: 'E',
-            style: TextStyle(fontSize: eSize, fontWeight: FontWeight.w400),
-          ),
-          TextSpan(
-            text: 'X',
-            style: TextStyle(fontSize: xSize, fontWeight: FontWeight.w700),
-          ),
-          TextSpan(
-            text: 'OTIC',
-            style: TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400),
-          ),
+          TextSpan(text: 'E',
+              style: TextStyle(fontSize: eSize, fontWeight: FontWeight.w400)),
+          TextSpan(text: 'X',
+              style: TextStyle(fontSize: xSize, fontWeight: FontWeight.w700)),
+          TextSpan(text: 'OTIC',
+              style: TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400)),
         ],
       ),
     );
 
-    final subWidget = Text(
-      'GAMING & CAFE',
-      style: GoogleFonts.playfairDisplay(
-        fontSize: subSize,
-        color: kWhiteDim,
-        letterSpacing: 3,
-        fontWeight: FontWeight.w400,
-      ),
-    );
+    final subWidget = Text('GAMING & CAFE',
+        style: GoogleFonts.playfairDisplay(
+          fontSize: subSize,
+          color: kWhiteDim,
+          letterSpacing: 3,
+          fontWeight: FontWeight.w400,
+        ));
 
     return AnimatedContainer(
       duration: Duration.zero,
@@ -270,17 +247,12 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _sectionLabel(String text) {
-    return Text(
-      text,
+  Widget _sectionLabel(String text) => Text(text,
       style: GoogleFonts.lato(
-        fontSize: 13,
-        fontWeight: FontWeight.w800,
-        color: kTextDark,
-        letterSpacing: 1,
-      ),
-    );
-  }
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          color: kTextDark,
+          letterSpacing: 1));
 
   Widget _buildRoleSelector() {
     return Row(
@@ -291,9 +263,9 @@ class _LoginScreenState extends State<LoginScreen>
             imagePath: 'assets/images/owner.jpg',
             label: 'Owner',
             sublabel: 'Pemilik / admin',
-            cardColor: const Color(0xFFFFF3C2),
-            borderColor: kGold,
-            labelColor: kGold,
+            cardColor: const Color(0xFFEFF4FF),
+            borderColor: kBlue,
+            labelColor: kBlue,
           ),
         ),
         const SizedBox(width: 14),
@@ -337,13 +309,10 @@ class _LoginScreenState extends State<LoginScreen>
               width: selected ? 2 : 1,
             ),
             boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: borderColor.withOpacity(0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
+                ? [BoxShadow(
+                    color: borderColor.withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4))]
                 : [],
           ),
           child: Column(
@@ -358,33 +327,26 @@ class _LoginScreenState extends State<LoginScreen>
                     shape: BoxShape.circle,
                     color: selected ? borderColor : Colors.transparent,
                     border: Border.all(
-                      color: selected ? borderColor : Colors.grey.shade300,
-                    ),
+                        color: selected
+                            ? borderColor
+                            : Colors.grey.shade300),
                   ),
                 ),
               ),
               const SizedBox(height: 4),
-              Image.asset(
-                imagePath,
-                width: 48,
-                height: 48,
-                fit: BoxFit.contain,
-              ),
+              Image.asset(imagePath, width: 48, height: 48,
+                  fit: BoxFit.contain),
               const SizedBox(height: 8),
-              Text(
-                label,
-                style: GoogleFonts.lato(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: selected ? labelColor : Colors.black54,
-                ),
-              ),
+              Text(label,
+                  style: GoogleFonts.lato(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: selected ? labelColor : Colors.black54)),
               const SizedBox(height: 3),
-              Text(
-                sublabel,
-                style: GoogleFonts.lato(fontSize: 11, color: Colors.black38),
-                textAlign: TextAlign.center,
-              ),
+              Text(sublabel,
+                  style: GoogleFonts.lato(
+                      fontSize: 11, color: Colors.black38),
+                  textAlign: TextAlign.center),
             ],
           ),
         ),
@@ -406,10 +368,9 @@ class _LoginScreenState extends State<LoginScreen>
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2))
         ],
       ),
       child: TextField(
@@ -429,7 +390,6 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildLoginButton() {
-    final isOwner = _selectedRole == 'owner';
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: SizedBox(
@@ -438,22 +398,18 @@ class _LoginScreenState extends State<LoginScreen>
         child: ElevatedButton(
           onPressed: _handleLogin,
           style: ElevatedButton.styleFrom(
-            backgroundColor: isOwner ? kYellow : kBlue,
-            foregroundColor: isOwner ? Colors.black87 : kWhite,
+            backgroundColor: kBlue,
+            foregroundColor: kWhite,
             elevation: 3,
-            shadowColor: (isOwner ? kYellow : kBlue).withOpacity(0.4),
+            shadowColor: kBlue.withOpacity(0.4),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
+                borderRadius: BorderRadius.circular(14)),
           ),
-          child: Text(
-            'Masuk',
-            style: GoogleFonts.lato(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
-          ),
+          child: Text('Masuk',
+              style: GoogleFonts.lato(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5)),
         ),
       ),
     );
@@ -461,20 +417,24 @@ class _LoginScreenState extends State<LoginScreen>
 
   void _handleLogin() {
     if (_usernameCtrl.text.isEmpty || _passwordCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Username dan password wajib diisi',
-            style: GoogleFonts.lato(color: kWhite),
-          ),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Username dan password wajib diisi',
+            style: GoogleFonts.lato(color: kWhite)),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10)),
+      ));
       return;
     }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OwnerDashboardScreen(
+          username: _usernameCtrl.text,
+        ),
+      ),
+    );
   }
 }

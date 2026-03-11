@@ -309,9 +309,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       children: [
         _stepCircle(1, 'Email'),
         _stepLine(1),
-        _stepCircle(2, 'kode OTP'),
+        _stepCircle(2, 'Kode OTP'),
         _stepLine(2),
-        _stepCircle(3, 'Paswoord'),
+        _stepCircle(3, 'Password'),
       ],
     );
   }
@@ -415,7 +415,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         ),
         const SizedBox(height: 8),
         Text(
-          'Masukan email atau username yang terdaftar.kami akan mengirimkan kode verifikasi',
+          'Masukan email atau username yang terdaftar. kami akan mengirimkan kode verifikasi',
           style: GoogleFonts.lato(fontSize: 13, color: Colors.black54),
         ),
         const SizedBox(height: 20),
@@ -434,7 +434,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Kode OTP akan dikirim ke imail yang terdaftar di sistem',
+                  'Kode OTP akan dikirim ke email yang terdaftar di sistem',
                   style: GoogleFonts.lato(fontSize: 12, color: Colors.black54),
                 ),
               ),
