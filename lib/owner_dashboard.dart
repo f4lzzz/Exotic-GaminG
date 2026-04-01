@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'owner_karyawan.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -73,27 +74,40 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4FF),
-      // ← TIDAK pakai FadeTransition di sini
-      body: Column(
+      body: IndexedStack(
+        index: _selectedNav,
         children: [
-          FadeTransition(opacity: _fadeAnim, child: _buildHeader()),
-          Expanded(
-            child: SingleChildScrollView(
-              controller: _scrollCtrl,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildUserInfoCard(), // ← ikut scroll bareng konten
-                  const SizedBox(height: 16),
-                  _buildStatCards(),
-                  const SizedBox(height: 20),
-                  _buildChartSection(),
-                  const SizedBox(height: 20),
-                ],
+          // Tab 0 — HOME (dashboard konten)
+          Column(
+            children: [
+              FadeTransition(opacity: _fadeAnim, child: _buildHeader()),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _scrollCtrl,
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildUserInfoCard(),
+                      const SizedBox(height: 16),
+                      _buildStatCards(),
+                      const SizedBox(height: 20),
+                      _buildChartSection(),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
+          // Tab 1 — KARYAWAN
+          const OwnerKaryawanScreen(),
+          // Tab 2 — center button (kosong)
+          const SizedBox(),
+          // Tab 3 — MENU (kosong dulu)
+          const Center(child: Text('MENU - Coming Soon')),
+          // Tab 4 — REKAP (kosong dulu)
+          const Center(child: Text('REKAP - Coming Soon')),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(),
