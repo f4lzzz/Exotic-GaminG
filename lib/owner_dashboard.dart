@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'owner_karyawan.dart';
+import 'owner_menu.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -104,8 +105,8 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
           const OwnerKaryawanScreen(),
           // Tab 2 — center button (kosong)
           const SizedBox(),
-          // Tab 3 — MENU (kosong dulu)
-          const Center(child: Text('MENU - Coming Soon')),
+          // Tab 3 — MENU
+          const OwnerMenuScreen(),
           // Tab 4 — REKAP (kosong dulu)
           const Center(child: Text('REKAP - Coming Soon')),
         ],
