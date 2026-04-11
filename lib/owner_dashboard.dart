@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'owner_karyawan.dart';
 import 'owner_menu.dart';
+import 'notifikasi_owner.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -165,7 +166,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
         _headerIconBtn(
           Icons.notifications_outlined,
           badge: _notifCount,
-          onTap: () {},
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotifikasiOwnerScreen()),
+          ),
         ),
       ],
     );
