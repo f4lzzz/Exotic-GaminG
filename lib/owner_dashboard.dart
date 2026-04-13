@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'owner_karyawan.dart';
 import 'owner_menu.dart';
 import 'notifikasi_owner.dart';
+import 'profil_owner.dart';
+import 'rekap_owner.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -108,8 +110,8 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
           const SizedBox(),
           // Tab 3 — MENU
           const OwnerMenuScreen(),
-          // Tab 4 — REKAP (kosong dulu)
-          const Center(child: Text('REKAP - Coming Soon')),
+          // Tab 4 — REKAP
+          const RekapOwnerScreen(),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(),
@@ -161,7 +163,13 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     final iconButtons = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _headerIconBtn(Icons.settings_outlined, onTap: () {}),
+        _headerIconBtn(
+          Icons.settings_outlined,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ProfilOwnerScreen()),
+          ),
+        ),
         const SizedBox(width: 6),
         _headerIconBtn(
           Icons.notifications_outlined,
@@ -755,7 +763,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
                               ),
                               children: const [
                                 TextSpan(
-                                  text: 'E',
+                                  text: 'e',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w400,
@@ -769,7 +777,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
                                   ),
                                 ),
                                 TextSpan(
-                                  text: 'OTIC',
+                                  text: 'otic',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w400,
