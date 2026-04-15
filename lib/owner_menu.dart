@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'notifikasi_owner.dart';
+import 'profil_owner.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -499,9 +501,22 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
     final iconButtons = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _headerIconBtn(Icons.settings_outlined, onTap: () {}),
+        _headerIconBtn(
+          Icons.settings_outlined,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ProfilOwnerScreen()),
+          ),
+        ),
         const SizedBox(width: 6),
-        _headerIconBtn(Icons.notifications_outlined, badge: 3, onTap: () {}),
+        _headerIconBtn(
+          Icons.notifications_outlined,
+          badge: 3,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotifikasiOwnerScreen()),
+          ),
+        ),
       ],
     );
 

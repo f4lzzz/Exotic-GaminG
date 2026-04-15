@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'notifikasi_owner.dart';
+import 'profil_owner.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -56,8 +58,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
 
   double get _collapseProgress => (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
   double get _headerHeight =>
-      _headerExpanded -
-      (_headerExpanded - _headerCollapsed) * _collapseProgress;
+      _headerExpanded - (_headerExpanded - _headerCollapsed) * _collapseProgress;
 
   int _tabIndex = 0;
   String _searchQuery = '';
@@ -65,119 +66,25 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
 
   // Data dummy karyawan
   final List<Karyawan> _karyawanList = [
-    Karyawan(
-      id: '1',
-      nama: 'Budi Santoso',
-      jabatan: 'Kasir',
-      shift: 'Pagi',
-      status: StatusKehadiran.hadir,
-      avatar: 'BS',
-    ),
-    Karyawan(
-      id: '2',
-      nama: 'Sari Dewi',
-      jabatan: 'Barista',
-      shift: 'Pagi',
-      status: StatusKehadiran.hadir,
-      avatar: 'SD',
-    ),
-    Karyawan(
-      id: '3',
-      nama: 'Riko Pratama',
-      jabatan: 'Operator Gaming',
-      shift: 'Siang',
-      status: StatusKehadiran.absen,
-      avatar: 'RP',
-    ),
-    Karyawan(
-      id: '4',
-      nama: 'Mega Putri',
-      jabatan: 'Kasir',
-      shift: 'Siang',
-      status: StatusKehadiran.hadir,
-      avatar: 'MP',
-    ),
-    Karyawan(
-      id: '5',
-      nama: 'Andi Wijaya',
-      jabatan: 'Teknisi',
-      shift: 'Malam',
-      status: StatusKehadiran.izin,
-      avatar: 'AW',
-    ),
-    Karyawan(
-      id: '6',
-      nama: 'Lina Susanti',
-      jabatan: 'Barista',
-      shift: 'Malam',
-      status: StatusKehadiran.hadir,
-      avatar: 'LS',
-    ),
-    Karyawan(
-      id: '7',
-      nama: 'Doni Kusuma',
-      jabatan: 'Operator Gaming',
-      shift: 'Pagi',
-      status: StatusKehadiran.hadir,
-      avatar: 'DK',
-    ),
-    Karyawan(
-      id: '8',
-      nama: 'Fitri Handayani',
-      jabatan: 'Kasir',
-      shift: 'Siang',
-      status: StatusKehadiran.sakit,
-      avatar: 'FH',
-    ),
-    Karyawan(
-      id: '9',
-      nama: 'Hendra Gunawan',
-      jabatan: 'Barista',
-      shift: 'Pagi',
-      status: StatusKehadiran.hadir,
-      avatar: 'HG',
-    ),
-    Karyawan(
-      id: '10',
-      nama: 'Yuni Rahayu',
-      jabatan: 'Operator Gaming',
-      shift: 'Malam',
-      status: StatusKehadiran.hadir,
-      avatar: 'YR',
-    ),
-    Karyawan(
-      id: '11',
-      nama: 'Bagas Aditya',
-      jabatan: 'Teknisi',
-      shift: 'Siang',
-      status: StatusKehadiran.hadir,
-      avatar: 'BA',
-    ),
-    Karyawan(
-      id: '12',
-      nama: 'Citra Novia',
-      jabatan: 'Barista',
-      shift: 'Malam',
-      status: StatusKehadiran.absen,
-      avatar: 'CN',
-    ),
-    Karyawan(
-      id: '13',
-      nama: 'Eko Saputra',
-      jabatan: 'Kasir',
-      shift: 'Pagi',
-      status: StatusKehadiran.hadir,
-      avatar: 'ES',
-    ),
+    Karyawan(id: '1', nama: 'Budi Santoso', jabatan: 'Kasir', shift: 'Pagi', status: StatusKehadiran.hadir, avatar: 'BS'),
+    Karyawan(id: '2', nama: 'Sari Dewi', jabatan: 'Barista', shift: 'Pagi', status: StatusKehadiran.hadir, avatar: 'SD'),
+    Karyawan(id: '3', nama: 'Riko Pratama', jabatan: 'Operator Gaming', shift: 'Siang', status: StatusKehadiran.absen, avatar: 'RP'),
+    Karyawan(id: '4', nama: 'Mega Putri', jabatan: 'Kasir', shift: 'Siang', status: StatusKehadiran.hadir, avatar: 'MP'),
+    Karyawan(id: '5', nama: 'Andi Wijaya', jabatan: 'Teknisi', shift: 'Malam', status: StatusKehadiran.izin, avatar: 'AW'),
+    Karyawan(id: '6', nama: 'Lina Susanti', jabatan: 'Barista', shift: 'Malam', status: StatusKehadiran.hadir, avatar: 'LS'),
+    Karyawan(id: '7', nama: 'Doni Kusuma', jabatan: 'Operator Gaming', shift: 'Pagi', status: StatusKehadiran.hadir, avatar: 'DK'),
+    Karyawan(id: '8', nama: 'Fitri Handayani', jabatan: 'Kasir', shift: 'Siang', status: StatusKehadiran.sakit, avatar: 'FH'),
+    Karyawan(id: '9', nama: 'Hendra Gunawan', jabatan: 'Barista', shift: 'Pagi', status: StatusKehadiran.hadir, avatar: 'HG'),
+    Karyawan(id: '10', nama: 'Yuni Rahayu', jabatan: 'Operator Gaming', shift: 'Malam', status: StatusKehadiran.hadir, avatar: 'YR'),
+    Karyawan(id: '11', nama: 'Bagas Aditya', jabatan: 'Teknisi', shift: 'Siang', status: StatusKehadiran.hadir, avatar: 'BA'),
+    Karyawan(id: '12', nama: 'Citra Novia', jabatan: 'Barista', shift: 'Malam', status: StatusKehadiran.absen, avatar: 'CN'),
+    Karyawan(id: '13', nama: 'Eko Saputra', jabatan: 'Kasir', shift: 'Pagi', status: StatusKehadiran.hadir, avatar: 'ES'),
   ];
 
   @override
   void initState() {
     super.initState();
-    _fadeCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
+    _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _fadeCtrl.forward();
     _scrollCtrl.addListener(
@@ -195,25 +102,18 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
 
   List<Karyawan> get _filtered {
     return _karyawanList.where((k) {
-      final matchTab =
-          _tabIndex == 0 ||
+      final matchTab = _tabIndex == 0 ||
           (_tabIndex == 1 && k.status == StatusKehadiran.hadir) ||
-          (_tabIndex == 2 &&
-              (k.status == StatusKehadiran.absen ||
-                  k.status == StatusKehadiran.izin ||
-                  k.status == StatusKehadiran.sakit));
-      final matchSearch =
-          _searchQuery.isEmpty ||
+          (_tabIndex == 2 && (k.status == StatusKehadiran.absen || k.status == StatusKehadiran.izin || k.status == StatusKehadiran.sakit));
+      final matchSearch = _searchQuery.isEmpty ||
           k.nama.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           k.jabatan.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchTab && matchSearch;
     }).toList();
   }
 
-  int get _totalHadir =>
-      _karyawanList.where((k) => k.status == StatusKehadiran.hadir).length;
-  int get _totalAbsen =>
-      _karyawanList.where((k) => k.status != StatusKehadiran.hadir).length;
+  int get _totalHadir => _karyawanList.where((k) => k.status == StatusKehadiran.hadir).length;
+  int get _totalAbsen => _karyawanList.where((k) => k.status != StatusKehadiran.hadir).length;
 
   @override
   Widget build(BuildContext context) {
@@ -262,18 +162,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       text: TextSpan(
         style: GoogleFonts.playfairDisplay(color: kWhite, height: 1.0),
         children: [
-          TextSpan(
-            text: 'E',
-            style: TextStyle(fontSize: eSize, fontWeight: FontWeight.w400),
-          ),
-          TextSpan(
-            text: 'X',
-            style: TextStyle(fontSize: xSize, fontWeight: FontWeight.w700),
-          ),
-          TextSpan(
-            text: 'OTIC',
-            style: TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400),
-          ),
+          TextSpan(text: 'E', style: TextStyle(fontSize: eSize, fontWeight: FontWeight.w400)),
+          TextSpan(text: 'X', style: TextStyle(fontSize: xSize, fontWeight: FontWeight.w700)),
+          TextSpan(text: 'OTIC', style: TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400)),
         ],
       ),
     );
@@ -281,19 +172,16 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     final subWidget = Text(
       'GAMING & CAFE',
       style: GoogleFonts.playfairDisplay(
-        fontSize: subSize,
-        color: kWhiteDim,
-        letterSpacing: 3,
-        fontWeight: FontWeight.w400,
+        fontSize: subSize, color: kWhiteDim, letterSpacing: 3, fontWeight: FontWeight.w400,
       ),
     );
 
     final iconButtons = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _headerIconBtn(Icons.settings_outlined, onTap: () {}),
+        _headerIconBtn(Icons.settings_outlined, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilOwnerScreen()))),
         const SizedBox(width: 6),
-        _headerIconBtn(Icons.notifications_outlined, badge: 3, onTap: () {}),
+        _headerIconBtn(Icons.notifications_outlined, badge: 3, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotifikasiOwnerScreen()))),
       ],
     );
 
@@ -338,45 +226,25 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     );
   }
 
-  Widget _headerIconBtn(
-    IconData icon, {
-    int badge = 0,
-    required VoidCallback onTap,
-  }) {
+  Widget _headerIconBtn(IconData icon, {int badge = 0, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: kWhite.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
+            width: 36, height: 36,
+            decoration: BoxDecoration(color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
             child: Icon(icon, color: kWhite, size: 20),
           ),
           if (badge > 0)
             Positioned(
-              top: -2,
-              right: -2,
+              top: -2, right: -2,
               child: Container(
-                width: 16,
-                height: 16,
-                decoration: const BoxDecoration(
-                  color: kRed,
-                  shape: BoxShape.circle,
-                ),
+                width: 16, height: 16,
+                decoration: const BoxDecoration(color: kRed, shape: BoxShape.circle),
                 child: Center(
-                  child: Text(
-                    '$badge',
-                    style: GoogleFonts.lato(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      color: kWhite,
-                    ),
-                  ),
+                  child: Text('$badge', style: GoogleFonts.lato(fontSize: 9, fontWeight: FontWeight.w900, color: kWhite)),
                 ),
               ),
             ),
@@ -389,32 +257,11 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
   Widget _buildSummaryRow() {
     return Row(
       children: [
-        Expanded(
-          child: _summaryCard(
-            'TOTAL',
-            '${_karyawanList.length}',
-            Icons.people,
-            kBlue,
-          ),
-        ),
+        Expanded(child: _summaryCard('TOTAL', '${_karyawanList.length}', Icons.people, kBlue)),
         const SizedBox(width: 10),
-        Expanded(
-          child: _summaryCard(
-            'HADIR',
-            '$_totalHadir',
-            Icons.check_circle,
-            kGreen,
-          ),
-        ),
+        Expanded(child: _summaryCard('HADIR', '$_totalHadir', Icons.check_circle, kGreen)),
         const SizedBox(width: 10),
-        Expanded(
-          child: _summaryCard(
-            'TIDAK HADIR',
-            '$_totalAbsen',
-            Icons.cancel,
-            kRed,
-          ),
-        ),
+        Expanded(child: _summaryCard('TIDAK HADIR', '$_totalAbsen', Icons.cancel, kRed)),
       ],
     );
   }
@@ -425,36 +272,15 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       decoration: BoxDecoration(
         color: kWhite,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3))],
       ),
       child: Column(
         children: [
           Icon(icon, color: color, size: 22),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: GoogleFonts.lato(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: kTextDark,
-            ),
-          ),
+          Text(value, style: GoogleFonts.lato(fontSize: 20, fontWeight: FontWeight.w900, color: kTextDark)),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: GoogleFonts.lato(
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              color: Colors.black38,
-              letterSpacing: 0.5,
-            ),
-          ),
+          Text(label, style: GoogleFonts.lato(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.black38, letterSpacing: 0.5)),
         ],
       ),
     );
@@ -467,13 +293,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       decoration: BoxDecoration(
         color: kWhite,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: TextField(
         controller: _searchCtrl,
@@ -485,15 +305,8 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
           prefixIcon: const Icon(Icons.search, color: Colors.black38, size: 20),
           suffixIcon: _searchQuery.isNotEmpty
               ? GestureDetector(
-                  onTap: () => setState(() {
-                    _searchQuery = '';
-                    _searchCtrl.clear();
-                  }),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.black38,
-                    size: 18,
-                  ),
+                  onTap: () => setState(() { _searchQuery = ''; _searchCtrl.clear(); }),
+                  child: const Icon(Icons.close, color: Colors.black38, size: 18),
                 )
               : null,
           border: InputBorder.none,
@@ -519,13 +332,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               decoration: BoxDecoration(
                 color: isActive ? kBlue : kWhite,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 2))],
               ),
               child: Text(
                 tabs[i],
@@ -554,16 +361,15 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
             children: [
               Icon(Icons.people_outline, size: 48, color: Colors.black26),
               const SizedBox(height: 12),
-              Text(
-                'Tidak ada karyawan',
-                style: GoogleFonts.lato(fontSize: 14, color: Colors.black38),
-              ),
+              Text('Tidak ada karyawan', style: GoogleFonts.lato(fontSize: 14, color: Colors.black38)),
             ],
           ),
         ),
       );
     }
-    return Column(children: list.map((k) => _karyawanCard(k)).toList());
+    return Column(
+      children: list.map((k) => _karyawanCard(k)).toList(),
+    );
   }
 
   Widget _karyawanCard(Karyawan k) {
@@ -576,13 +382,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       decoration: BoxDecoration(
         color: kWhite,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 3))],
       ),
       child: Row(
         children: [
@@ -598,11 +398,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
             child: Center(
               child: Text(
                 k.avatar,
-                style: GoogleFonts.lato(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: kBlue,
-                ),
+                style: GoogleFonts.lato(fontSize: 13, fontWeight: FontWeight.w900, color: kBlue),
               ),
             ),
           ),
@@ -612,36 +408,17 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  k.nama,
-                  style: GoogleFonts.lato(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: kTextDark,
-                  ),
-                ),
+                Text(k.nama, style: GoogleFonts.lato(fontSize: 14, fontWeight: FontWeight.w800, color: kTextDark)),
                 const SizedBox(height: 3),
                 Row(
                   children: [
                     Icon(Icons.work_outline, size: 11, color: Colors.black38),
                     const SizedBox(width: 4),
-                    Text(
-                      k.jabatan,
-                      style: GoogleFonts.lato(
-                        fontSize: 11,
-                        color: Colors.black45,
-                      ),
-                    ),
+                    Text(k.jabatan, style: GoogleFonts.lato(fontSize: 11, color: Colors.black45)),
                     const SizedBox(width: 10),
                     Icon(Icons.access_time, size: 11, color: Colors.black38),
                     const SizedBox(width: 4),
-                    Text(
-                      'Shift ${k.shift}',
-                      style: GoogleFonts.lato(
-                        fontSize: 11,
-                        color: Colors.black45,
-                      ),
-                    ),
+                    Text('Shift ${k.shift}', style: GoogleFonts.lato(fontSize: 11, color: Colors.black45)),
                   ],
                 ),
               ],
@@ -652,38 +429,23 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: statusColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   statusLabel,
-                  style: GoogleFonts.lato(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: statusColor,
-                  ),
+                  style: GoogleFonts.lato(fontSize: 10, fontWeight: FontWeight.w800, color: statusColor),
                 ),
               ),
               const SizedBox(height: 6),
               // Tombol aksi
               Row(
                 children: [
-                  _actionBtn(
-                    Icons.edit_outlined,
-                    kBlue,
-                    () => _showEditDialog(k),
-                  ),
+                  _actionBtn(Icons.edit_outlined, kBlue, () => _showEditDialog(k)),
                   const SizedBox(width: 6),
-                  _actionBtn(
-                    Icons.delete_outline,
-                    kRed,
-                    () => _showDeleteDialog(k),
-                  ),
+                  _actionBtn(Icons.delete_outline, kRed, () => _showDeleteDialog(k)),
                 ],
               ),
             ],
@@ -714,37 +476,26 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       onPressed: () => _showTambahDialog(),
       backgroundColor: kBlue,
       icon: const Icon(Icons.person_add, color: kWhite),
-      label: Text(
-        'Tambah',
-        style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite),
-      ),
+      label: Text('Tambah', style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite)),
     );
   }
 
   // ─── HELPER ──────────────────────────────────────────────────────────────
   Color _statusColor(StatusKehadiran s) {
     switch (s) {
-      case StatusKehadiran.hadir:
-        return kGreen;
-      case StatusKehadiran.absen:
-        return kRed;
-      case StatusKehadiran.izin:
-        return kOrange;
-      case StatusKehadiran.sakit:
-        return Colors.purple;
+      case StatusKehadiran.hadir: return kGreen;
+      case StatusKehadiran.absen: return kRed;
+      case StatusKehadiran.izin: return kOrange;
+      case StatusKehadiran.sakit: return Colors.purple;
     }
   }
 
   String _statusLabel(StatusKehadiran s) {
     switch (s) {
-      case StatusKehadiran.hadir:
-        return 'HADIR';
-      case StatusKehadiran.absen:
-        return 'ABSEN';
-      case StatusKehadiran.izin:
-        return 'IZIN';
-      case StatusKehadiran.sakit:
-        return 'SAKIT';
+      case StatusKehadiran.hadir: return 'HADIR';
+      case StatusKehadiran.absen: return 'ABSEN';
+      case StatusKehadiran.izin: return 'IZIN';
+      case StatusKehadiran.sakit: return 'SAKIT';
     }
   }
 
@@ -759,16 +510,8 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'Tambah Karyawan',
-            style: GoogleFonts.lato(
-              fontWeight: FontWeight.w900,
-              color: kTextDark,
-            ),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Tambah Karyawan', style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -797,48 +540,27 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Batal',
-                style: GoogleFonts.lato(color: Colors.black45),
-              ),
+              child: Text('Batal', style: GoogleFonts.lato(color: Colors.black45)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kBlue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: kBlue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
               onPressed: () {
                 if (namaCtrl.text.isNotEmpty && jabatanCtrl.text.isNotEmpty) {
-                  final inisial = namaCtrl.text
-                      .trim()
-                      .split(' ')
-                      .take(2)
-                      .map((e) => e[0].toUpperCase())
-                      .join();
+                  final inisial = namaCtrl.text.trim().split(' ').take(2).map((e) => e[0].toUpperCase()).join();
                   setState(() {
-                    _karyawanList.add(
-                      Karyawan(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        nama: namaCtrl.text.trim(),
-                        jabatan: jabatanCtrl.text.trim(),
-                        shift: shift,
-                        status: status,
-                        avatar: inisial,
-                      ),
-                    );
+                    _karyawanList.add(Karyawan(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      nama: namaCtrl.text.trim(),
+                      jabatan: jabatanCtrl.text.trim(),
+                      shift: shift,
+                      status: status,
+                      avatar: inisial,
+                    ));
                   });
                   Navigator.pop(ctx);
                 }
               },
-              child: Text(
-                'Simpan',
-                style: GoogleFonts.lato(
-                  fontWeight: FontWeight.w800,
-                  color: kWhite,
-                ),
-              ),
+              child: Text('Simpan', style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite)),
             ),
           ],
         ),
@@ -857,16 +579,8 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'Edit Karyawan',
-            style: GoogleFonts.lato(
-              fontWeight: FontWeight.w900,
-              color: kTextDark,
-            ),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Edit Karyawan', style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -895,40 +609,21 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Batal',
-                style: GoogleFonts.lato(color: Colors.black45),
-              ),
+              child: Text('Batal', style: GoogleFonts.lato(color: Colors.black45)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kBlue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: kBlue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
               onPressed: () {
                 setState(() {
                   k.nama = namaCtrl.text.trim();
                   k.jabatan = jabatanCtrl.text.trim();
                   k.shift = shift;
                   k.status = status;
-                  k.avatar = namaCtrl.text
-                      .trim()
-                      .split(' ')
-                      .take(2)
-                      .map((e) => e[0].toUpperCase())
-                      .join();
+                  k.avatar = namaCtrl.text.trim().split(' ').take(2).map((e) => e[0].toUpperCase()).join();
                 });
                 Navigator.pop(ctx);
               },
-              child: Text(
-                'Simpan',
-                style: GoogleFonts.lato(
-                  fontWeight: FontWeight.w800,
-                  color: kWhite,
-                ),
-              ),
+              child: Text('Simpan', style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite)),
             ),
           ],
         ),
@@ -942,25 +637,13 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Hapus Karyawan',
-          style: GoogleFonts.lato(
-            fontWeight: FontWeight.w900,
-            color: kTextDark,
-          ),
-        ),
+        title: Text('Hapus Karyawan', style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark)),
         content: RichText(
           text: TextSpan(
             style: GoogleFonts.lato(fontSize: 13, color: Colors.black54),
             children: [
               const TextSpan(text: 'Yakin hapus '),
-              TextSpan(
-                text: k.nama,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: kTextDark,
-                ),
-              ),
+              TextSpan(text: k.nama, style: const TextStyle(fontWeight: FontWeight.w800, color: kTextDark)),
               const TextSpan(text: '?'),
             ],
           ),
@@ -968,29 +651,15 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Batal',
-              style: GoogleFonts.lato(color: Colors.black45),
-            ),
+            child: Text('Batal', style: GoogleFonts.lato(color: Colors.black45)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kRed,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: kRed, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
             onPressed: () {
               setState(() => _karyawanList.removeWhere((e) => e.id == k.id));
               Navigator.pop(ctx);
             },
-            child: Text(
-              'Hapus',
-              style: GoogleFonts.lato(
-                fontWeight: FontWeight.w800,
-                color: kWhite,
-              ),
-            ),
+            child: Text('Hapus', style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite)),
           ),
         ],
       ),
@@ -1027,27 +696,17 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: kBgLight,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: kBgLight, borderRadius: BorderRadius.circular(12)),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,
           isExpanded: true,
           style: GoogleFonts.lato(fontSize: 13, color: kTextDark),
-          hint: Text(
-            label,
-            style: GoogleFonts.lato(fontSize: 13, color: Colors.black38),
-          ),
-          items: items
-              .map(
-                (e) => DropdownMenuItem<T>(
-                  value: e,
-                  child: Text(itemLabel != null ? itemLabel(e) : e.toString()),
-                ),
-              )
-              .toList(),
+          hint: Text(label, style: GoogleFonts.lato(fontSize: 13, color: Colors.black38)),
+          items: items.map((e) => DropdownMenuItem<T>(
+            value: e,
+            child: Text(itemLabel != null ? itemLabel(e) : e.toString()),
+          )).toList(),
           onChanged: onChanged,
         ),
       ),

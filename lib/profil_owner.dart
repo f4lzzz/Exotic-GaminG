@@ -143,10 +143,8 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
     final double eSize = 24 - (24 - 14) * p;
     final double xSize = 40 - (40 - 22) * p;
     final double oticSize = 24 - (24 - 14) * p;
-    final double subSize = 11 - (11 - 9) * p;
     final double padTop = 36 - (36 - 16) * p;
     final double padBot = 16 - (16 - 10) * p;
-    final double subOpacity = (1 - p * 2).clamp(0.0, 1.0);
 
     final logoWidget = RichText(
       text: TextSpan(
@@ -165,16 +163,6 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
             style: TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400),
           ),
         ],
-      ),
-    );
-
-    final subWidget = Text(
-      'GAMING & CAFE',
-      style: GoogleFonts.playfairDisplay(
-        fontSize: subSize,
-        color: kWhiteDim,
-        letterSpacing: 3,
-        fontWeight: FontWeight.w400,
       ),
     );
 

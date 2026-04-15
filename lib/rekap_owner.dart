@@ -417,16 +417,18 @@ class _RekapOwnerScreenState extends State<RekapOwnerScreen>
       _headerExpanded -
       (_headerExpanded - _headerCollapsed) * _collapseProgress;
 
-  final List<int> _tahunList = [2026, 2025, 2024];
+  final List<int> _tahunList = [
+    2024,
+    2025,
+    2026,
+  ]; // ascending biar swipe kanan = lebih baru
   int _selectedTahun = 2026;
   late PageController _pageCtrl;
-
-  RekapData get _data => _rekapPerTahun[_selectedTahun]!;
 
   @override
   void initState() {
     super.initState();
-    _pageCtrl = PageController();
+    _pageCtrl = PageController(initialPage: 2); // 2026 ada di index 2
     _fadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -548,8 +550,9 @@ class _RekapOwnerScreenState extends State<RekapOwnerScreen>
           ),
           const Spacer(),
           _tahunArrow(Icons.chevron_left, () {
+            // kiri = tahun lebih lama = index lebih kecil
             final idx = _tahunList.indexOf(_selectedTahun);
-            if (idx < _tahunList.length - 1) _changeTahun(_tahunList[idx + 1]);
+            if (idx > 0) _changeTahun(_tahunList[idx - 1]);
           }),
           const SizedBox(width: 10),
           Text(
@@ -562,8 +565,9 @@ class _RekapOwnerScreenState extends State<RekapOwnerScreen>
           ),
           const SizedBox(width: 10),
           _tahunArrow(Icons.chevron_right, () {
+            // kanan = tahun lebih baru = index lebih besar
             final idx = _tahunList.indexOf(_selectedTahun);
-            if (idx > 0) _changeTahun(_tahunList[idx - 1]);
+            if (idx < _tahunList.length - 1) _changeTahun(_tahunList[idx + 1]);
           }),
         ],
       ),

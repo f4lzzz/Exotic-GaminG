@@ -5,6 +5,7 @@ import 'owner_menu.dart';
 import 'notifikasi_owner.dart';
 import 'profil_owner.dart';
 import 'rekap_owner.dart';
+import 'quick_access_owner.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -106,8 +107,8 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
           ),
           // Tab 1 — KARYAWAN
           const OwnerKaryawanScreen(),
-          // Tab 2 — center button (kosong)
-          const SizedBox(),
+          // Tab 2 — QUICK ACCESS
+          const QuickAccessOwnerScreen(),
           // Tab 3 — MENU
           const OwnerMenuScreen(),
           // Tab 4 — REKAP
@@ -732,58 +733,65 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
               _navItem(1, Icons.people_outline, Icons.people, 'KARYAWAN'),
               Expanded(
                 child: GestureDetector(
-                  onTap: () {},
+                  onTap: () => setState(() => _selectedNav = 2),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF4A90D9), kBlue],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: kBlueBg,
-                              blurRadius: 10,
-                              offset: Offset(0, 3),
+                      // Belah ketupat = Transform.rotate 45 derajat
+                      Transform.rotate(
+                        angle: 0.785,
+                        child: Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF4A90D9), kBlue],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                          ],
-                        ),
-                        child: Center(
-                          child: RichText(
-                            text: TextSpan(
-                              style: GoogleFonts.playfairDisplay(
-                                color: kWhite,
-                                height: 1.0,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: kBlueBg.withOpacity(0.6),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
                               ),
-                              children: const [
-                                TextSpan(
-                                  text: 'e',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w400,
+                            ],
+                          ),
+                          child: Transform.rotate(
+                            angle: -0.785,
+                            child: Center(
+                              child: RichText(
+                                text: TextSpan(
+                                  style: GoogleFonts.playfairDisplay(
+                                    color: kWhite,
+                                    height: 1.0,
                                   ),
+                                  children: const [
+                                    TextSpan(
+                                      text: 'e',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: 'X',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: 'otic',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                TextSpan(
-                                  text: 'X',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: 'otic',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
