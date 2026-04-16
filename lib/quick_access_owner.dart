@@ -73,9 +73,7 @@ class _QuickAccessOwnerScreenState extends State<QuickAccessOwnerScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Logo eXotic besar di atas
-                  Center(child: _buildLogo()),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
                   _sectionLabel('⚡ AKSI CEPAT'),
                   const SizedBox(height: 12),
                   _buildGrid(),
@@ -207,79 +205,6 @@ class _QuickAccessOwnerScreenState extends State<QuickAccessOwnerScreen>
                 ),
               ],
             ),
-    );
-  }
-
-  // ─── LOGO EXOTIC BESAR ───────────────────────────────────────
-  Widget _buildLogo() {
-    return Container(
-      width: 100,
-      height: 100,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4A90D9), kBlue],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        // Belah ketupat
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: kBlue.withOpacity(0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Transform.rotate(
-        angle: 0.785, // 45 derajat = belah ketupat
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF4A90D9), kBlue],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Transform.rotate(
-            angle: -0.785,
-            child: Center(
-              child: RichText(
-                text: TextSpan(
-                  style: GoogleFonts.playfairDisplay(
-                    color: kWhite,
-                    height: 1.0,
-                  ),
-                  children: const [
-                    TextSpan(
-                      text: 'e',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    TextSpan(
-                      text: 'X',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    TextSpan(
-                      text: 'otic',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 

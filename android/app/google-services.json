@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "87084821589",
+    "project_id": "exotic-gaming-and-cafe",
+    "storage_bucket": "exotic-gaming-and-cafe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:87084821589:android:8252c30aea6ba5f8abb8dc",
+        "android_client_info": {
+          "package_name": "com.example.apk"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvHR9k85AfVsO6KZrZryKl2cmej1H6Kh0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:87084821589:android:76a484cf312ddfeeabb8dc",
+        "android_client_info": {
+          "package_name": "com.exotic_gaming_and_cafe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvHR9k85AfVsO6KZrZryKl2cmej1H6Kh0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

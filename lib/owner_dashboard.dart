@@ -769,7 +769,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
                                   ),
                                   children: const [
                                     TextSpan(
-                                      text: 'e',
+                                      text: 'E',
                                       style: TextStyle(
                                         fontSize: 9,
                                         fontWeight: FontWeight.w400,
@@ -783,7 +783,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
                                       ),
                                     ),
                                     TextSpan(
-                                      text: 'otic',
+                                      text: 'OTIC',
                                       style: TextStyle(
                                         fontSize: 9,
                                         fontWeight: FontWeight.w400,
