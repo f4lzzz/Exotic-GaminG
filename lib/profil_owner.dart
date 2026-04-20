@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'login.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -291,7 +292,7 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  nama.toUpperCase(),
+                  nama,
                   style: GoogleFonts.lato(
                     fontSize: 15,
                     fontWeight: FontWeight.w900,
@@ -500,9 +501,14 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
               ),
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
-                if (context.mounted) {
-                  Navigator.popUntil(ctx, (route) => route.isFirst);
-                  // Atau push ke LoginScreen
+                // Tunggu sebentar agar state benar-benar berubah
+                await Future.delayed(const Duration(milliseconds: 300));
+                if (ctx.mounted) {
+                  // Gunakan ctx (context dari dialog) untuk navigasi
+                  Navigator.of(ctx).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
                 }
               },
               child: Text(

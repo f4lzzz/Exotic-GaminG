@@ -8,7 +8,7 @@ import 'notifikasi_owner.dart';
 import 'profil_owner.dart';
 import 'rekap_owner.dart';
 import 'quick_access_owner.dart';
-import 'login.dart'; // untuk logout
+import 'login.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -21,7 +21,6 @@ const kGreen = Color(0xFF4CAF50);
 const kRed = Color(0xFFE53935);
 
 class OwnerDashboardScreen extends StatefulWidget {
-  // Tidak perlu username parameter lagi, akan diambil dari Firebase
   const OwnerDashboardScreen({super.key});
 
   @override
@@ -36,7 +35,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
   // Data Firebase
   User? _currentUser;
   Map<String, dynamic>? _userData;
-  bool _isLoading = true;
 
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
@@ -66,7 +64,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
   Future<void> _loadUserData() async {
     _currentUser = FirebaseAuth.instance.currentUser;
     if (_currentUser == null) {
-      // Jika tidak ada user, kembali ke login
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -84,14 +81,11 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
       if (doc.exists) {
         setState(() {
           _userData = doc.data();
-          _isLoading = false;
         });
       } else {
-        setState(() => _isLoading = false);
         _showSnackbar('Data pengguna tidak ditemukan', Colors.redAccent);
       }
     } catch (e) {
-      setState(() => _isLoading = false);
       _showSnackbar('Gagal memuat data: $e', Colors.redAccent);
     }
   }
@@ -105,16 +99,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
-  }
-
-  Future<void> _logout() async {
-    await FirebaseAuth.instance.signOut();
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
-    }
   }
 
   @override
@@ -153,13 +137,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFF0F4FF),
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4FF),
       body: IndexedStack(
@@ -202,7 +179,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  // ─── HEADER (sama persis login) ──────────────────────────────────────────
+  // ─── HEADER ──────────────────────────────────────────────────────────
   Widget _buildHeader() {
     final p = _collapseProgress;
 
@@ -251,7 +228,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
           Icons.settings_outlined,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const ProfilOwnerScreen()),
+            MaterialPageRoute(
+              builder: (_) => ProfilOwnerScreen(userData: _userData),
+            ),
           ),
         ),
         const SizedBox(width: 6),
@@ -263,8 +242,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
             MaterialPageRoute(builder: (_) => const NotifikasiOwnerScreen()),
           ),
         ),
-        const SizedBox(width: 6),
-        _headerIconBtn(Icons.logout, onTap: _logout),
       ],
     );
 
@@ -484,7 +461,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     return '${days[now.weekday - 1]} ${now.day} ${months[now.month - 1]} ${now.year}';
   }
 
-  // ─── STAT CARDS (sementara masih dummy) ──────────────────────────────────
+  // ─── STAT CARDS ──────────────────────────────────────────────────────────
   Widget _buildStatCards() {
     return Column(
       children: [
@@ -619,7 +596,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  // ─── CHART SECTION (sementara dummy) ─────────────────────────────────────
+  // ─── CHART SECTION ────────────────────────────────────────────────────────
   Widget _buildChartSection() {
     return Column(
       children: [
@@ -822,7 +799,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Belah ketupat = Transform.rotate 45 derajat
                       Transform.rotate(
                         angle: 0.785,
                         child: Container(

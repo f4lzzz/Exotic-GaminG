@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'forgot_password.dart';
 import 'owner_dashboard.dart';
+import 'karyawan_dashboard.dart'; // 👈 IMPORT DASHBOARD KARYAWAN
 
 // Warna konstanta
 const kBlue = Color(0xFF1A5EBF);
@@ -66,7 +67,6 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   double get _collapseProgress => (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
-
   double get _headerHeight =>
       _headerExpanded -
       (_headerExpanded - _headerCollapsed) * _collapseProgress;
@@ -516,6 +516,7 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  // ========== PERUBAHAN UTAMA PADA _handleLogin ==========
   Future<void> _handleLogin() async {
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text.trim();
@@ -528,18 +529,15 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _isLoading = true);
 
     try {
-      // Login ke Firebase Auth
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
 
-      // Ambil data user dari Firestore
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(userCredential.user!.uid)
           .get();
 
       if (!userDoc.exists) {
-        // Jika tidak ada dokumen user (misal data korup)
         await FirebaseAuth.instance.signOut();
         _showSnackbar(
           'Data pengguna tidak lengkap. Silakan hubungi admin.',
@@ -551,32 +549,25 @@ class _LoginScreenState extends State<LoginScreen>
 
       String role = userDoc.get('role');
 
-      // Cek kesesuaian role yang dipilih di UI (opsional)
       if (role != _selectedRole) {
         _showSnackbar(
           'Role yang dipilih tidak sesuai dengan akun ini.',
           Colors.orange,
         );
-        // Tetap lanjutkan? Atau bisa logout. Kita pilih tetap lanjut sesuai role sebenarnya.
       }
 
-      // Simpan status "Ingat saya" jika diperlukan (bisa pakai shared_preferences)
-      // Untuk sementara lewati.
-
+      // 🔥 Navigasi berdasarkan role
       if (role == 'owner') {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const OwnerDashboardScreen()),
         );
       } else if (role == 'karyawan') {
-        // TODO: ganti dengan halaman dashboard karyawan jika sudah ada
-        // Sementara tampilkan pesan dan kembali ke login
-        _showSnackbar(
-          'Halaman karyawan belum tersedia. Silakan hubungi owner.',
-          Colors.orange,
+        // ✅ ARAHKAN KE DASHBOARD KARYAWAN
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const KaryawanDashboardScreen()),
         );
-        await FirebaseAuth.instance.signOut();
-        setState(() => _isLoading = false);
       } else {
         _showSnackbar('Role tidak dikenal', Colors.redAccent);
         await FirebaseAuth.instance.signOut();
@@ -612,7 +603,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 }
 
-// ========== REGISTER SCREEN ==========
+// ========== REGISTER SCREEN (TIDAK BERUBAH) ==========
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -1219,11 +1210,9 @@ class _RegisterScreenState extends State<RegisterScreen>
     setState(() => _isLoading = true);
 
     try {
-      // 1. Buat user di Firebase Auth
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
 
-      // 2. Simpan data tambahan ke Firestore
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userCredential.user!.uid)
@@ -1239,7 +1228,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         'Akun berhasil dibuat! Silakan masuk.',
         const Color(0xFF4CAF50),
       );
-      Navigator.pop(context); // kembali ke login
+      Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       String pesan;
       if (e.code == 'email-already-in-use')
