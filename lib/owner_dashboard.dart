@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'owner_karyawan.dart';
 import 'owner_menu.dart';
 import 'notifikasi_owner.dart';
 import 'profil_owner.dart';
 import 'rekap_owner.dart';
 import 'quick_access_owner.dart';
+import 'login.dart'; // untuk logout
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -18,9 +21,8 @@ const kGreen = Color(0xFF4CAF50);
 const kRed = Color(0xFFE53935);
 
 class OwnerDashboardScreen extends StatefulWidget {
-  final String username;
-
-  const OwnerDashboardScreen({super.key, required this.username});
+  // Tidak perlu username parameter lagi, akan diambil dari Firebase
+  const OwnerDashboardScreen({super.key});
 
   @override
   State<OwnerDashboardScreen> createState() => _OwnerDashboardScreenState();
@@ -30,6 +32,11 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     with SingleTickerProviderStateMixin {
   int _selectedNav = 0;
   int _notifCount = 3;
+
+  // Data Firebase
+  User? _currentUser;
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true;
 
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
@@ -53,6 +60,61 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     _scrollCtrl.addListener(
       () => setState(() => _scrollOffset = _scrollCtrl.offset),
     );
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    _currentUser = FirebaseAuth.instance.currentUser;
+    if (_currentUser == null) {
+      // Jika tidak ada user, kembali ke login
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
+      return;
+    }
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .get();
+      if (doc.exists) {
+        setState(() {
+          _userData = doc.data();
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+        _showSnackbar('Data pengguna tidak ditemukan', Colors.redAccent);
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showSnackbar('Gagal memuat data: $e', Colors.redAccent);
+    }
+  }
+
+  void _showSnackbar(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: GoogleFonts.lato(color: Colors.white)),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    }
   }
 
   @override
@@ -75,8 +137,29 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     return 'selamat malam';
   }
 
+  String get _displayName {
+    if (_userData != null) {
+      return _userData!['nama'] ?? _userData!['username'] ?? 'Owner';
+    }
+    return 'Owner';
+  }
+
+  String get _roleBadge {
+    if (_userData != null) {
+      return (_userData!['role'] ?? 'owner').toString().toUpperCase();
+    }
+    return 'OWNER';
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF0F4FF),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4FF),
       body: IndexedStack(
@@ -180,6 +263,8 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
             MaterialPageRoute(builder: (_) => const NotifikasiOwnerScreen()),
           ),
         ),
+        const SizedBox(width: 6),
+        _headerIconBtn(Icons.logout, onTap: _logout),
       ],
     );
 
@@ -316,7 +401,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
                   style: GoogleFonts.lato(fontSize: 11, color: Colors.black45),
                 ),
                 Text(
-                  widget.username.toUpperCase(),
+                  _displayName,
                   style: GoogleFonts.lato(
                     fontSize: 15,
                     fontWeight: FontWeight.w900,
@@ -358,7 +443,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
               ],
             ),
             child: Text(
-              'OWNER',
+              _roleBadge,
               style: GoogleFonts.lato(
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
@@ -399,7 +484,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     return '${days[now.weekday - 1]} ${now.day} ${months[now.month - 1]} ${now.year}';
   }
 
-  // ─── STAT CARDS ──────────────────────────────────────────────────────────
+  // ─── STAT CARDS (sementara masih dummy) ──────────────────────────────────
   Widget _buildStatCards() {
     return Column(
       children: [
@@ -534,7 +619,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  // ─── CHART SECTION ───────────────────────────────────────────────────────
+  // ─── CHART SECTION (sementara dummy) ─────────────────────────────────────
   Widget _buildChartSection() {
     return Column(
       children: [
