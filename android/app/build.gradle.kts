@@ -14,7 +14,7 @@ android {
     ndkVersion = flutter.ndkVersion
 
     // Tambahkan baris ini:
-    buildToolsVersion = "36.0.0"
+    buildToolsVersion = "33.0.2"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
