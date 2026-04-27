@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'forgot_password.dart';
 import 'owner_dashboard.dart';
-import 'karyawan_dashboard.dart'; // 👈 IMPORT DASHBOARD KARYAWAN
+import 'karyawan_dashboard.dart';
 
 // Warna konstanta
 const kBlue = Color(0xFF1A5EBF);
@@ -25,7 +25,6 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
-  String _selectedRole = 'owner';
   bool _rememberMe = false;
   bool _obscurePassword = true;
   bool _isLoading = false;
@@ -90,10 +89,8 @@ class _LoginScreenState extends State<LoginScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _sectionLabel('MASUK SEBAGAI'),
-                    const SizedBox(height: 14),
-                    _buildRoleSelector(),
-                    const SizedBox(height: 28),
+                    // HAPUS: role selector
+                    const SizedBox(height: 8),
                     _sectionLabel('EMAIL'),
                     const SizedBox(height: 10),
                     _buildTextField(
@@ -175,10 +172,7 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                     const SizedBox(height: 28),
                     _buildLoginButton(),
-                    const SizedBox(height: 16),
-                    _buildDivider(),
-                    const SizedBox(height: 16),
-                    _buildCreateAccountButton(),
+                    // HAPUS: divider dan tombol buat akun
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -281,108 +275,6 @@ class _LoginScreenState extends State<LoginScreen>
     ),
   );
 
-  Widget _buildRoleSelector() {
-    return Row(
-      children: [
-        Expanded(
-          child: _roleCard(
-            role: 'owner',
-            imagePath: 'assets/images/owner.jpg',
-            label: 'Owner',
-            sublabel: 'Pemilik / admin',
-            cardColor: const Color(0xFFEFF4FF),
-            borderColor: kBlue,
-            labelColor: kBlue,
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: _roleCard(
-            role: 'karyawan',
-            imagePath: 'assets/images/karyawan.jpg',
-            label: 'Karyawan',
-            sublabel: 'staff / pegawai',
-            cardColor: const Color(0xFFEFF4FF),
-            borderColor: kBlue,
-            labelColor: kBlue,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _roleCard({
-    required String role,
-    required String imagePath,
-    required String label,
-    required String sublabel,
-    required Color cardColor,
-    required Color borderColor,
-    required Color labelColor,
-  }) {
-    final selected = _selectedRole == role;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedRole = role),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
-        decoration: BoxDecoration(
-          color: selected ? cardColor : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: selected ? borderColor : Colors.grey.shade200,
-            width: selected ? 2 : 1,
-          ),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: borderColor.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selected ? borderColor : Colors.transparent,
-                  border: Border.all(
-                    color: selected ? borderColor : Colors.grey.shade300,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Image.asset(imagePath, width: 48, height: 48, fit: BoxFit.contain),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: GoogleFonts.lato(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: selected ? labelColor : Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              sublabel,
-              style: GoogleFonts.lato(fontSize: 11, color: Colors.black38),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
@@ -464,59 +356,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        Expanded(child: Divider(color: Colors.black12, thickness: 1)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            'atau',
-            style: GoogleFonts.lato(fontSize: 12, color: Colors.black38),
-          ),
-        ),
-        Expanded(child: Divider(color: Colors.black12, thickness: 1)),
-      ],
-    );
-  }
-
-  Widget _buildCreateAccountButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: OutlinedButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const RegisterScreen()),
-        ),
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: kBlue.withOpacity(0.5), width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          backgroundColor: kWhite,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.person_add_outlined, size: 20, color: kBlue),
-            const SizedBox(width: 8),
-            Text(
-              'Buat Akun',
-              style: GoogleFonts.lato(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: kBlue,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ========== PERUBAHAN UTAMA PADA _handleLogin ==========
   Future<void> _handleLogin() async {
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text.trim();
@@ -549,21 +388,13 @@ class _LoginScreenState extends State<LoginScreen>
 
       String role = userDoc.get('role');
 
-      if (role != _selectedRole) {
-        _showSnackbar(
-          'Role yang dipilih tidak sesuai dengan akun ini.',
-          Colors.orange,
-        );
-      }
-
-      // 🔥 Navigasi berdasarkan role
+      // Navigasi berdasarkan role (tanpa pengecekan _selectedRole)
       if (role == 'owner') {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const OwnerDashboardScreen()),
         );
       } else if (role == 'karyawan') {
-        // ✅ ARAHKAN KE DASHBOARD KARYAWAN
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const KaryawanDashboardScreen()),
@@ -603,7 +434,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 }
 
-// ========== REGISTER SCREEN (TIDAK BERUBAH) ==========
+// ========== REGISTER SCREEN (TIDAK DIHAPUS, NANTI UNTUK OWNER) ==========
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
