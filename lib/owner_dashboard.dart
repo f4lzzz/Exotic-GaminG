@@ -123,7 +123,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
 
   String get _displayName {
     if (_userData != null) {
-      return _userData!['nama'] ?? _userData!['username'] ?? 'Owner';
+      return _userData!['username'] ?? _userData!['nama'] ?? 'Owner';
     }
     return 'Owner';
   }
