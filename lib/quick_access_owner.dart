@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'kirim_pengumuman.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -264,7 +265,12 @@ class _QuickAccessOwnerScreenState extends State<QuickAccessOwnerScreen>
         emoji: '🔔',
         label: 'Kirim\nPengumuman',
         color: kRed,
-        onTap: () => _snack('Pengumuman'),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const KirimPengumumanScreen(),
+          ),
+        ),
       ),
       _QAItem(
         emoji: '⚙️',
