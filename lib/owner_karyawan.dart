@@ -25,23 +25,7 @@ class OwnerKaryawanScreen extends StatefulWidget {
   State<OwnerKaryawanScreen> createState() => _OwnerKaryawanScreenState();
 }
 
-class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _fadeCtrl;
-  late Animation<double> _fadeAnim;
-
-  final _scrollCtrl = ScrollController();
-  double _scrollOffset = 0;
-
-  static const double _headerExpanded = 120.0;
-  static const double _headerCollapsed = 60.0;
-  static const double _collapseAt = 70.0;
-
-  double get _collapseProgress => (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
-  double get _headerHeight =>
-      _headerExpanded -
-      (_headerExpanded - _headerCollapsed) * _collapseProgress;
-
+class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
   int _tabIndex = 0;
   String _searchQuery = '';
   final _searchCtrl = TextEditingController();
@@ -60,23 +44,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
   };
 
   @override
-  void initState() {
-    super.initState();
-    _fadeCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
-    _fadeCtrl.forward();
-    _scrollCtrl.addListener(
-      () => setState(() => _scrollOffset = _scrollCtrl.offset),
-    );
-  }
-
-  @override
   void dispose() {
-    _fadeCtrl.dispose();
-    _scrollCtrl.dispose();
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -88,48 +56,97 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         .snapshots();
   }
 
-  List<QueryDocumentSnapshot> _filterKaryawan(
-    List<QueryDocumentSnapshot> list,
-  ) {
-    return list.where((doc) {
-      final data = doc.data() as Map<String, dynamic>;
-      final nama = data['nama']?.toLowerCase() ?? '';
-      final jabatan = data['jabatan']?.toLowerCase() ?? '';
-      final matchSearch =
-          _searchQuery.isEmpty ||
-          nama.contains(_searchQuery.toLowerCase()) ||
-          jabatan.contains(_searchQuery.toLowerCase());
-      String status = data['statusKehadiran'] ?? 'absen';
-      bool matchTab = true;
-      if (_tabIndex == 1) matchTab = status == 'hadir';
-      if (_tabIndex == 2) matchTab = status != 'hadir';
-      return matchSearch && matchTab;
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBgLight,
       body: Column(
         children: [
-          FadeTransition(opacity: _fadeAnim, child: _buildHeader()),
+          _buildHeader(), // header statis, tanpa FadeTransition
+          // Summary, Search, Tab
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: _buildSummaryRowStream(),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: _buildSearchBar(),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: _buildTabBar(),
+          ),
+          // List karyawan menggunakan StreamBuilder + ListView.builder
           Expanded(
-            child: SingleChildScrollView(
-              controller: _scrollCtrl,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSummaryRow(),
-                  const SizedBox(height: 16),
-                  _buildSearchBar(),
-                  const SizedBox(height: 12),
-                  _buildTabBar(),
-                  const SizedBox(height: 12),
-                  _buildKaryawanList(),
-                ],
-              ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _karyawanStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 48,
+                            color: Colors.black26,
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'Belum ada karyawan',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black38,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                final docs = snapshot.data!.docs;
+                // Filter berdasarkan search dan tab (dilakukan di sini, setiap snapshot, tapi ringan)
+                final filtered = docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final nama = data['nama']?.toLowerCase() ?? '';
+                  final jabatan = data['jabatan']?.toLowerCase() ?? '';
+                  final matchSearch =
+                      _searchQuery.isEmpty ||
+                      nama.contains(_searchQuery.toLowerCase()) ||
+                      jabatan.contains(_searchQuery.toLowerCase());
+                  String status = data['statusKehadiran'] ?? 'absen';
+                  bool matchTab = true;
+                  if (_tabIndex == 1) matchTab = status == 'hadir';
+                  if (_tabIndex == 2) matchTab = status != 'hadir';
+                  return matchSearch && matchTab;
+                }).toList();
+
+                if (filtered.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Text(
+                        'Tidak ditemukan',
+                        style: TextStyle(fontSize: 14, color: Colors.black38),
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) =>
+                      _karyawanCard(filtered[index]),
+                );
+              },
             ),
           ),
         ],
@@ -139,70 +156,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
   }
 
   Widget _buildHeader() {
-    final p = _collapseProgress;
-    final double eSize = 24 - (24 - 14) * p;
-    final double xSize = 40 - (40 - 22) * p;
-    final double oticSize = 24 - (24 - 14) * p;
-    final double subSize = 11 - (11 - 9) * p;
-    final double padTop = 36 - (36 - 16) * p;
-    final double padBot = 16 - (16 - 10) * p;
-    final double subOpacity = (1 - p * 2).clamp(0.0, 1.0);
-
-    final logoWidget = RichText(
-      text: TextSpan(
-        style: GoogleFonts.playfairDisplay(color: kWhite, height: 1.0),
-        children: [
-          TextSpan(
-            text: 'E',
-            style: TextStyle(fontSize: eSize, fontWeight: FontWeight.w400),
-          ),
-          TextSpan(
-            text: 'X',
-            style: TextStyle(fontSize: xSize, fontWeight: FontWeight.w700),
-          ),
-          TextSpan(
-            text: 'OTIC',
-            style: TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400),
-          ),
-        ],
-      ),
-    );
-
-    final subWidget = Text(
-      'GAMING & CAFE',
-      style: GoogleFonts.playfairDisplay(
-        fontSize: subSize,
-        color: kWhiteDim,
-        letterSpacing: 3,
-        fontWeight: FontWeight.w400,
-      ),
-    );
-
-    final iconButtons = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _headerIconBtn(
-          Icons.settings_outlined,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ProfilOwnerScreen()),
-          ),
-        ),
-        const SizedBox(width: 6),
-        _headerIconBtn(
-          Icons.notifications_outlined,
-          badge: 3,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NotifikasiOwnerScreen()),
-          ),
-        ),
-      ],
-    );
-
-    return AnimatedContainer(
-      duration: Duration.zero,
-      height: _headerHeight,
+    return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -212,31 +166,59 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         ),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
-      padding: EdgeInsets.fromLTRB(20, padTop, 20, padBot),
-      child: p < 0.5
-          ? Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  children: [
-                    logoWidget,
-                    const SizedBox(width: 6),
-                    Opacity(opacity: subOpacity, child: subWidget),
-                    const Spacer(),
-                    iconButtons,
-                  ],
+      padding: const EdgeInsets.fromLTRB(20, 44, 20, 16),
+      child: Row(
+        children: [
+          RichText(
+            text: TextSpan(
+              style: GoogleFonts.playfairDisplay(color: kWhite, height: 1.0),
+              children: const [
+                TextSpan(
+                  text: 'E',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w400),
+                ),
+                TextSpan(
+                  text: 'X',
+                  style: TextStyle(fontSize: 40, fontWeight: FontWeight.w700),
+                ),
+                TextSpan(
+                  text: 'OTIC',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w400),
                 ),
               ],
-            )
-          : Row(
-              children: [
-                logoWidget,
-                const SizedBox(width: 8),
-                subWidget,
-                const Spacer(),
-                iconButtons,
-              ],
             ),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'GAMING & CAFE',
+            style: TextStyle(fontSize: 11, color: kWhiteDim, letterSpacing: 3),
+          ),
+          const Spacer(),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _headerIconBtn(
+                Icons.settings_outlined,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfilOwnerScreen()),
+                ),
+              ),
+              const SizedBox(width: 6),
+              _headerIconBtn(
+                Icons.notifications_outlined,
+                badge: 3,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const NotifikasiOwnerScreen(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -287,34 +269,21 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     );
   }
 
-  Widget _buildSummaryRow() {
+  Widget _buildSummaryRowStream() {
     return StreamBuilder<QuerySnapshot>(
       stream: _karyawanStream,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Row(
-            children: [
-              Expanded(child: _summaryCard('TOTAL', '0', Icons.people, kBlue)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _summaryCard('HADIR', '0', Icons.check_circle, kGreen),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _summaryCard('TIDAK HADIR', '0', Icons.cancel, kRed),
-              ),
-            ],
-          );
+        int total = 0, hadir = 0;
+        if (snapshot.hasData) {
+          total = snapshot.data!.docs.length;
+          hadir = snapshot.data!.docs
+              .where(
+                (d) =>
+                    (d.data() as Map<String, dynamic>)['statusKehadiran'] ==
+                    'hadir',
+              )
+              .length;
         }
-        final docs = snapshot.data!.docs;
-        final total = docs.length;
-        final hadir = docs
-            .where(
-              (d) =>
-                  (d.data() as Map<String, dynamic>)['statusKehadiran'] ==
-                  'hadir',
-            )
-            .length;
         final tidakHadir = total - hadir;
         return Row(
           children: [
@@ -383,7 +352,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               fontSize: 9,
               fontWeight: FontWeight.w700,
               color: Colors.black38,
-              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -441,8 +409,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         return Expanded(
           child: GestureDetector(
             onTap: () => setState(() => _tabIndex = i),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+            child: Container(
               margin: EdgeInsets.only(right: i < tabs.length - 1 ? 8 : 0),
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
@@ -469,52 +436,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
           ),
         );
       }),
-    );
-  }
-
-  Widget _buildKaryawanList() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _karyawanStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Column(
-                children: [
-                  Icon(Icons.people_outline, size: 48, color: Colors.black26),
-                  SizedBox(height: 12),
-                  Text(
-                    'Belum ada karyawan',
-                    style: TextStyle(fontSize: 14, color: Colors.black38),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-        final filtered = _filterKaryawan(snapshot.data!.docs);
-        if (filtered.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Text(
-                'Tidak ditemukan',
-                style: TextStyle(fontSize: 14, color: Colors.black38),
-              ),
-            ),
-          );
-        }
-        return Column(
-          children: filtered.map((doc) => _karyawanCard(doc)).toList(),
-        );
-      },
     );
   }
 
@@ -635,15 +556,17 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               const SizedBox(height: 6),
               Row(
                 children: [
-                  _actionBtn(Icons.calendar_month, kBlue, () {
-                    Navigator.push(
+                  _actionBtn(
+                    Icons.calendar_month,
+                    kBlue,
+                    () => Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
                             OwnerKalenderScreen(uid: uid, nama: nama),
                       ),
-                    );
-                  }),
+                    ),
+                  ),
                   const SizedBox(width: 6),
                   _actionBtn(
                     Icons.edit_outlined,
@@ -692,7 +615,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     );
   }
 
-  // ==================== TAMBAH KARYAWAN (SEDERHANA) ====================
+  // ==================== TAMBAH, EDIT, HAPUS (sama seperti kode Anda sebelumnya) ====================
   void _showTambahDialog() {
     final emailCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
@@ -737,7 +660,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                       color: kTextDark,
-                      letterSpacing: 1,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -758,7 +680,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                       color: kTextDark,
-                      letterSpacing: 1,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -806,10 +727,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               onPressed: () => Navigator.pop(ctx),
               child: Text(
                 'Batal',
-                style: GoogleFonts.lato(
-                  color: Colors.black45,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: GoogleFonts.lato(color: Colors.black45),
               ),
             ),
             ElevatedButton.icon(
@@ -875,9 +793,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                               'username': username,
                               'email': email,
                               'role': 'karyawan',
-                              'jabatan': null, // kosong
-                              'shift': null, // kosong
-                              'statusKehadiran': 'hadir', // default
+                              'jabatan': null,
+                              'shift': null,
+                              'statusKehadiran': 'hadir',
                               'createdAt': FieldValue.serverTimestamp(),
                             });
                         if (ctx.mounted) Navigator.pop(ctx);
@@ -887,20 +805,14 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                             backgroundColor: kGreen,
                           ),
                         );
-                      } on FirebaseAuthException catch (e) {
-                        String msg = e.code == 'email-already-in-use'
-                            ? 'Email sudah digunakan'
-                            : 'Gagal: ${e.message}';
+                      } catch (e) {
+                        String msg = e is FirebaseAuthException
+                            ? (e.code == 'email-already-in-use'
+                                  ? 'Email sudah digunakan'
+                                  : 'Gagal: ${e.message}')
+                            : 'Terjadi kesalahan: $e';
                         ScaffoldMessenger.of(ctx).showSnackBar(
                           SnackBar(content: Text(msg), backgroundColor: kRed),
-                        );
-                        setDlg(() => isLoading = false);
-                      } catch (e) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(
-                            content: Text('Terjadi kesalahan: $e'),
-                            backgroundColor: kRed,
-                          ),
                         );
                         setDlg(() => isLoading = false);
                       }
@@ -920,7 +832,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     );
   }
 
-  // ==================== EDIT KARYAWAN ====================
   void _showEditDialog(String uid, Map<String, dynamic> data) {
     final namaCtrl = TextEditingController(text: data['nama'] ?? '');
     final usernameCtrl = TextEditingController(text: data['username'] ?? '');
@@ -1036,7 +947,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     );
   }
 
-  // ==================== HAPUS KARYAWAN ====================
   void _showDeleteDialog(String uid, String nama) {
     showDialog(
       context: context,
@@ -1098,7 +1008,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     );
   }
 
-  // ==================== DIALOG WIDGETS ====================
   Widget _dialogField(
     TextEditingController ctrl,
     String hint,
