@@ -7,7 +7,7 @@ import 'owner_menu.dart';
 import 'notifikasi_owner.dart';
 import 'profil_owner.dart';
 import 'rekap_owner.dart';
-import 'quick_access_owner.dart';
+import 'kirim_pengumuman.dart';
 import 'login.dart';
 
 const kBlue = Color(0xFF1A5EBF);
@@ -32,7 +32,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
   int _selectedNav = 0;
   int _notifCount = 3;
 
-  // Data Firebase
   User? _currentUser;
   Map<String, dynamic>? _userData;
 
@@ -142,7 +141,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
       body: IndexedStack(
         index: _selectedNav,
         children: [
-          // Tab 0 — HOME (dashboard konten)
           Column(
             children: [
               FadeTransition(opacity: _fadeAnim, child: _buildHeader()),
@@ -165,13 +163,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
               ),
             ],
           ),
-          // Tab 1 — KARYAWAN
           const OwnerKaryawanScreen(),
-          // Tab 2 — QUICK ACCESS
-          const QuickAccessOwnerScreen(),
-          // Tab 3 — MENU
+          const KirimPengumumanScreen(),
           const OwnerMenuScreen(),
-          // Tab 4 — REKAP
           const RekapOwnerScreen(),
         ],
       ),
@@ -179,10 +173,8 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  // ─── HEADER ──────────────────────────────────────────────────────────
   Widget _buildHeader() {
     final p = _collapseProgress;
-
     final double eSize = 24 - (24 - 14) * p;
     final double xSize = 40 - (40 - 22) * p;
     final double oticSize = 24 - (24 - 14) * p;
@@ -250,11 +242,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
       height: _headerHeight,
       width: double.infinity,
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF4A90D9), kBlue],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+        gradient: LinearGradient(colors: [Color(0xFF4A90D9), kBlue]),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(20, padTop, 20, padBot),
@@ -274,7 +262,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
               ],
             )
           : Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 logoWidget,
                 const SizedBox(width: 8),
@@ -333,7 +320,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  // ─── USER INFO CARD ───────────────────────────────────────────────────────
   Widget _buildUserInfoCard() {
     return Container(
       margin: const EdgeInsets.fromLTRB(0, 0, 0, 0),
@@ -384,7 +370,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
                     fontWeight: FontWeight.w900,
                     color: kTextDark,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
                 Row(
                   children: [
@@ -461,7 +446,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     return '${days[now.weekday - 1]} ${now.day} ${months[now.month - 1]} ${now.year}';
   }
 
-  // ─── STAT CARDS ──────────────────────────────────────────────────────────
   Widget _buildStatCards() {
     return Column(
       children: [
@@ -542,7 +526,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               emoji != null
                   ? Text(emoji, style: const TextStyle(fontSize: 28))
@@ -596,7 +579,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  // ─── CHART SECTION ────────────────────────────────────────────────────────
   Widget _buildChartSection() {
     return Column(
       children: [
@@ -773,7 +755,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  // ─── BOTTOM NAV ──────────────────────────────────────────────────────────
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
@@ -793,73 +774,11 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
             children: [
               _navItem(0, Icons.home_outlined, Icons.home, 'HOME'),
               _navItem(1, Icons.people_outline, Icons.people, 'KARYAWAN'),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _selectedNav = 2),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Transform.rotate(
-                        angle: 0.785,
-                        child: Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF4A90D9), kBlue],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: kBlueBg.withOpacity(0.6),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Transform.rotate(
-                            angle: -0.785,
-                            child: Center(
-                              child: RichText(
-                                text: TextSpan(
-                                  style: GoogleFonts.playfairDisplay(
-                                    color: kWhite,
-                                    height: 1.0,
-                                  ),
-                                  children: const [
-                                    TextSpan(
-                                      text: 'E',
-                                      style: TextStyle(
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                    TextSpan(
-                                      text: 'X',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    TextSpan(
-                                      text: 'OTIC',
-                                      style: TextStyle(
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _navItem(
+                2,
+                Icons.chat_bubble_outline,
+                Icons.chat_bubble,
+                'ANNOUNCE',
               ),
               _navItem(3, Icons.menu_outlined, Icons.menu, 'MENU'),
               _navItem(4, Icons.bar_chart_outlined, Icons.bar_chart, 'REKAP'),

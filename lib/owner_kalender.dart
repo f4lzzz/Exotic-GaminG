@@ -222,6 +222,7 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
     );
   }
 
+  // HEADER DIPERBAIKI: hanya logo EXOTIC + tombol back + chip KALENDER
   Widget _buildHeader() {
     final p = _collapseProgress;
     final double eSize = 24 - (24 - 14) * p;
@@ -229,7 +230,6 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
     final double oticSize = 24 - (24 - 14) * p;
     final double padTop = 36 - (36 - 16) * p;
     final double padBot = 16 - (16 - 10) * p;
-    final double subOpacity = (1 - p * 2).clamp(0.0, 1.0);
 
     final logoWidget = RichText(
       text: TextSpan(
@@ -264,19 +264,6 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
       ),
     );
 
-    final subOpacityWidget = Opacity(
-      opacity: subOpacity,
-      child: Text(
-        'GAMING & CAFE',
-        style: GoogleFonts.playfairDisplay(
-          fontSize: 11,
-          color: kWhiteDim,
-          letterSpacing: 3,
-          fontWeight: FontWeight.w400,
-        ),
-      ),
-    );
-
     final chipWidget = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -307,33 +294,16 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(20, padTop, 20, padBot),
-      child: p < 0.5
-          ? Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  children: [
-                    backBtn,
-                    const SizedBox(width: 10),
-                    logoWidget,
-                    const SizedBox(width: 6),
-                    subOpacityWidget,
-                    const Spacer(),
-                    chipWidget,
-                  ],
-                ),
-              ],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                backBtn,
-                const SizedBox(width: 10),
-                logoWidget,
-                const Spacer(),
-                chipWidget,
-              ],
-            ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          backBtn,
+          const SizedBox(width: 10),
+          logoWidget,
+          const Spacer(),
+          chipWidget,
+        ],
+      ),
     );
   }
 

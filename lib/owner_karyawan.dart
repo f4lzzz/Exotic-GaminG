@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'notifikasi_owner.dart';
 import 'profil_owner.dart';
 import 'owner_kalender.dart';
@@ -16,6 +17,7 @@ const kTextDark = Color(0xFF1A237E);
 const kGreen = Color(0xFF4CAF50);
 const kRed = Color(0xFFE53935);
 const kOrange = Color(0xFFFF9800);
+const kPurple = Color(0xFF7C4DFF);
 const kBgLight = Color(0xFFF0F4FF);
 
 class OwnerKaryawanScreen extends StatefulWidget {
@@ -25,28 +27,51 @@ class OwnerKaryawanScreen extends StatefulWidget {
   State<OwnerKaryawanScreen> createState() => _OwnerKaryawanScreenState();
 }
 
-class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
+class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
+    with WidgetsBindingObserver {
   int _tabIndex = 0;
   String _searchQuery = '';
   final _searchCtrl = TextEditingController();
 
-  final Map<String, Color> statusColor = {
-    'hadir': kGreen,
-    'absen': kRed,
-    'izin': kOrange,
-    'sakit': Colors.purple,
-  };
-  final Map<String, String> statusLabel = {
-    'hadir': 'HADIR',
-    'absen': 'ABSEN',
-    'izin': 'IZIN',
-    'sakit': 'SAKIT',
-  };
+  DateTime _today = DateTime.now();
+  int _refreshKey = 0;
+
+  // Data absensi semua karyawan (uid -> data)
+  Map<String, Map<String, dynamic>> _mapAbsensi = {};
+  bool _loadingAbsensi = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _updateToday();
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _updateToday();
+    }
+  }
+
+  void _updateToday() {
+    final now = DateTime.now();
+    final newToday = DateTime(now.year, now.month, now.day);
+    if (_today != newToday) {
+      setState(() {
+        _today = newToday;
+        _refreshKey++;
+        _mapAbsensi.clear();
+        _loadingAbsensi = true;
+      });
+    }
   }
 
   Stream<QuerySnapshot> get _karyawanStream {
@@ -56,102 +81,178 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
         .snapshots();
   }
 
+  // Load absensi semua karyawan untuk hari ini (sekali jalan)
+  Future<void> _loadAllAbsensi(List<QueryDocumentSnapshot> karyawanDocs) async {
+    if (karyawanDocs.isEmpty) {
+      setState(() => _loadingAbsensi = false);
+      return;
+    }
+    final todayTimestamp = Timestamp.fromDate(_today);
+    final Map<String, Map<String, dynamic>> temp = {};
+
+    for (var doc in karyawanDocs) {
+      final uid = doc.id;
+      final snapshot = await FirebaseFirestore.instance
+          .collection('absensi')
+          .where('uid', isEqualTo: uid)
+          .where('tanggal', isEqualTo: todayTimestamp)
+          .limit(1)
+          .get();
+      if (snapshot.docs.isNotEmpty) {
+        final data = snapshot.docs.first.data();
+        final checkIn = data['checkIn'] as Timestamp?;
+        final status = data['status'] as String?;
+        temp[uid] = {
+          'status': status ?? 'hadir',
+          'checkIn': checkIn != null
+              ? DateFormat('HH:mm').format(checkIn.toDate())
+              : null,
+          'hasCheckIn': checkIn != null,
+        };
+      } else {
+        temp[uid] = {'status': 'belum', 'checkIn': null, 'hasCheckIn': false};
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _mapAbsensi = temp;
+        _loadingAbsensi = false;
+      });
+    }
+  }
+
+  Future<Map<String, int>> _getRingkasan(
+    List<QueryDocumentSnapshot> docs,
+  ) async {
+    int total = docs.length;
+    int hadir = 0;
+    int belum = 0;
+    for (var doc in docs) {
+      final data = _mapAbsensi[doc.id];
+      if (data != null && data['hasCheckIn'] == true) {
+        hadir++;
+      } else {
+        belum++;
+      }
+    }
+    return {'total': total, 'hadir': hadir, 'belum': belum};
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBgLight,
-      body: Column(
-        children: [
-          _buildHeader(), // header statis, tanpa FadeTransition
-          // Summary, Search, Tab
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: _buildSummaryRowStream(),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: _buildSearchBar(),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: _buildTabBar(),
-          ),
-          // List karyawan menggunakan StreamBuilder + ListView.builder
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _karyawanStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.people_outline,
-                            size: 48,
-                            color: Colors.black26,
-                          ),
-                          SizedBox(height: 12),
-                          Text(
-                            'Belum ada karyawan',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.black38,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                final docs = snapshot.data!.docs;
-                // Filter berdasarkan search dan tab (dilakukan di sini, setiap snapshot, tapi ringan)
-                final filtered = docs.where((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final nama = data['nama']?.toLowerCase() ?? '';
-                  final jabatan = data['jabatan']?.toLowerCase() ?? '';
-                  final matchSearch =
-                      _searchQuery.isEmpty ||
-                      nama.contains(_searchQuery.toLowerCase()) ||
-                      jabatan.contains(_searchQuery.toLowerCase());
-                  String status = data['statusKehadiran'] ?? 'absen';
-                  bool matchTab = true;
-                  if (_tabIndex == 1) matchTab = status == 'hadir';
-                  if (_tabIndex == 2) matchTab = status != 'hadir';
-                  return matchSearch && matchTab;
-                }).toList();
-
-                if (filtered.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: Text(
-                        'Tidak ditemukan',
-                        style: TextStyle(fontSize: 14, color: Colors.black38),
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) =>
-                      _karyawanCard(filtered[index]),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
       floatingActionButton: _buildFAB(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          _updateToday();
+          setState(() {});
+        },
+        child: Column(
+          children: [
+            _buildHeader(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: _buildSummaryRow(),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: _buildSearchBar(),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: _buildTabBar(),
+            ),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                key: ValueKey(_refreshKey),
+                stream: _karyawanStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.people_outline,
+                              size: 48,
+                              color: Colors.black26,
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              'Belum ada karyawan',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black38,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  final docs = snapshot.data!.docs;
+                  if (_mapAbsensi.isEmpty && _loadingAbsensi) {
+                    _loadAllAbsensi(docs);
+                  }
+                  final filtered = docs.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final nama = data['nama']?.toLowerCase() ?? '';
+                    final jabatan = data['jabatan']?.toLowerCase() ?? '';
+                    final matchSearch =
+                        _searchQuery.isEmpty ||
+                        nama.contains(_searchQuery.toLowerCase()) ||
+                        jabatan.contains(_searchQuery.toLowerCase());
+                    if (!matchSearch) return false;
+                    final absen = _mapAbsensi[doc.id];
+                    final hasCheckIn = absen?['hasCheckIn'] == true;
+                    if (_tabIndex == 1) return hasCheckIn;
+                    if (_tabIndex == 2) return !hasCheckIn;
+                    return true;
+                  }).toList();
+
+                  if (filtered.isEmpty && !_loadingAbsensi) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: Text(
+                          'Tidak ditemukan',
+                          style: TextStyle(fontSize: 14, color: Colors.black38),
+                        ),
+                      ),
+                    );
+                  }
+                  if (_loadingAbsensi) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(
+                      16,
+                      0,
+                      16,
+                      80,
+                    ), // padding bottom lebih besar agar tidak tertutup FAB
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final doc = filtered[index];
+                      final absenData = _mapAbsensi[doc.id];
+                      return _karyawanCard(doc, absenData);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -159,11 +260,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF4A90D9), kBlue],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+        gradient: LinearGradient(colors: [Color(0xFF4A90D9), kBlue]),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 44, 20, 16),
@@ -269,51 +366,56 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
     );
   }
 
-  Widget _buildSummaryRowStream() {
+  Widget _buildSummaryRow() {
     return StreamBuilder<QuerySnapshot>(
       stream: _karyawanStream,
       builder: (context, snapshot) {
-        int total = 0, hadir = 0;
-        if (snapshot.hasData) {
-          total = snapshot.data!.docs.length;
-          hadir = snapshot.data!.docs
-              .where(
-                (d) =>
-                    (d.data() as Map<String, dynamic>)['statusKehadiran'] ==
-                    'hadir',
-              )
-              .length;
-        }
-        final tidakHadir = total - hadir;
-        return Row(
-          children: [
-            Expanded(
-              child: _summaryCard(
-                'TOTAL',
-                total.toString(),
-                Icons.people,
-                kBlue,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _summaryCard(
-                'HADIR',
-                hadir.toString(),
-                Icons.check_circle,
-                kGreen,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _summaryCard(
-                'TIDAK HADIR',
-                tidakHadir.toString(),
-                Icons.cancel,
-                kRed,
-              ),
-            ),
-          ],
+        if (!snapshot.hasData) return const SizedBox(height: 80);
+        final docs = snapshot.data!.docs;
+        if (_mapAbsensi.isEmpty && _loadingAbsensi)
+          return const SizedBox(height: 80);
+        return FutureBuilder<Map<String, int>>(
+          future: _getRingkasan(docs),
+          builder: (context, sumSnap) {
+            if (sumSnap.connectionState != ConnectionState.done ||
+                _loadingAbsensi) {
+              return const SizedBox(
+                height: 80,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final data = sumSnap.data ?? {'total': 0, 'hadir': 0, 'belum': 0};
+            return Row(
+              children: [
+                Expanded(
+                  child: _summaryCard(
+                    'TOTAL',
+                    data['total'].toString(),
+                    Icons.people,
+                    kBlue,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _summaryCard(
+                    'HADIR',
+                    data['hadir'].toString(),
+                    Icons.check_circle,
+                    kGreen,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _summaryCard(
+                    'BELUM HADIR',
+                    data['belum'].toString(),
+                    Icons.hourglass_empty,
+                    kOrange,
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -402,7 +504,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
   }
 
   Widget _buildTabBar() {
-    final tabs = ['Semua', 'Hadir', 'Tidak Hadir'];
+    final tabs = ['Semua', 'Hadir', 'Belum Hadir'];
     return Row(
       children: List.generate(tabs.length, (i) {
         final isActive = _tabIndex == i;
@@ -439,16 +541,45 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
     );
   }
 
-  Widget _karyawanCard(QueryDocumentSnapshot doc) {
+  Widget _karyawanCard(
+    QueryDocumentSnapshot doc,
+    Map<String, dynamic>? absenData,
+  ) {
     final data = doc.data() as Map<String, dynamic>;
     final uid = doc.id;
     final nama = data['nama'] ?? 'Tanpa Nama';
     final jabatan = data['jabatan'] ?? '-';
-    final shift = data['shift'] ?? '-';
-    final status = data['statusKehadiran'] ?? 'absen';
     final avatar = nama.isNotEmpty
         ? nama.split(' ').take(2).map((e) => e[0].toUpperCase()).join()
         : '??';
+
+    String statusText = '';
+    Color statusColor = Colors.black38;
+    IconData statusIcon = Icons.help_outline;
+    if (absenData == null) {
+      statusText = 'Memuat...';
+    } else {
+      final hasCheckIn = absenData['hasCheckIn'] == true;
+      final status = absenData['status'];
+      final checkInTime = absenData['checkIn'];
+      if (hasCheckIn) {
+        statusText = 'Hadir $checkInTime';
+        statusColor = kGreen;
+        statusIcon = Icons.check_circle;
+      } else if (status == 'izin') {
+        statusText = 'Izin';
+        statusColor = kOrange;
+        statusIcon = Icons.event_note;
+      } else if (status == 'sakit') {
+        statusText = 'Sakit';
+        statusColor = kPurple;
+        statusIcon = Icons.healing;
+      } else {
+        statusText = 'Belum Hadir';
+        statusColor = kRed;
+        statusIcon = Icons.hourglass_empty;
+      }
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -472,12 +603,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: kBlue.withOpacity(0.12),
-              border: Border.all(
-                color:
-                    statusColor[status]?.withOpacity(0.5) ??
-                    kRed.withOpacity(0.5),
-                width: 2,
-              ),
+              border: Border.all(color: statusColor.withOpacity(0.5), width: 2),
             ),
             child: Center(
               child: Text(
@@ -515,14 +641,19 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
                         color: Colors.black45,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Icon(Icons.access_time, size: 11, color: Colors.black38),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(statusIcon, size: 12, color: statusColor),
                     const SizedBox(width: 4),
                     Text(
-                      'Shift $shift',
+                      statusText,
                       style: GoogleFonts.lato(
                         fontSize: 11,
-                        color: Colors.black45,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
                       ),
                     ),
                   ],
@@ -533,27 +664,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      statusColor[status]?.withOpacity(0.12) ??
-                      kRed.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  statusLabel[status] ?? 'ABSEN',
-                  style: GoogleFonts.lato(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: statusColor[status] ?? kRed,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
               Row(
                 children: [
                   _actionBtn(
@@ -615,7 +725,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
     );
   }
 
-  // ==================== TAMBAH, EDIT, HAPUS (sama seperti kode Anda sebelumnya) ====================
+  // =========================================================================
+  // TAMBAH KARYAWAN
+  // =========================================================================
   void _showTambahDialog() {
     final emailCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
@@ -794,8 +906,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
                               'email': email,
                               'role': 'karyawan',
                               'jabatan': null,
-                              'shift': null,
-                              'statusKehadiran': 'hadir',
                               'createdAt': FieldValue.serverTimestamp(),
                             });
                         if (ctx.mounted) Navigator.pop(ctx);
@@ -832,12 +942,13 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
     );
   }
 
+  // =========================================================================
+  // EDIT KARYAWAN
+  // =========================================================================
   void _showEditDialog(String uid, Map<String, dynamic> data) {
     final namaCtrl = TextEditingController(text: data['nama'] ?? '');
     final usernameCtrl = TextEditingController(text: data['username'] ?? '');
     final jabatanCtrl = TextEditingController(text: data['jabatan'] ?? '');
-    String shift = data['shift'] ?? 'Pagi';
-    String status = data['statusKehadiran'] ?? 'hadir';
     bool isLoading = false;
 
     showDialog(
@@ -861,21 +972,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
                 _dialogField(usernameCtrl, 'Username', Icons.alternate_email),
                 const SizedBox(height: 12),
                 _dialogField(jabatanCtrl, 'Jabatan', Icons.work_outline),
-                const SizedBox(height: 12),
-                _dialogDropdown<String>(
-                  label: 'Shift',
-                  value: shift,
-                  items: ['Pagi', 'Siang', 'Malam'],
-                  onChanged: (v) => setDlg(() => shift = v!),
-                ),
-                const SizedBox(height: 12),
-                _dialogDropdown<String>(
-                  label: 'Status Kehadiran',
-                  value: status,
-                  items: ['hadir', 'absen', 'izin', 'sakit'],
-                  itemLabel: (v) => statusLabel[v] ?? v,
-                  onChanged: (v) => setDlg(() => status = v!),
-                ),
                 if (isLoading)
                   const Padding(
                     padding: EdgeInsets.all(8),
@@ -913,8 +1009,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
                               'jabatan': jabatanCtrl.text.trim().isEmpty
                                   ? null
                                   : jabatanCtrl.text.trim(),
-                              'shift': shift,
-                              'statusKehadiran': status,
                             });
                         if (ctx.mounted) Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -947,6 +1041,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
     );
   }
 
+  // =========================================================================
+  // HAPUS KARYAWAN
+  // =========================================================================
   void _showDeleteDialog(String uid, String nama) {
     showDialog(
       context: context,
@@ -1008,6 +1105,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
     );
   }
 
+  // =========================================================================
+  // FIELD FORM
+  // =========================================================================
   Widget _dialogField(
     TextEditingController ctrl,
     String hint,
@@ -1033,42 +1133,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen> {
           suffixIcon: suffix,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-      ),
-    );
-  }
-
-  Widget _dialogDropdown<T>({
-    required String label,
-    required T value,
-    required List<T> items,
-    String Function(T)? itemLabel,
-    required void Function(T?) onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: kBgLight,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          isExpanded: true,
-          style: GoogleFonts.lato(fontSize: 13, color: kTextDark),
-          hint: Text(
-            label,
-            style: GoogleFonts.lato(fontSize: 13, color: Colors.black38),
-          ),
-          items: items
-              .map(
-                (e) => DropdownMenuItem<T>(
-                  value: e,
-                  child: Text(itemLabel != null ? itemLabel(e) : e.toString()),
-                ),
-              )
-              .toList(),
-          onChanged: onChanged,
         ),
       ),
     );
