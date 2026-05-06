@@ -33,15 +33,13 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
   bool _isSending = false;
   bool _sentSuccess = false;
 
-  // Data user untuk header (settings & notifikasi)
   User? _currentUser;
   Map<String, dynamic>? _userData;
+  String _ownerUsername = 'owner';
 
-  // Animasi fade untuk konten
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
 
-  // Scroll controller untuk efek collapse header
   final ScrollController _scrollCtrl = ScrollController();
   double _scrollOffset = 0;
   static const double _headerExpanded = 120.0;
@@ -52,7 +50,6 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
   bool _loadingRiwayat = true;
   bool _isDeletingAll = false;
 
-  // Getter untuk progress collapse
   double get _collapseProgress => (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
   double get _headerHeight =>
       _headerExpanded -
@@ -97,8 +94,10 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
           .doc(_currentUser!.uid)
           .get();
       if (doc.exists) {
+        final data = doc.data();
         setState(() {
-          _userData = doc.data();
+          _userData = data;
+          _ownerUsername = data?['username'] ?? 'owner';
         });
       }
     } catch (_) {}
@@ -110,7 +109,7 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
       final snap = await FirebaseFirestore.instance
           .collection('pengumuman')
           .orderBy('timestamp', descending: true)
-          .limit(50) // batasi 50 agar tidak terlalu berat
+          .limit(50)
           .get();
       setState(() {
         _riwayat = snap.docs.map((d) => {...d.data(), 'id': d.id}).toList();
@@ -127,12 +126,14 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
 
     try {
       final user = FirebaseAuth.instance.currentUser;
+      final pengirim = _ownerUsername; // username
       await FirebaseFirestore.instance.collection('pengumuman').add({
         'judul': _judulCtrl.text.trim(),
         'isi': _isiCtrl.text.trim(),
-        'target': 'Semua', // default, karena fitur dihapus
-        'prioritas': 'Normal', // default
-        'pengirim': user?.email ?? 'owner',
+        'target': 'Semua',
+        'prioritas': 'Normal',
+        'pengirim': pengirim,
+        'pengirim_email': user?.email ?? 'owner',
         'timestamp': FieldValue.serverTimestamp(),
         'dibaca': 0,
       });
@@ -192,7 +193,6 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
 
     setState(() => _isDeletingAll = true);
     try {
-      // Ambil semua ID dokumen pengumuman
       final snapshot = await FirebaseFirestore.instance
           .collection('pengumuman')
           .get();
@@ -221,6 +221,234 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  // ========== DETAIL DIALOG (dengan perbaikan pengirim: jika email, ambil sebelum @) ==========
+  void _showDetailDialog(Map<String, dynamic> item) {
+    final prioritas = item['prioritas'] ?? 'Normal';
+    final Color pColor = prioritas == 'Darurat'
+        ? kRed
+        : prioritas == 'Penting'
+        ? const Color(0xFFFF9800)
+        : kBlue;
+    final ts = item['timestamp'];
+    String waktu = '';
+    if (ts != null && ts is Timestamp) {
+      final dt = ts.toDate();
+      waktu =
+          '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    }
+
+    // Perbaikan: jika pengirim masih berupa email, ambil bagian sebelum @
+    String pengirim = item['pengirim'] ?? 'owner';
+    if (pengirim.contains('@')) {
+      pengirim = pengirim.split('@').first;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(
+            maxWidth: 400,
+            maxHeight: MediaQuery.of(ctx).size.height * 0.8,
+          ),
+          padding: const EdgeInsets.all(0),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [kWhite, Color(0xFFF8F9FF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // header
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                decoration: BoxDecoration(
+                  color: pColor.withOpacity(0.1),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: pColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        prioritas == 'Darurat'
+                            ? Icons.error_outline
+                            : prioritas == 'Penting'
+                            ? Icons.warning_amber_outlined
+                            : Icons.notifications_outlined,
+                        color: pColor,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item['judul'] ?? 'Pengumuman',
+                            style: GoogleFonts.lato(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: kTextDark,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: pColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  prioritas,
+                                  style: GoogleFonts.lato(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    color: pColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.people_outline,
+                                size: 12,
+                                color: Colors.black38,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                item['target'] ?? 'Semua',
+                                style: GoogleFonts.lato(
+                                  fontSize: 11,
+                                  color: Colors.black38,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // body scrollable
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item['isi'] ?? '',
+                        style: GoogleFonts.lato(
+                          fontSize: 14,
+                          height: 1.4,
+                          color: kTextDark,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Divider(color: Colors.black12),
+                      const SizedBox(height: 12),
+                      // Baris pengirim dan waktu
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                            size: 14,
+                            color: Colors.black38,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Pengirim: $pengirim',
+                              style: GoogleFonts.lato(
+                                fontSize: 11,
+                                color: Colors.black45,
+                              ),
+                              softWrap: true,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.access_time,
+                            size: 12,
+                            color: Colors.black38,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            waktu,
+                            style: GoogleFonts.lato(
+                              fontSize: 11,
+                              color: Colors.black45,
+                            ),
+                            softWrap: true,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // tombol tutup
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: TextButton.styleFrom(
+                      foregroundColor: kBlue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: Text(
+                      'Tutup',
+                      style: GoogleFonts.lato(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -254,7 +482,7 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     );
   }
 
-  // ========== HEADER (sama persis dengan dashboard) ==========
+  // ========== HEADER (sama seperti dashboard) ==========
   Widget _buildHeader() {
     final p = _collapseProgress;
     final double eSize = 24 - (24 - 14) * p;
@@ -402,7 +630,7 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     );
   }
 
-  // ========== FORM CARD (tanpa target dan prioritas) ==========
+  // ========== FORM CARD (tanpa target & prioritas) ==========
   Widget _buildFormCard() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -537,7 +765,7 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     );
   }
 
-  // ========== RIWAYAT SECTION dengan tombol hapus semua ==========
+  // ========== RIWAYAT SECTION ==========
   Widget _buildRiwayatSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -659,117 +887,127 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
           '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: kWhite,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: pColor.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: pColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
+    return GestureDetector(
+      onTap: () => _showDetailDialog(item),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: kWhite,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: pColor.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
-            child: Center(
-              child: Icon(
-                prioritas == 'Darurat'
-                    ? Icons.error_outline
-                    : prioritas == 'Penting'
-                    ? Icons.warning_amber_outlined
-                    : Icons.notifications_outlined,
-                color: pColor,
-                size: 20,
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: pColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Icon(
+                  prioritas == 'Darurat'
+                      ? Icons.error_outline
+                      : prioritas == 'Penting'
+                      ? Icons.warning_amber_outlined
+                      : Icons.notifications_outlined,
+                  color: pColor,
+                  size: 20,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item['judul'] ?? '-',
-                        style: GoogleFonts.lato(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: kTextDark,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: pColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        prioritas,
-                        style: GoogleFonts.lato(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          color: pColor,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item['judul'] ?? '-',
+                          style: GoogleFonts.lato(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: kTextDark,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: pColor.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          prioritas,
+                          style: GoogleFonts.lato(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: pColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item['isi'] ?? '',
+                    style: GoogleFonts.lato(
+                      fontSize: 12,
+                      color: Colors.black54,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item['isi'] ?? '',
-                  style: GoogleFonts.lato(fontSize: 12, color: Colors.black54),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(Icons.people_outline, size: 12, color: Colors.black38),
-                    const SizedBox(width: 4),
-                    Text(
-                      item['target'] ?? 'Semua',
-                      style: GoogleFonts.lato(
-                        fontSize: 10,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.people_outline,
+                        size: 12,
                         color: Colors.black38,
                       ),
-                    ),
-                    const Spacer(),
-                    Icon(Icons.access_time, size: 11, color: Colors.black26),
-                    const SizedBox(width: 3),
-                    Text(
-                      waktu,
-                      style: GoogleFonts.lato(
-                        fontSize: 10,
-                        color: Colors.black26,
+                      const SizedBox(width: 4),
+                      Text(
+                        item['target'] ?? 'Semua',
+                        style: GoogleFonts.lato(
+                          fontSize: 10,
+                          color: Colors.black38,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      const Spacer(),
+                      Icon(Icons.access_time, size: 11, color: Colors.black26),
+                      const SizedBox(width: 3),
+                      Text(
+                        waktu,
+                        style: GoogleFonts.lato(
+                          fontSize: 10,
+                          color: Colors.black26,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
