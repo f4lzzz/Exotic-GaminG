@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'profil_owner.dart';
 import 'notifikasi_owner.dart';
 
-// ========== KONSTANTA WARNA ==========
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
 const kYellow = Color(0xFFF5C842);
@@ -126,7 +125,7 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
 
     try {
       final user = FirebaseAuth.instance.currentUser;
-      final pengirim = _ownerUsername; // username
+      final pengirim = _ownerUsername;
       await FirebaseFirestore.instance.collection('pengumuman').add({
         'judul': _judulCtrl.text.trim(),
         'isi': _isiCtrl.text.trim(),
@@ -157,6 +156,49 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     } catch (e) {
       setState(() => _isSending = false);
       _showSnack('Gagal mengirim: $e', kRed);
+    }
+  }
+
+  Future<void> _hapusPengumuman(String id, String judul) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Hapus Pengumuman?',
+          style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kRed),
+        ),
+        content: Text(
+          'Yakin hapus pengumuman "$judul"?',
+          style: GoogleFonts.lato(fontSize: 13, color: kTextDark),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Batal',
+              style: GoogleFonts.lato(color: Colors.black45),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: kRed),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Hapus', style: GoogleFonts.lato(color: kWhite)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('pengumuman')
+          .doc(id)
+          .delete();
+      _showSnack('Pengumuman dihapus', kGreen);
+      await _loadRiwayat();
+    } catch (e) {
+      _showSnack('Gagal menghapus: $e', kRed);
     }
   }
 
@@ -225,7 +267,6 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     );
   }
 
-  // ========== DETAIL DIALOG (dengan perbaikan pengirim: jika email, ambil sebelum @) ==========
   void _showDetailDialog(Map<String, dynamic> item) {
     final prioritas = item['prioritas'] ?? 'Normal';
     final Color pColor = prioritas == 'Darurat'
@@ -241,7 +282,6 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
           '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     }
 
-    // Perbaikan: jika pengirim masih berupa email, ambil bagian sebelum @
     String pengirim = item['pengirim'] ?? 'owner';
     if (pengirim.contains('@')) {
       pengirim = pengirim.split('@').first;
@@ -279,7 +319,6 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // header
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
                 decoration: BoxDecoration(
@@ -365,7 +404,6 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
                   ],
                 ),
               ),
-              // body scrollable
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -383,7 +421,6 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
                       const SizedBox(height: 20),
                       const Divider(color: Colors.black12),
                       const SizedBox(height: 12),
-                      // Baris pengirim dan waktu
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -424,7 +461,6 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
                   ),
                 ),
               ),
-              // tombol tutup
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
                 child: Center(
@@ -482,7 +518,6 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     );
   }
 
-  // ========== HEADER (sama seperti dashboard) ==========
   Widget _buildHeader() {
     final p = _collapseProgress;
     final double eSize = 24 - (24 - 14) * p;
@@ -630,7 +665,6 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     );
   }
 
-  // ========== FORM CARD (tanpa target & prioritas) ==========
   Widget _buildFormCard() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -765,7 +799,6 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     );
   }
 
-  // ========== RIWAYAT SECTION ==========
   Widget _buildRiwayatSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -886,6 +919,7 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
       waktu =
           '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     }
+    final id = item['id'] as String?;
 
     return GestureDetector(
       onTap: () => _showDetailDialog(item),
@@ -945,21 +979,23 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: pColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          prioritas,
-                          style: GoogleFonts.lato(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            color: pColor,
+                      GestureDetector(
+                        onTap: () {
+                          if (id != null) {
+                            _hapusPengumuman(id, item['judul'] ?? 'Pengumuman');
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          margin: const EdgeInsets.only(left: 8),
+                          decoration: BoxDecoration(
+                            color: kRed.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Icon(
+                            Icons.delete_outline,
+                            size: 16,
+                            color: kRed,
                           ),
                         ),
                       ),
@@ -1012,7 +1048,6 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     );
   }
 
-  // ========== HELPERS ==========
   Widget _label(String text) {
     return Text(
       text,
