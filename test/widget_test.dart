@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:apk/main.dart';
-  import 'package:apk/splash_screen.dart'; 
+import 'package:exotic_gaming_and_cafe/main.dart';
+import 'package:exotic_gaming_and_cafe/splash_screen.dart';
 
 void main() {
   testWidgets('SplashScreen renders', (WidgetTester tester) async {

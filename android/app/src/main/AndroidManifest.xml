@@ -5,10 +5,27 @@
     <!-- Untuk Android 13 (API 33) ke atas -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
 
+    <!-- Izin lokasi (untuk absensi & maps) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
+    <!-- Izin internet (wajib untuk Google Maps) -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Fitur kamera -->
+    <uses-feature android:name="android.hardware.camera" android:required="true"/>
+    <uses-feature android:name="android.hardware.camera.front" android:required="false"/>
+
     <application
         android:label="apk"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <!-- Google Maps API Key (Ganti dengan API key asli Anda) -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="YOUR_GOOGLE_MAPS_API_KEY_HERE"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -1,5 +1,5 @@
-name: apk
-description: "A new Flutter project."
+name: exotic_gaming_and_cafe
+description: "Aplikasi Internal Exotic Gaming and Cafe untuk manajemen karyawan, absensi, dan laporan keuangan."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -17,6 +17,13 @@ dependencies:
   cloud_firestore: ^6.3.0
   image_picker: ^1.1.2
   firebase_storage: ^13.3.0   # <- ubah dari ^12.3.0
+
+# absensi
+  camera: ^0.10.5+9
+  geolocator: ^11.0.0
+  permission_handler: ^11.3.0
+  google_maps_flutter: ^2.6.1
+
 
 dev_dependencies:
   flutter_test:
