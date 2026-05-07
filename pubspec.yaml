@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.8
+  sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -12,26 +12,22 @@ dependencies:
   intl: ^0.19.0
   google_fonts: ^6.2.1
   cupertino_icons: ^1.0.8
-  firebase_core: ^4.7.0
-  firebase_auth: ^6.4.0
-  cloud_firestore: ^6.3.0
+  firebase_core: ^3.0.0
+  firebase_auth: ^5.0.0
+  cloud_firestore: ^5.0.0
   image_picker: ^1.1.2
-  firebase_storage: ^13.3.0   # <- ubah dari ^12.3.0
-
-# absensi
+  firebase_storage: ^12.0.0
   camera: ^0.10.5+9
   geolocator: ^11.0.0
   permission_handler: ^11.3.0
   google_maps_flutter: ^2.6.1
 
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^4.0.0
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/owner.jpg
-    - assets/images/karyawan.jpg
+    - assets/images/
