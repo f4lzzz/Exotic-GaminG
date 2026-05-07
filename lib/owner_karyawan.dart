@@ -743,6 +743,8 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) => AlertDialog(
+          backgroundColor: kWhite,
+          surfaceTintColor: kWhite,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -759,8 +761,8 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               ),
             ],
           ),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
+          content: SizedBox(
+            width: MediaQuery.of(ctx).size.width,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -956,15 +958,19 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) => AlertDialog(
+          backgroundColor: kWhite,
+          surfaceTintColor: kWhite,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           title: Text(
             'Edit Karyawan',
-            style: GoogleFonts.lato(fontWeight: FontWeight.w900),
+            style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark),
           ),
-          content: SingleChildScrollView(
-            child: Column(
+          content: SizedBox(
+            width: MediaQuery.of(ctx).size.width,
+            child: SingleChildScrollView(
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _dialogField(namaCtrl, 'Nama Lengkap', Icons.person_outline),
@@ -979,6 +985,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                   ),
               ],
             ),
+          ),
           ),
           actions: [
             TextButton(
@@ -1048,12 +1055,16 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: kWhite,
+        surfaceTintColor: kWhite,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Hapus Karyawan',
-          style: GoogleFonts.lato(fontWeight: FontWeight.w900),
+          style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark),
         ),
-        content: RichText(
+        content: SizedBox(
+          width: MediaQuery.of(ctx).size.width,
+          child: RichText(
           text: TextSpan(
             style: GoogleFonts.lato(fontSize: 13, color: Colors.black54),
             children: [
@@ -1068,6 +1079,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               const TextSpan(text: '?'),
             ],
           ),
+        ),
         ),
         actions: [
           TextButton(
