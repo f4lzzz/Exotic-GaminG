@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -11,86 +13,9 @@ const kTextDark = Color(0xFF1A237E);
 const kGreen = Color(0xFF4CAF50);
 const kRed = Color(0xFFE53935);
 const kOrange = Color(0xFFFF9800);
+const kPurple = Color(0xFF7C4DFF);
 const kBgLight = Color(0xFFF0F4FF);
 
-// ─── MODEL ───────────────────────────────────────────────────────────────────
-enum NotifCategory { transaksi, stok, karyawan }
-
-class NotifItem {
-  final String id;
-  final String title;
-  final String body;
-  final String time;
-  final NotifCategory category;
-  final bool isUnread;
-
-  const NotifItem({
-    required this.id,
-    required this.title,
-    required this.body,
-    required this.time,
-    required this.category,
-    this.isUnread = false,
-  });
-}
-
-// ─── DATA ────────────────────────────────────────────────────────────────────
-const _allNotifs = [
-  NotifItem(
-    id: '1',
-    title: 'Transaksi Baru — Meja 5',
-    body:
-        'Order baru masuk dari Meja 5: 2x Kopi Susu + 1x Roti Bakar senilai Rp 59.000',
-    time: '08:00 hari ini',
-    category: NotifCategory.transaksi,
-    isUnread: true,
-  ),
-  NotifItem(
-    id: '2',
-    title: 'Stok Habis — Teh Hijau',
-    body:
-        'Stok teh hijau habis (0 pcs). Segera lakukan restock untuk menghindari kehabisan.',
-    time: '08:15 hari ini',
-    category: NotifCategory.stok,
-    isUnread: true,
-  ),
-  NotifItem(
-    id: '3',
-    title: 'Karyawan Tidak Hadir — Bagas',
-    body:
-        'Karyawan Bagas Nugroho (Chef — Shift Siang) tidak hadir tanpa keterangan.',
-    time: '09:00 hari ini',
-    category: NotifCategory.karyawan,
-    isUnread: false,
-  ),
-  NotifItem(
-    id: '4',
-    title: 'Transaksi Baru — Suite Room 2',
-    body:
-        'Order baru masuk dari Suite Room 2: 2x Kopi Susu + 1x Roti Bakar senilai Rp 59.000',
-    time: '10:30 hari ini',
-    category: NotifCategory.transaksi,
-    isUnread: false,
-  ),
-  NotifItem(
-    id: '5',
-    title: 'Karyawan Tidak Hadir — Anna',
-    body: 'Karyawan Anna (Chef — Shift Siang) tidak hadir tanpa keterangan.',
-    time: '08:00 kemarin',
-    category: NotifCategory.karyawan,
-    isUnread: false,
-  ),
-  NotifItem(
-    id: '6',
-    title: 'Stok Kritis — Gula Pasir',
-    body: 'Stok gula pasir tinggal 2 kg. Segera lakukan restock.',
-    time: '14:00 kemarin',
-    category: NotifCategory.stok,
-    isUnread: false,
-  ),
-];
-
-// ─── SCREEN ──────────────────────────────────────────────────────────────────
 class NotifikasiOwnerScreen extends StatefulWidget {
   const NotifikasiOwnerScreen({super.key});
 
@@ -115,21 +40,7 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
       _headerExpanded -
       (_headerExpanded - _headerCollapsed) * _collapseProgress;
 
-  NotifCategory? _selectedCategory;
-  final List<String> _dismissed = [];
-
-  List<NotifItem> get _visible => _allNotifs
-      .where(
-        (n) =>
-            !_dismissed.contains(n.id) &&
-            (_selectedCategory == null || n.category == _selectedCategory),
-      )
-      .toList();
-
-  int get _totalCount => _allNotifs.length;
-  int get _unreadCount => _allNotifs.where((n) => n.isUnread).length;
-  int get _transaksiCount =>
-      _allNotifs.where((n) => n.category == NotifCategory.transaksi).length;
+  bool _isDeletingAll = false;
 
   @override
   void initState() {
@@ -152,52 +63,92 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
     super.dispose();
   }
 
-  void _dismiss(String id) => setState(() => _dismissed.add(id));
-
-  void _dismissAll() {
-    showDialog(
+  Future<void> _hapusSemuaPengumuman() async {
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Hapus Semua Notifikasi',
-          style: GoogleFonts.lato(
-            fontWeight: FontWeight.w900,
-            color: kTextDark,
-          ),
+          'Hapus Semua Pengumuman?',
+          style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kRed),
         ),
         content: Text(
-          'Yakin ingin menghapus semua notifikasi? Tindakan ini tidak dapat dibatalkan.',
-          style: GoogleFonts.lato(fontSize: 13, color: Colors.black54),
+          'Semua pengumuman akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.',
+          style: GoogleFonts.lato(fontSize: 13, color: kTextDark),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Batal',
-              style: GoogleFonts.lato(color: Colors.black45),
-            ),
+            onPressed: () => Navigator.pop(ctx, false),
+            child:
+                Text('Batal', style: GoogleFonts.lato(color: Colors.black45)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kRed,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() => _dismissed.addAll(_allNotifs.map((n) => n.id)));
-            },
-            child: Text(
-              'Hapus Semua',
-              style: GoogleFonts.lato(
-                fontWeight: FontWeight.w800,
-                color: kWhite,
-              ),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: kRed),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Hapus', style: GoogleFonts.lato(color: kWhite)),
           ),
         ],
+      ),
+    );
+    if (confirm != true) return;
+
+    setState(() => _isDeletingAll = true);
+    try {
+      final snapshot =
+          await FirebaseFirestore.instance.collection('pengumuman').get();
+      final batch = FirebaseFirestore.instance.batch();
+      for (var doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      _showSnack('Semua pengumuman berhasil dihapus', kGreen);
+    } catch (e) {
+      _showSnack('Gagal menghapus: $e', kRed);
+    } finally {
+      if (mounted) setState(() => _isDeletingAll = false);
+    }
+  }
+
+  Future<void> _hapusPengumuman(String id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Hapus Pengumuman?',
+            style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kRed)),
+        content: Text('Yakin hapus pengumuman ini?',
+            style: GoogleFonts.lato(fontSize: 13, color: kTextDark)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('Batal',
+                  style: GoogleFonts.lato(color: Colors.black45))),
+          ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: kRed),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text('Hapus', style: GoogleFonts.lato(color: kWhite))),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('pengumuman')
+          .doc(id)
+          .delete();
+      _showSnack('Pengumuman dihapus', kGreen);
+    } catch (e) {
+      _showSnack('Gagal menghapus: $e', kRed);
+    }
+  }
+
+  void _showSnack(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: GoogleFonts.lato(color: kWhite)),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -218,9 +169,7 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
                 children: [
                   _buildSummaryRow(),
                   const SizedBox(height: 12),
-                  _buildFilterTabs(),
-                  const SizedBox(height: 12),
-                  _buildNotifList(),
+                  _buildPengumumanList(),
                 ],
               ),
             ),
@@ -230,10 +179,9 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
     );
   }
 
-  // ─── HEADER (sama persis owner dashboard) ────────────────────────────────
+  // ─── HEADER ────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     final p = _collapseProgress;
-
     final double eSize = 24 - (24 - 14) * p;
     final double xSize = 40 - (40 - 22) * p;
     final double oticSize = 24 - (24 - 14) * p;
@@ -247,17 +195,15 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
         style: GoogleFonts.playfairDisplay(color: kWhite, height: 1.0),
         children: [
           TextSpan(
-            text: 'E',
-            style: TextStyle(fontSize: eSize, fontWeight: FontWeight.w400),
-          ),
+              text: 'E',
+              style: TextStyle(fontSize: eSize, fontWeight: FontWeight.w400)),
           TextSpan(
-            text: 'X',
-            style: TextStyle(fontSize: xSize, fontWeight: FontWeight.w700),
-          ),
+              text: 'X',
+              style: TextStyle(fontSize: xSize, fontWeight: FontWeight.w700)),
           TextSpan(
-            text: 'OTIC',
-            style: TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400),
-          ),
+              text: 'OTIC',
+              style:
+                  TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400)),
         ],
       ),
     );
@@ -273,15 +219,18 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
     );
 
     final actionButtons = GestureDetector(
-      onTap: _dismissAll,
+      onTap: _hapusSemuaPengumuman,
       child: Container(
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: kWhite.withOpacity(0.2),
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.delete_sweep_rounded, color: kWhite, size: 20),
+            color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
+        child: _isDeletingAll
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: kWhite))
+            : const Icon(Icons.delete_sweep_rounded, color: kWhite, size: 20),
       ),
     );
 
@@ -290,11 +239,7 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
       height: _headerHeight,
       width: double.infinity,
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF4A90D9), kBlue],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+        gradient: LinearGradient(colors: [Color(0xFF4A90D9), kBlue]),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(20, padTop, 20, padBot),
@@ -337,45 +282,29 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: kWhite.withOpacity(0.2),
-          shape: BoxShape.circle,
-        ),
+            color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
         child: const Icon(Icons.arrow_back_ios_new, color: kWhite, size: 16),
       ),
     );
   }
 
-  // ─── SUMMARY ROW ─────────────────────────────────────────────────────────
+  // ─── SUMMARY ROW (total pengumuman) ────────────────────────────────────────
   Widget _buildSummaryRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: _summaryCard(
-            'TOTAL',
-            '$_totalCount',
-            Icons.notifications_active,
-            kBlue,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _summaryCard(
-            'BELUM BACA',
-            '$_unreadCount',
-            Icons.mark_chat_unread,
-            kOrange,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _summaryCard(
-            'TRANSAKSI',
-            '$_transaksiCount',
-            Icons.attach_money,
-            kGreen,
-          ),
-        ),
-      ],
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('pengumuman').snapshots(),
+      builder: (context, snapshot) {
+        int total = 0;
+        if (snapshot.hasData) {
+          total = snapshot.data!.docs.length;
+        }
+        return Row(
+          children: [
+            Expanded(
+                child: _summaryCard('TOTAL PENGUMUMAN', total.toString(),
+                    Icons.announcement, kBlue)),
+          ],
+        );
+      },
     );
   }
 
@@ -387,127 +316,103 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 3))
         ],
       ),
       child: Column(
         children: [
           Icon(icon, color: color, size: 22),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: GoogleFonts.lato(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: kTextDark,
-            ),
-          ),
+          Text(value,
+              style: GoogleFonts.lato(
+                  fontSize: 20, fontWeight: FontWeight.w900, color: kTextDark)),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: GoogleFonts.lato(
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              color: Colors.black38,
-              letterSpacing: 0.5,
-            ),
-          ),
+          Text(label,
+              style: GoogleFonts.lato(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black38,
+                  letterSpacing: 0.5)),
         ],
       ),
     );
   }
 
-  // ─── FILTER TABS ─────────────────────────────────────────────────────────
-  Widget _buildFilterTabs() {
-    final tabs = <String, NotifCategory?>{
-      'SEMUA': null,
-      'TRANSAKSI': NotifCategory.transaksi,
-      'STOK': NotifCategory.stok,
-      'KARYAWAN': NotifCategory.karyawan,
-    };
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: tabs.entries.map((e) {
-          final isActive = _selectedCategory == e.value;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedCategory = e.value),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: isActive ? kBlue : kWhite,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
+  // ─── LIST PENGUMUMAN ──────────────────────────────────────────────────────
+  Widget _buildPengumumanList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('pengumuman')
+          .orderBy('timestamp', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+              child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(color: kBlue)));
+        }
+        if (snapshot.hasError) {
+          return Center(
+              child: Text('Error: ${snapshot.error}',
+                  style: GoogleFonts.lato(color: kRed)));
+        }
+        final docs = snapshot.data!.docs;
+        if (docs.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 60),
+              child: Column(
+                children: [
+                  Icon(Icons.notifications_off_outlined,
+                      size: 52, color: Colors.black26),
+                  const SizedBox(height: 12),
+                  Text('Tidak ada pengumuman',
+                      style: GoogleFonts.lato(
+                          fontSize: 14, color: Colors.black38)),
                 ],
-              ),
-              child: Text(
-                e.key,
-                style: GoogleFonts.lato(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: isActive ? kWhite : Colors.black45,
-                ),
               ),
             ),
           );
-        }).toList(),
-      ),
-    );
-  }
+        }
 
-  // ─── NOTIF LIST ──────────────────────────────────────────────────────────
-  Widget _buildNotifList() {
-    final items = _visible;
+        // kelompokkan berdasarkan tanggal (hari ini, lebih lama)
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final todayList = <QueryDocumentSnapshot>[];
+        final olderList = <QueryDocumentSnapshot>[];
 
-    if (items.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 60),
-          child: Column(
-            children: [
-              Icon(
-                Icons.notifications_off_outlined,
-                size: 52,
-                color: Colors.black26,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Tidak ada notifikasi',
-                style: GoogleFonts.lato(fontSize: 14, color: Colors.black38),
-              ),
+        for (var doc in docs) {
+          final ts = doc['timestamp'] as Timestamp?;
+          if (ts != null) {
+            final date = ts.toDate();
+            if (date.isAfter(today)) {
+              todayList.add(doc);
+            } else {
+              olderList.add(doc);
+            }
+          } else {
+            olderList.add(doc);
+          }
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (todayList.isNotEmpty) ...[
+              _sectionLabel('HARI INI'),
+              ...todayList.map((doc) => _pengumumanCard(doc)),
             ],
-          ),
-        ),
-      );
-    }
-
-    final hariIni = items.where((n) => n.time.contains('hari ini')).toList();
-    final lebihLama = items.where((n) => !n.time.contains('hari ini')).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (hariIni.isNotEmpty) ...[
-          _sectionLabel('HARI INI'),
-          ...hariIni.map((n) => _notifCard(n)),
-        ],
-        if (lebihLama.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          _sectionLabel('LEBIH LAMA'),
-          ...lebihLama.map((n) => _notifCard(n)),
-        ],
-      ],
+            if (olderList.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              _sectionLabel('SEBELUMNYA'),
+              ...olderList.map((doc) => _pengumumanCard(doc)),
+            ],
+          ],
+        );
+      },
     );
   }
 
@@ -519,15 +424,12 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
           Expanded(child: Divider(color: Colors.black12, thickness: 1)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Text(
-              label,
-              style: GoogleFonts.lato(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                color: Colors.black38,
-                letterSpacing: 0.8,
-              ),
-            ),
+            child: Text(label,
+                style: GoogleFonts.lato(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black38,
+                    letterSpacing: 0.8)),
           ),
           Expanded(child: Divider(color: Colors.black12, thickness: 1)),
         ],
@@ -535,22 +437,49 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
     );
   }
 
-  Widget _notifCard(NotifItem n) {
-    final color = _categoryColor(n.category);
-    final icon = _categoryIcon(n.category);
+  Widget _pengumumanCard(QueryDocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    final id = doc.id;
+    final judul = data['judul'] ?? 'Tanpa Judul';
+    final isi = data['isi'] ?? '';
+    final pengirim = data['pengirim'] ?? 'owner';
+    final prioritas = data['prioritas'] ?? 'Normal';
+    final ts = data['timestamp'] as Timestamp?;
+    String waktu = '';
+    if (ts != null) {
+      final dt = ts.toDate();
+      waktu = DateFormat('d MMM yyyy, HH:mm').format(dt);
+    }
+    final dibaca = data['dibaca'] ?? 0;
+    final bool isUnread = dibaca == 0;
+
+    Color borderColor;
+    IconData iconData;
+    switch (prioritas) {
+      case 'Darurat':
+        borderColor = kRed;
+        iconData = Icons.error_outline;
+        break;
+      case 'Penting':
+        borderColor = kOrange;
+        iconData = Icons.warning_amber_outlined;
+        break;
+      default:
+        borderColor = kBlue;
+        iconData = Icons.notifications_outlined;
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: n.isUnread ? const Color(0xFFFFF8E1) : kWhite,
+        color: isUnread ? const Color(0xFFFFF8E1) : kWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border(left: BorderSide(color: color, width: 4)),
+        border: Border(left: BorderSide(color: borderColor, width: 4)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3))
         ],
       ),
       child: Padding(
@@ -562,10 +491,8 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 22),
+                  color: borderColor.withOpacity(0.12), shape: BoxShape.circle),
+              child: Icon(iconData, color: borderColor, size: 22),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -576,69 +503,61 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
                     children: [
                       Expanded(
                         child: Text(
-                          n.title,
+                          judul,
                           style: GoogleFonts.lato(
                             fontSize: 13,
-                            fontWeight: n.isUnread
-                                ? FontWeight.w800
-                                : FontWeight.w700,
-                            color: color,
+                            fontWeight:
+                                isUnread ? FontWeight.w800 : FontWeight.w700,
+                            color: borderColor,
                           ),
                         ),
                       ),
-                      if (n.isUnread)
+                      if (isUnread)
                         Container(
                           width: 8,
                           height: 8,
                           margin: const EdgeInsets.only(left: 6, top: 2),
                           decoration: const BoxDecoration(
-                            color: kBlue,
-                            shape: BoxShape.circle,
-                          ),
+                              color: kBlue, shape: BoxShape.circle),
                         ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    n.body,
-                    style: GoogleFonts.lato(
-                      fontSize: 11,
-                      color: Colors.black54,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(isi,
+                      style:
+                          GoogleFonts.lato(fontSize: 11, color: Colors.black54),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.access_time,
-                        size: 11,
-                        color: Colors.black38,
-                      ),
+                      const Icon(Icons.person_outline,
+                          size: 11, color: Colors.black38),
                       const SizedBox(width: 4),
-                      Text(
-                        n.time,
-                        style: GoogleFonts.lato(
-                          fontSize: 10,
-                          color: Colors.black38,
-                        ),
-                      ),
+                      Text(pengirim,
+                          style: GoogleFonts.lato(
+                              fontSize: 10, color: Colors.black38)),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.access_time,
+                          size: 11, color: Colors.black38),
+                      const SizedBox(width: 4),
+                      Text(waktu,
+                          style: GoogleFonts.lato(
+                              fontSize: 10, color: Colors.black38)),
                     ],
                   ),
                 ],
               ),
             ),
             GestureDetector(
-              onTap: () => _dismiss(n.id),
+              onTap: () => _hapusPengumuman(id),
               child: Container(
                 width: 28,
                 height: 28,
                 margin: const EdgeInsets.only(left: 8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                    color: Colors.black.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8)),
                 child: const Icon(Icons.close, size: 15, color: Colors.black38),
               ),
             ),
@@ -646,27 +565,5 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
         ),
       ),
     );
-  }
-
-  Color _categoryColor(NotifCategory cat) {
-    switch (cat) {
-      case NotifCategory.transaksi:
-        return kBlue;
-      case NotifCategory.stok:
-        return kOrange;
-      case NotifCategory.karyawan:
-        return kRed;
-    }
-  }
-
-  IconData _categoryIcon(NotifCategory cat) {
-    switch (cat) {
-      case NotifCategory.transaksi:
-        return Icons.attach_money_rounded;
-      case NotifCategory.stok:
-        return Icons.warning_amber_rounded;
-      case NotifCategory.karyawan:
-        return Icons.person_off_rounded;
-    }
   }
 }
