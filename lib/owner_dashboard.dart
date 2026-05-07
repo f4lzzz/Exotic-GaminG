@@ -789,6 +789,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
+  // PERBAIKAN NAVBAR: hitbox lebih besar dengan GestureDetector + Container padding
   Widget _navItem(
     int index,
     IconData outlineIcon,
@@ -799,24 +800,28 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => _selectedNav = index),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isSelected ? filledIcon : outlineIcon,
-              color: isSelected ? kBlue : Colors.black38,
-              size: 22,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: GoogleFonts.lato(
-                fontSize: 9,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isSelected ? filledIcon : outlineIcon,
                 color: isSelected ? kBlue : Colors.black38,
+                size: 22,
               ),
-            ),
-          ],
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: GoogleFonts.lato(
+                  fontSize: 9,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                  color: isSelected ? kBlue : Colors.black38,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
