@@ -403,106 +403,146 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
   }
 
   Widget _buildLogoutButton() {
-    final nama = _userData?['nama'] ?? 'Owner';
-    final role = _userData?['role'] ?? 'owner';
     return GestureDetector(
       onTap: () => showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
+        builder: (ctx) => Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
           ),
-          title: Text(
-            'Keluar dari Akun',
-            style: GoogleFonts.lato(
-              fontWeight: FontWeight.w900,
-              color: kTextDark,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: kWhite,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: kBlue.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: kRed.withOpacity(0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.logout_rounded, color: kRed, size: 36),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: kYellow.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '$nama — ${role.toUpperCase()}',
-                  style: GoogleFonts.lato(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: kGold,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: kBlue.withOpacity(0.05),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: kBlue.withOpacity(0.1), width: 4),
+                  ),
+                  child: const Icon(
+                    Icons.power_settings_new_rounded,
+                    color: kBlue,
+                    size: 40,
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Yakin ingin keluar dari akun?',
-                style: GoogleFonts.lato(fontSize: 13, color: Colors.black54),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Batal',
-                style: GoogleFonts.lato(color: Colors.black45),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: kRed),
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                if (ctx.mounted)
-                  Navigator.of(ctx).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-              },
-              child: Text(
-                'KELUAR',
-                style: GoogleFonts.lato(
-                  fontWeight: FontWeight.w800,
-                  color: kWhite,
+                const SizedBox(height: 20),
+                Text(
+                  'Konfirmasi Keluar',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.lato(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: kTextDark,
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 12),
+                Text(
+                  'Apakah Anda yakin ingin mengakhiri sesi dan keluar dari akun?',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.lato(
+                    fontSize: 14,
+                    color: Colors.black54,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Batal',
+                          style: GoogleFonts.lato(
+                            color: Colors.black38,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await FirebaseAuth.instance.signOut();
+                          if (ctx.mounted) {
+                            Navigator.of(ctx).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (_) => const LoginScreen(),
+                              ),
+                              (route) => false,
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kRed,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Keluar',
+                          style: GoogleFonts.lato(
+                            color: kWhite,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: kRed.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: kRed.withOpacity(0.2)),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: kRed.withOpacity(0.15), width: 1.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.logout_rounded, color: kRed, size: 20),
-            const SizedBox(width: 10),
+            const Icon(Icons.logout_rounded, color: kRed, size: 22),
+            const SizedBox(width: 12),
             Text(
               'KELUAR DARI AKUN',
               style: GoogleFonts.lato(
                 color: kRed,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w900,
                 fontSize: 14,
+                letterSpacing: 1.2,
               ),
             ),
           ],
@@ -1018,7 +1058,6 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
                     ctrl: _newPassCtrl,
                     show: _showNew,
                     onToggle: () => setState(() => _showNew = !_showNew),
-                    accentColor: kBlue,
                   ),
                   const SizedBox(height: 12),
                   _buildPasswordField(
@@ -1028,7 +1067,6 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
                     show: _showConfirm,
                     onToggle: () =>
                         setState(() => _showConfirm = !_showConfirm),
-                    accentColor: kGreen,
                   ),
                   const SizedBox(height: 10),
                   _buildPasswordRules(),
@@ -1129,19 +1167,19 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
   Widget _buildInfoCard() => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: kOrange.withOpacity(0.07),
+      color: kBlue.withOpacity(0.07),
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: kOrange.withOpacity(0.2)),
+      border: Border.all(color: kBlue.withOpacity(0.2)),
     ),
     child: Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: kOrange.withOpacity(0.15),
+            color: kBlue.withOpacity(0.15),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.info_outline, color: kOrange, size: 20),
+          child: const Icon(Icons.info_outline, color: kBlue, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -1226,7 +1264,7 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
     required TextEditingController ctrl,
     required bool show,
     required VoidCallback onToggle,
-    Color accentColor = kOrange,
+    Color accentColor = kBlue,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -1274,14 +1312,23 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
   Widget _buildSaveButton() {
     return GestureDetector(
       onTap: _isLoading ? null : _changePassword,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [kOrange, kOrange.withRed(220)]),
+          gradient: _isLoading
+              ? LinearGradient(
+                  colors: [Colors.grey.shade400, Colors.grey.shade500],
+                )
+              : const LinearGradient(colors: [Color(0xFF4A90D9), kBlue]),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(color: kOrange.withOpacity(0.3), blurRadius: 12),
+            BoxShadow(
+              color: kBlue.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Center(
@@ -1309,6 +1356,7 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
                         color: kWhite,
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
