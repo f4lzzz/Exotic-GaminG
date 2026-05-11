@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'notifikasi_owner.dart';
 import 'profil_owner.dart';
+import 'notif_icon.dart'; // widget notifikasi reusable
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -418,12 +418,11 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
   }
 
   List<MenuItem> get _filtered => _menuList.where((m) {
-    final matchKat = m.kategori == _selectedKategori;
-    final matchSearch =
-        _searchQuery.isEmpty ||
-        m.nama.toLowerCase().contains(_searchQuery.toLowerCase());
-    return matchKat && matchSearch;
-  }).toList();
+        final matchKat = m.kategori == _selectedKategori;
+        final matchSearch = _searchQuery.isEmpty ||
+            m.nama.toLowerCase().contains(_searchQuery.toLowerCase());
+        return matchKat && matchSearch;
+      }).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -509,14 +508,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
           ),
         ),
         const SizedBox(width: 6),
-        _headerIconBtn(
-          Icons.notifications_outlined,
-          badge: 3,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NotifikasiOwnerScreen()),
-          ),
-        ),
+        const NotifIcon(), // widget notifikasi reusable
       ],
     );
 
@@ -759,8 +751,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
 
   Widget _menuCard(MenuItem m) {
     final color = _kategoriColor(m.kategori);
-    final isJam =
-        m.kategori == KategoriMenu.reguler ||
+    final isJam = m.kategori == KategoriMenu.reguler ||
         m.kategori == KategoriMenu.suiteroom;
     final isVIP = m.nama.contains('VIP');
     final isNoSmoke = m.info != null && m.info!.contains('NO SMOKING');
