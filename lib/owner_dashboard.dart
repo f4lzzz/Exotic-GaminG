@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -30,7 +31,6 @@ class OwnerDashboardScreen extends StatefulWidget {
 class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     with SingleTickerProviderStateMixin {
   int _selectedNav = 0;
-  int _notifCount = 3;
 
   User? _currentUser;
   Map<String, dynamic>? _userData;
@@ -109,8 +109,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
 
   double get _collapseProgress => (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
   double get _headerHeight =>
-      _headerExpanded -
-      (_headerExpanded - _headerCollapsed) * _collapseProgress;
+      _headerExpanded - (_headerExpanded - _headerCollapsed) * _collapseProgress;
 
   String get _greeting {
     final hour = DateTime.now().hour;
@@ -121,16 +120,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
   }
 
   String get _displayName {
-    if (_userData != null) {
-      return _userData!['username'] ?? _userData!['nama'] ?? 'Owner';
-    }
+    if (_userData != null) return _userData!['username'] ?? _userData!['nama'] ?? 'Owner';
     return 'Owner';
   }
 
   String get _roleBadge {
-    if (_userData != null) {
-      return (_userData!['role'] ?? 'owner').toString().toUpperCase();
-    }
+    if (_userData != null) return (_userData!['role'] ?? 'owner').toString().toUpperCase();
     return 'OWNER';
   }
 
@@ -147,6 +142,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
               Expanded(
                 child: SingleChildScrollView(
                   controller: _scrollCtrl,
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,18 +183,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
       text: TextSpan(
         style: GoogleFonts.playfairDisplay(color: kWhite, height: 1.0),
         children: [
-          TextSpan(
-            text: 'E',
-            style: TextStyle(fontSize: eSize, fontWeight: FontWeight.w400),
-          ),
-          TextSpan(
-            text: 'X',
-            style: TextStyle(fontSize: xSize, fontWeight: FontWeight.w700),
-          ),
-          TextSpan(
-            text: 'OTIC',
-            style: TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400),
-          ),
+          TextSpan(text: 'E', style: TextStyle(fontSize: eSize, fontWeight: FontWeight.w400)),
+          TextSpan(text: 'X', style: TextStyle(fontSize: xSize, fontWeight: FontWeight.w700)),
+          TextSpan(text: 'OTIC', style: TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400)),
         ],
       ),
     );
@@ -220,19 +207,29 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
           Icons.settings_outlined,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => ProfilOwnerScreen(userData: _userData),
-            ),
+            MaterialPageRoute(builder: (_) => ProfilOwnerScreen(userData: _userData)),
           ),
         ),
         const SizedBox(width: 6),
-        _headerIconBtn(
-          Icons.notifications_outlined,
-          badge: _notifCount,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NotifikasiOwnerScreen()),
-          ),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('pengumuman')
+              .where('dibaca', isEqualTo: 0)
+              .snapshots(),
+          builder: (context, snapshot) {
+            int badgeCount = 0;
+            if (snapshot.hasData && snapshot.data != null) {
+              badgeCount = snapshot.data!.docs.length;
+            }
+            return _headerIconBtn(
+              Icons.notifications_outlined,
+              badge: badgeCount,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotifikasiOwnerScreen()),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -273,11 +270,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  Widget _headerIconBtn(
-    IconData icon, {
-    int badge = 0,
-    required VoidCallback onTap,
-  }) {
+  Widget _headerIconBtn(IconData icon, {int badge = 0, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Stack(
@@ -286,10 +279,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(
-              color: kWhite.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
             child: Icon(icon, color: kWhite, size: 20),
           ),
           if (badge > 0)
@@ -299,18 +289,11 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
               child: Container(
                 width: 16,
                 height: 16,
-                decoration: const BoxDecoration(
-                  color: kRed,
-                  shape: BoxShape.circle,
-                ),
+                decoration: const BoxDecoration(color: kRed, shape: BoxShape.circle),
                 child: Center(
                   child: Text(
                     '$badge',
-                    style: GoogleFonts.lato(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      color: kWhite,
-                    ),
+                    style: GoogleFonts.lato(fontSize: 9, fontWeight: FontWeight.w900, color: kWhite),
                   ),
                 ),
               ),
@@ -327,91 +310,31 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
       decoration: BoxDecoration(
         color: kWhite,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 3))],
       ),
       child: Row(
         children: [
           Container(
             width: 46,
             height: 46,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: kYellow.withOpacity(0.2),
-              border: Border.all(color: kYellow, width: 2),
-            ),
-            child: ClipOval(
-              child: Image.asset(
-                'assets/images/owner.jpg',
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.person, color: kGold, size: 26),
-              ),
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: kYellow.withOpacity(0.2), border: Border.all(color: kYellow, width: 2)),
+            child: ClipOval(child: Image.asset('assets/images/owner.jpg', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.person, color: kGold, size: 26))),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _greeting,
-                  style: GoogleFonts.lato(fontSize: 11, color: Colors.black45),
-                ),
-                Text(
-                  _displayName,
-                  style: GoogleFonts.lato(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                    color: kTextDark,
-                  ),
-                ),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 10,
-                      color: Colors.black38,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _formatDate(),
-                      style: GoogleFonts.lato(
-                        fontSize: 10,
-                        color: Colors.black38,
-                      ),
-                    ),
-                  ],
-                ),
+                Text(_greeting, style: GoogleFonts.lato(fontSize: 11, color: Colors.black45)),
+                Text(_displayName, style: GoogleFonts.lato(fontSize: 15, fontWeight: FontWeight.w900, color: kTextDark)),
+                Row(children: [const Icon(Icons.calendar_today, size: 10, color: Colors.black38), const SizedBox(width: 4), Text(_formatDate(), style: GoogleFonts.lato(fontSize: 10, color: Colors.black38))]),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              color: kYellow,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: kGold.withOpacity(0.3),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Text(
-              _roleBadge,
-              style: GoogleFonts.lato(
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                color: Colors.black87,
-              ),
-            ),
+            decoration: BoxDecoration(color: kYellow, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: kGold.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 2))]),
+            child: Text(_roleBadge, style: GoogleFonts.lato(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.black87)),
           ),
         ],
       ),
@@ -420,29 +343,8 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
 
   String _formatDate() {
     final now = DateTime.now();
-    const days = [
-      'senin',
-      'selasa',
-      'rabu',
-      'kamis',
-      'jumat',
-      'sabtu',
-      'minggu',
-    ];
-    const months = [
-      'januari',
-      'februari',
-      'maret',
-      'april',
-      'mei',
-      'juni',
-      'juli',
-      'agustus',
-      'september',
-      'oktober',
-      'november',
-      'desember',
-    ];
+    const days = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu', 'minggu'];
+    const months = ['januari', 'februari', 'maret', 'april', 'mei', 'juni', 'juli', 'agustus', 'september', 'oktober', 'november', 'desember'];
     return '${days[now.weekday - 1]} ${now.day} ${months[now.month - 1]} ${now.year}';
   }
 
@@ -451,129 +353,41 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
       children: [
         Row(
           children: [
-            Expanded(
-              child: _statCard(
-                emoji: '💰',
-                value: 'Rp 3,4 jt',
-                label: 'PENDAPATAN HARI INI',
-                badge: '+5',
-                badgeColor: kGreen,
-              ),
-            ),
+            Expanded(child: _statCard(emoji: '💰', value: 'Rp 3,4 jt', label: 'PENDAPATAN HARI INI', badge: '+5', badgeColor: kGreen)),
             const SizedBox(width: 12),
-            Expanded(
-              child: _statCard(
-                icon: Icons.add,
-                value: '40',
-                label: 'TOTAL TRANSAKSI',
-                badge: '+5',
-                badgeColor: kGreen,
-              ),
-            ),
+            Expanded(child: _statCard(icon: Icons.add, value: '40', label: 'TOTAL TRANSAKSI', badge: '+5', badgeColor: kGreen)),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(
-              child: _statCard(
-                emoji: '🤖',
-                value: '11/13',
-                label: 'KARYAWAN HADIR',
-                badge: '2 ABSEN',
-                badgeColor: kRed,
-              ),
-            ),
+            Expanded(child: _statCard(emoji: '🤖', value: '11/13', label: 'KARYAWAN HADIR', badge: '2 ABSEN', badgeColor: kRed)),
             const SizedBox(width: 12),
-            Expanded(
-              child: _statCard(
-                emoji: '📦',
-                value: '5 item',
-                label: 'STOK KRITIS',
-                badge: '3 HABIS',
-                badgeColor: kRed,
-              ),
-            ),
+            Expanded(child: _statCard(emoji: '📦', value: '5 item', label: 'STOK KRITIS', badge: '3 HABIS', badgeColor: kRed)),
           ],
         ),
       ],
     );
   }
 
-  Widget _statCard({
-    String? emoji,
-    IconData? icon,
-    required String value,
-    required String label,
-    required String badge,
-    required Color badgeColor,
-  }) {
+  Widget _statCard({String? emoji, IconData? icon, required String value, required String label, required String badge, required Color badgeColor}) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: kWhite,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 3))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              emoji != null
-                  ? Text(emoji, style: const TextStyle(fontSize: 28))
-                  : Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: kBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(icon, color: kBlue, size: 22),
-                    ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: badgeColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  badge,
-                  style: GoogleFonts.lato(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: badgeColor,
-                  ),
-                ),
-              ),
+              emoji != null ? Text(emoji, style: const TextStyle(fontSize: 28)) : Container(width: 36, height: 36, decoration: BoxDecoration(color: kBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: kBlue, size: 22)),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: badgeColor.withOpacity(0.12), borderRadius: BorderRadius.circular(20)), child: Text(badge, style: GoogleFonts.lato(fontSize: 10, fontWeight: FontWeight.w800, color: badgeColor))),
             ],
           ),
           const SizedBox(height: 10),
-          Text(
-            value,
-            style: GoogleFonts.lato(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: kTextDark,
-            ),
-          ),
+          Text(value, style: GoogleFonts.lato(fontSize: 22, fontWeight: FontWeight.w900, color: kTextDark)),
           const SizedBox(height: 4),
-          Text(
-            label,
-            style: GoogleFonts.lato(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: Colors.black38,
-              letterSpacing: 0.5,
-            ),
-          ),
+          Text(label, style: GoogleFonts.lato(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.black38, letterSpacing: 0.5)),
         ],
       ),
     );
@@ -589,33 +403,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
               children: [
                 const Icon(Icons.bar_chart, color: kBlue, size: 20),
                 const SizedBox(width: 8),
-                Text(
-                  'PENDAPATAN MINGGU INI',
-                  style: GoogleFonts.lato(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: kTextDark,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+                Text('PENDAPATAN MINGGU INI', style: GoogleFonts.lato(fontSize: 13, fontWeight: FontWeight.w800, color: kTextDark, letterSpacing: 0.5)),
               ],
             ),
             GestureDetector(
               onTap: () {},
-              child: Row(
-                children: [
-                  Text(
-                    'DETAIL',
-                    style: GoogleFonts.lato(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: kBlue,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.arrow_forward, color: kBlue, size: 14),
-                ],
-              ),
+              child: Row(children: [Text('DETAIL', style: GoogleFonts.lato(fontSize: 12, fontWeight: FontWeight.w700, color: kBlue)), const SizedBox(width: 4), const Icon(Icons.arrow_forward, color: kBlue, size: 14)]),
             ),
           ],
         ),
@@ -623,67 +416,19 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF4A90D9), kBlue],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: kBlue.withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
+          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF4A90D9), kBlue]), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: kBlue.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 6))]),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'TOTAL MINGGU INI',
-                style: GoogleFonts.lato(
-                  fontSize: 11,
-                  color: kWhiteDim,
-                  letterSpacing: 1,
-                ),
-              ),
+              Text('TOTAL MINGGU INI', style: GoogleFonts.lato(fontSize: 11, color: kWhiteDim, letterSpacing: 1)),
               const SizedBox(height: 4),
-              Text(
-                'Rp 18,7 jt',
-                style: GoogleFonts.lato(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: kWhite,
-                ),
-              ),
+              Text('Rp 18,7 jt', style: GoogleFonts.lato(fontSize: 28, fontWeight: FontWeight.w900, color: kWhite)),
               const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.trending_up, color: kGreen, size: 14),
-                  const SizedBox(width: 4),
-                  Text(
-                    '+8.4% vs minggu lalu',
-                    style: GoogleFonts.lato(
-                      fontSize: 12,
-                      color: kGreen,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
+              Row(children: [const Icon(Icons.trending_up, color: kGreen, size: 14), const SizedBox(width: 4), Text('+8.4% vs minggu lalu', style: GoogleFonts.lato(fontSize: 12, color: kGreen, fontWeight: FontWeight.w600))]),
               const SizedBox(height: 20),
               _buildBarChart(),
               const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _chartLegend('☕', 'cafe', '9,2 jt'),
-                  _chartLegend('🎮', 'gaming', '9,2 jt'),
-                  _chartLegend('👤', 'lainnya', '9,2 jt'),
-                ],
-              ),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_chartLegend('☕', 'cafe', '9,2 jt'), _chartLegend('🎮', 'gaming', '9,2 jt'), _chartLegend('👤', 'lainnya', '9,2 jt')]),
             ],
           ),
         ),
@@ -698,32 +443,24 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
       height: 100,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
-        children: List.generate(values.length, (i) {
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  AnimatedContainer(
-                    duration: Duration(milliseconds: 400 + i * 60),
-                    curve: Curves.easeOut,
-                    height: values[i] * 75,
-                    decoration: BoxDecoration(
-                      color: kWhite.withOpacity(i == 4 ? 1.0 : 0.35),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    days[i],
-                    style: GoogleFonts.lato(fontSize: 9, color: kWhiteDim),
-                  ),
-                ],
-              ),
+        children: List.generate(values.length, (i) => Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                AnimatedContainer(
+                  duration: Duration(milliseconds: 400 + i * 60),
+                  curve: Curves.easeOut,
+                  height: values[i] * 75,
+                  decoration: BoxDecoration(color: kWhite.withOpacity(i == 4 ? 1.0 : 0.35), borderRadius: BorderRadius.circular(6)),
+                ),
+                const SizedBox(height: 6),
+                Text(days[i], style: GoogleFonts.lato(fontSize: 9, color: kWhiteDim)),
+              ],
             ),
-          );
-        }),
+          ),
+        )),
       ),
     );
   }
@@ -731,42 +468,16 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
   Widget _chartLegend(String emoji, String label, String value) {
     return Column(
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 13)),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: GoogleFonts.lato(fontSize: 11, color: kWhiteDim),
-            ),
-          ],
-        ),
+        Row(mainAxisSize: MainAxisSize.min, children: [Text(emoji, style: const TextStyle(fontSize: 13)), const SizedBox(width: 4), Text(label, style: GoogleFonts.lato(fontSize: 11, color: kWhiteDim))]),
         const SizedBox(height: 2),
-        Text(
-          value,
-          style: GoogleFonts.lato(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            color: kWhite,
-          ),
-        ),
+        Text(value, style: GoogleFonts.lato(fontSize: 13, fontWeight: FontWeight.w800, color: kWhite)),
       ],
     );
   }
 
   Widget _buildBottomNav() {
     return Container(
-      decoration: BoxDecoration(
-        color: kWhite,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: kWhite, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, -4))]),
       child: SafeArea(
         child: SizedBox(
           height: 64,
@@ -774,12 +485,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
             children: [
               _navItem(0, Icons.home_outlined, Icons.home, 'HOME'),
               _navItem(1, Icons.people_outline, Icons.people, 'KARYAWAN'),
-              _navItem(
-                2,
-                Icons.chat_bubble_outline,
-                Icons.chat_bubble,
-                'ANNOUNCE',
-              ),
+              _navItem(2, Icons.chat_bubble_outline, Icons.chat_bubble, 'ANNOUNCE'),
               _navItem(3, Icons.menu_outlined, Icons.menu, 'MENU'),
               _navItem(4, Icons.bar_chart_outlined, Icons.bar_chart, 'REKAP'),
             ],
@@ -789,13 +495,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  // PERBAIKAN NAVBAR: hitbox lebih besar dengan GestureDetector + Container padding
-  Widget _navItem(
-    int index,
-    IconData outlineIcon,
-    IconData filledIcon,
-    String label,
-  ) {
+  Widget _navItem(int index, IconData outlineIcon, IconData filledIcon, String label) {
     final isSelected = _selectedNav == index;
     return Expanded(
       child: GestureDetector(
@@ -806,20 +506,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                isSelected ? filledIcon : outlineIcon,
-                color: isSelected ? kBlue : Colors.black38,
-                size: 22,
-              ),
+              Icon(isSelected ? filledIcon : outlineIcon, color: isSelected ? kBlue : Colors.black38, size: 22),
               const SizedBox(height: 3),
-              Text(
-                label,
-                style: GoogleFonts.lato(
-                  fontSize: 9,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                  color: isSelected ? kBlue : Colors.black38,
-                ),
-              ),
+              Text(label, style: GoogleFonts.lato(fontSize: 9, fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500, color: isSelected ? kBlue : Colors.black38)),
             ],
           ),
         ),
