@@ -75,7 +75,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
   DateTime     _now = DateTime.now();
 
   late AnimationController _pulseCtrl;
-  late Animation<double>   _pulse;
+  late Animation<double> _pulse;
   late AnimationController _fadeCtrl;
   late Animation<double>   _fadeAnim;
 
