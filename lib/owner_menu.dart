@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'profil_owner.dart';
-import 'notif_icon.dart'; // widget notifikasi reusable
+import 'notif_icon.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -395,6 +397,10 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
     ),
   ];
 
+  // --- tambahan untuk user data ---
+  Map<String, dynamic>? _userData;
+  User? _currentUser;
+
   @override
   void initState() {
     super.initState();
@@ -407,6 +413,23 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
     _scrollCtrl.addListener(
       () => setState(() => _scrollOffset = _scrollCtrl.offset),
     );
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    _currentUser = FirebaseAuth.instance.currentUser;
+    if (_currentUser == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .get();
+      if (doc.exists && mounted) {
+        setState(() {
+          _userData = doc.data();
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -455,10 +478,8 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
     );
   }
 
-  // ─── HEADER (sama persis owner dashboard) ────────────────────────────────
   Widget _buildHeader() {
     final p = _collapseProgress;
-
     final double eSize = 24 - (24 - 14) * p;
     final double xSize = 40 - (40 - 22) * p;
     final double oticSize = 24 - (24 - 14) * p;
@@ -504,11 +525,12 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
           Icons.settings_outlined,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const ProfilOwnerScreen()),
+            MaterialPageRoute(
+                builder: (_) => ProfilOwnerScreen(userData: _userData)),
           ),
         ),
         const SizedBox(width: 6),
-        const NotifIcon(), // widget notifikasi reusable
+        const NotifIcon(),
       ],
     );
 
@@ -517,11 +539,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       height: _headerHeight,
       width: double.infinity,
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF4A90D9), kBlue],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+        gradient: LinearGradient(colors: [Color(0xFF4A90D9), kBlue]),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(20, padTop, 20, padBot),
@@ -541,7 +559,6 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
               ],
             )
           : Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 logoWidget,
                 const SizedBox(width: 8),
@@ -553,11 +570,8 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
     );
   }
 
-  Widget _headerIconBtn(
-    IconData icon, {
-    int badge = 0,
-    required VoidCallback onTap,
-  }) {
+  Widget _headerIconBtn(IconData icon,
+      {int badge = 0, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Stack(
@@ -567,9 +581,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: kWhite.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
+                color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
             child: Icon(icon, color: kWhite, size: 20),
           ),
           if (badge > 0)
@@ -579,18 +591,15 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
               child: Container(
                 width: 16,
                 height: 16,
-                decoration: const BoxDecoration(
-                  color: kRed,
-                  shape: BoxShape.circle,
-                ),
+                decoration:
+                    const BoxDecoration(color: kRed, shape: BoxShape.circle),
                 child: Center(
                   child: Text(
                     '$badge',
                     style: GoogleFonts.lato(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      color: kWhite,
-                    ),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        color: kWhite),
                   ),
                 ),
               ),
@@ -630,10 +639,9 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2)),
                 ],
               ),
               child: Row(
@@ -643,10 +651,9 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                   Text(
                     t.$3,
                     style: GoogleFonts.lato(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: isActive ? kWhite : Colors.black45,
-                    ),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: isActive ? kWhite : Colors.black45),
                   ),
                 ],
               ),
@@ -666,10 +673,9 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: TextField(
@@ -686,11 +692,8 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                     _searchQuery = '';
                     _searchCtrl.clear();
                   }),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.black38,
-                    size: 18,
-                  ),
+                  child:
+                      const Icon(Icons.close, color: Colors.black38, size: 18),
                 )
               : null,
           border: InputBorder.none,
@@ -710,16 +713,12 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20)),
           child: Text(
             '$total item • $tersedia tersedia',
             style: GoogleFonts.lato(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
+                fontSize: 11, fontWeight: FontWeight.w700, color: color),
           ),
         ),
       ],
@@ -737,10 +736,8 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
             children: [
               Icon(Icons.search_off, size: 48, color: Colors.black26),
               const SizedBox(height: 12),
-              Text(
-                'Tidak ada menu',
-                style: GoogleFonts.lato(fontSize: 14, color: Colors.black38),
-              ),
+              Text('Tidak ada menu',
+                  style: GoogleFonts.lato(fontSize: 14, color: Colors.black38)),
             ],
           ),
         ),
@@ -765,10 +762,9 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
         border: isVIP ? Border.all(color: kGold, width: 1.5) : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3)),
         ],
       ),
       child: Row(
@@ -778,17 +774,13 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12)),
             child: Center(
               child: Text(
                 _getInisial(m.inisial),
                 style: GoogleFonts.lato(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: color,
-                ),
+                    fontSize: 14, fontWeight: FontWeight.w900, color: color),
               ),
             ),
           ),
@@ -804,38 +796,32 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                       child: Text(
                         m.nama,
                         style: GoogleFonts.lato(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: isVIP ? kGold : kTextDark,
-                        ),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: isVIP ? kGold : kTextDark),
                       ),
                     ),
                     if (isVIP)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
+                            horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: kGold,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
+                            color: kGold,
+                            borderRadius: BorderRadius.circular(20)),
                         child: Text(
                           'VIP',
                           style: GoogleFonts.lato(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            color: kWhite,
-                          ),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              color: kWhite),
                         ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 3),
-                Text(
-                  m.deskripsi,
-                  style: GoogleFonts.lato(fontSize: 11, color: Colors.black45),
-                ),
+                Text(m.deskripsi,
+                    style:
+                        GoogleFonts.lato(fontSize: 11, color: Colors.black45)),
                 if (m.info != null) ...[
                   const SizedBox(height: 4),
                   Row(
@@ -848,10 +834,9 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                         child: Text(
                           m.info!,
                           style: GoogleFonts.lato(
-                            fontSize: 10,
-                            color: isNoSmoke ? kGreen : Colors.black38,
-                            fontWeight: FontWeight.w600,
-                          ),
+                              fontSize: 10,
+                              color: isNoSmoke ? kGreen : Colors.black38,
+                              fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
@@ -868,25 +853,19 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
               Text(
                 'Rp ${_formatHarga(m.harga)}',
                 style: GoogleFonts.lato(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: color,
-                ),
+                    fontSize: 13, fontWeight: FontWeight.w900, color: color),
               ),
               if (isJam)
-                Text(
-                  '/jam',
-                  style: GoogleFonts.lato(fontSize: 10, color: Colors.black38),
-                ),
+                Text('/jam',
+                    style:
+                        GoogleFonts.lato(fontSize: 10, color: Colors.black38)),
               const SizedBox(height: 6),
               // Toggle tersedia
               GestureDetector(
                 onTap: () => setState(() => m.tersedia = !m.tersedia),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: m.tersedia
                         ? kGreen.withOpacity(0.1)
@@ -896,10 +875,9 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                   child: Text(
                     m.tersedia ? 'TERSEDIA' : 'HABIS',
                     style: GoogleFonts.lato(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: m.tersedia ? kGreen : kRed,
-                    ),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        color: m.tersedia ? kGreen : kRed),
                   ),
                 ),
               ),
@@ -907,16 +885,10 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
               Row(
                 children: [
                   _actionBtn(
-                    Icons.edit_outlined,
-                    kBlue,
-                    () => _showEditDialog(m),
-                  ),
+                      Icons.edit_outlined, kBlue, () => _showEditDialog(m)),
                   const SizedBox(width: 6),
                   _actionBtn(
-                    Icons.delete_outline,
-                    kRed,
-                    () => _showDeleteDialog(m),
-                  ),
+                      Icons.delete_outline, kRed, () => _showDeleteDialog(m)),
                 ],
               ),
             ],
@@ -933,9 +905,8 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8)),
         child: Icon(icon, size: 15, color: color),
       ),
     );
@@ -947,10 +918,8 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       onPressed: () => _showTambahDialog(),
       backgroundColor: _kategoriColor(_selectedKategori),
       icon: const Icon(Icons.add, color: kWhite),
-      label: Text(
-        'Tambah Menu',
-        style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite),
-      ),
+      label: Text('Tambah Menu',
+          style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite)),
     );
   }
 
@@ -993,16 +962,11 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'Tambah Menu',
-            style: GoogleFonts.lato(
-              fontWeight: FontWeight.w900,
-              color: kTextDark,
-            ),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Tambah Menu',
+              style: GoogleFonts.lato(
+                  fontWeight: FontWeight.w900, color: kTextDark)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1010,26 +974,16 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                 _dialogField(namaCtrl, 'Nama Menu', Icons.restaurant_menu),
                 const SizedBox(height: 10),
                 _dialogField(
-                  inisialCtrl,
-                  'Inisial (maks 3 huruf)',
-                  Icons.text_fields,
-                  maxLength: 3,
-                ),
+                    inisialCtrl, 'Inisial (maks 3 huruf)', Icons.text_fields,
+                    maxLength: 3),
                 const SizedBox(height: 10),
-                _dialogField(
-                  hargaCtrl,
-                  'Harga (Rp)',
-                  Icons.attach_money,
-                  isNumber: true,
-                ),
+                _dialogField(hargaCtrl, 'Harga (Rp)', Icons.attach_money,
+                    isNumber: true),
                 const SizedBox(height: 10),
                 _dialogField(deskCtrl, 'Deskripsi', Icons.info_outline),
                 const SizedBox(height: 10),
                 _dialogField(
-                  infoCtrl,
-                  'Info Tambahan (opsional)',
-                  Icons.label_outline,
-                ),
+                    infoCtrl, 'Info Tambahan (opsional)', Icons.label_outline),
                 const SizedBox(height: 10),
                 _dialogDropdown<KategoriMenu>(
                   label: 'Kategori',
@@ -1043,19 +997,14 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Batal',
-                style: GoogleFonts.lato(color: Colors.black45),
-              ),
-            ),
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Batal',
+                    style: GoogleFonts.lato(color: Colors.black45))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: kBlue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+                  backgroundColor: kBlue,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
               onPressed: () {
                 if (namaCtrl.text.isNotEmpty && hargaCtrl.text.isNotEmpty) {
                   final nama = namaCtrl.text.trim();
@@ -1086,13 +1035,9 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                   Navigator.pop(ctx);
                 }
               },
-              child: Text(
-                'Simpan',
-                style: GoogleFonts.lato(
-                  fontWeight: FontWeight.w800,
-                  color: kWhite,
-                ),
-              ),
+              child: Text('Simpan',
+                  style: GoogleFonts.lato(
+                      fontWeight: FontWeight.w800, color: kWhite)),
             ),
           ],
         ),
@@ -1113,16 +1058,11 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'Edit Menu',
-            style: GoogleFonts.lato(
-              fontWeight: FontWeight.w900,
-              color: kTextDark,
-            ),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Edit Menu',
+              style: GoogleFonts.lato(
+                  fontWeight: FontWeight.w900, color: kTextDark)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1130,26 +1070,16 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                 _dialogField(namaCtrl, 'Nama Menu', Icons.restaurant_menu),
                 const SizedBox(height: 10),
                 _dialogField(
-                  inisialCtrl,
-                  'Inisial (maks 3 huruf)',
-                  Icons.text_fields,
-                  maxLength: 3,
-                ),
+                    inisialCtrl, 'Inisial (maks 3 huruf)', Icons.text_fields,
+                    maxLength: 3),
                 const SizedBox(height: 10),
-                _dialogField(
-                  hargaCtrl,
-                  'Harga (Rp)',
-                  Icons.attach_money,
-                  isNumber: true,
-                ),
+                _dialogField(hargaCtrl, 'Harga (Rp)', Icons.attach_money,
+                    isNumber: true),
                 const SizedBox(height: 10),
                 _dialogField(deskCtrl, 'Deskripsi', Icons.info_outline),
                 const SizedBox(height: 10),
                 _dialogField(
-                  infoCtrl,
-                  'Info Tambahan (opsional)',
-                  Icons.label_outline,
-                ),
+                    infoCtrl, 'Info Tambahan (opsional)', Icons.label_outline),
                 const SizedBox(height: 10),
                 _dialogDropdown<KategoriMenu>(
                   label: 'Kategori',
@@ -1163,19 +1093,14 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Batal',
-                style: GoogleFonts.lato(color: Colors.black45),
-              ),
-            ),
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Batal',
+                    style: GoogleFonts.lato(color: Colors.black45))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: kBlue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+                  backgroundColor: kBlue,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
               onPressed: () {
                 setState(() {
                   m.nama = namaCtrl.text.trim();
@@ -1191,13 +1116,9 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                 });
                 Navigator.pop(ctx);
               },
-              child: Text(
-                'Simpan',
-                style: GoogleFonts.lato(
-                  fontWeight: FontWeight.w800,
-                  color: kWhite,
-                ),
-              ),
+              child: Text('Simpan',
+                  style: GoogleFonts.lato(
+                      fontWeight: FontWeight.w800, color: kWhite)),
             ),
           ],
         ),
@@ -1211,55 +1132,39 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Hapus Menu',
-          style: GoogleFonts.lato(
-            fontWeight: FontWeight.w900,
-            color: kTextDark,
-          ),
-        ),
+        title: Text('Hapus Menu',
+            style: GoogleFonts.lato(
+                fontWeight: FontWeight.w900, color: kTextDark)),
         content: RichText(
           text: TextSpan(
             style: GoogleFonts.lato(fontSize: 13, color: Colors.black54),
             children: [
               const TextSpan(text: 'Yakin hapus '),
               TextSpan(
-                text: m.nama,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: kTextDark,
-                ),
-              ),
+                  text: m.nama,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, color: kTextDark)),
               const TextSpan(text: '?'),
             ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Batal',
-              style: GoogleFonts.lato(color: Colors.black45),
-            ),
-          ),
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Batal',
+                  style: GoogleFonts.lato(color: Colors.black45))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: kRed,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+                backgroundColor: kRed,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10))),
             onPressed: () {
               setState(() => _menuList.removeWhere((e) => e.id == m.id));
               Navigator.pop(ctx);
             },
-            child: Text(
-              'Hapus',
-              style: GoogleFonts.lato(
-                fontWeight: FontWeight.w800,
-                color: kWhite,
-              ),
-            ),
+            child: Text('Hapus',
+                style: GoogleFonts.lato(
+                    fontWeight: FontWeight.w800, color: kWhite)),
           ),
         ],
       ),
@@ -1276,9 +1181,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: kBgLight,
-        borderRadius: BorderRadius.circular(12),
-      ),
+          color: kBgLight, borderRadius: BorderRadius.circular(12)),
       child: TextField(
         controller: ctrl,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
@@ -1306,21 +1209,18 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: kBgLight,
-        borderRadius: BorderRadius.circular(12),
-      ),
+          color: kBgLight, borderRadius: BorderRadius.circular(12)),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,
           isExpanded: true,
           style: GoogleFonts.lato(fontSize: 13, color: kTextDark),
           items: items
-              .map(
-                (e) => DropdownMenuItem<T>(
-                  value: e,
-                  child: Text(itemLabel != null ? itemLabel(e) : e.toString()),
-                ),
-              )
+              .map((e) => DropdownMenuItem<T>(
+                    value: e,
+                    child:
+                        Text(itemLabel != null ? itemLabel(e) : e.toString()),
+                  ))
               .toList(),
           onChanged: onChanged,
         ),
