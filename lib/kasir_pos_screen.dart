@@ -8,8 +8,6 @@ const _kpTextMid  = Color(0xFF5B7AAA);
 const _kpBgLight  = Color(0xFFDDE8F8);
 const _kpWhite    = Color(0xFFFFFFFF);
 const _kpGreen    = Color(0xFF27AE60);
-const _kpOrange   = Color(0xFFF5A623);
-const _kpRed      = Color(0xFFE74C3C);
 
 class KasirPosScreen extends StatefulWidget {
   const KasirPosScreen({super.key});

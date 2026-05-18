@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'profil_owner.dart';
-import 'notifikasi_owner.dart';
+import 'notif_icon.dart'; // widget notifikasi reusable
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -235,9 +235,8 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
 
     setState(() => _isDeletingAll = true);
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('pengumuman')
-          .get();
+      final snapshot =
+          await FirebaseFirestore.instance.collection('pengumuman').get();
       final batch = FirebaseFirestore.instance.batch();
       for (var doc in snapshot.docs) {
         batch.delete(doc.reference);
@@ -272,8 +271,8 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     final Color pColor = prioritas == 'Darurat'
         ? kRed
         : prioritas == 'Penting'
-        ? const Color(0xFFFF9800)
-        : kBlue;
+            ? const Color(0xFFFF9800)
+            : kBlue;
     final ts = item['timestamp'];
     String waktu = '';
     if (ts != null && ts is Timestamp) {
@@ -340,8 +339,8 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
                         prioritas == 'Darurat'
                             ? Icons.error_outline
                             : prioritas == 'Penting'
-                            ? Icons.warning_amber_outlined
-                            : Icons.notifications_outlined,
+                                ? Icons.warning_amber_outlined
+                                : Icons.notifications_outlined,
                         color: pColor,
                         size: 28,
                       ),
@@ -571,14 +570,7 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
           ),
         ),
         const SizedBox(width: 6),
-        _headerIconBtn(
-          Icons.notifications_outlined,
-          badge: 3,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NotifikasiOwnerScreen()),
-          ),
-        ),
+        const NotifIcon(), // widget notifikasi reusable
       ],
     );
 
@@ -724,8 +716,8 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
                 child: _sentSuccess
                     ? _successBtn()
                     : _isSending
-                    ? _loadingBtn()
-                    : _sendBtn(),
+                        ? _loadingBtn()
+                        : _sendBtn(),
               ),
             ),
           ],
@@ -910,8 +902,8 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     final Color pColor = prioritas == 'Darurat'
         ? kRed
         : prioritas == 'Penting'
-        ? const Color(0xFFFF9800)
-        : kBlue;
+            ? const Color(0xFFFF9800)
+            : kBlue;
     final ts = item['timestamp'];
     String waktu = '';
     if (ts != null && ts is Timestamp) {
@@ -953,8 +945,8 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
                   prioritas == 'Darurat'
                       ? Icons.error_outline
                       : prioritas == 'Penting'
-                      ? Icons.warning_amber_outlined
-                      : Icons.notifications_outlined,
+                          ? Icons.warning_amber_outlined
+                          : Icons.notifications_outlined,
                   color: pColor,
                   size: 20,
                 ),

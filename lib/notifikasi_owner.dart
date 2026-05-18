@@ -153,6 +153,193 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
     );
   }
 
+  // ========== DETAIL DIALOG (scrollable) ==========
+  void _showDetailDialog(Map<String, dynamic> item) {
+    final prioritas = item['prioritas'] ?? 'Normal';
+    final Color pColor = prioritas == 'Darurat'
+        ? kRed
+        : prioritas == 'Penting'
+            ? const Color(0xFFFF9800)
+            : kBlue;
+    final ts = item['timestamp'] as Timestamp?;
+    String waktu = '';
+    if (ts != null) {
+      final dt = ts.toDate();
+      waktu = DateFormat('d MMM yyyy, HH:mm').format(dt);
+    }
+
+    String pengirim = item['pengirim'] ?? 'owner';
+    if (pengirim.contains('@')) {
+      pengirim = pengirim.split('@').first;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(
+            maxWidth: 400,
+            maxHeight: MediaQuery.of(ctx).size.height * 0.8,
+          ),
+          padding: const EdgeInsets.all(0),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [kWhite, Color(0xFFF8F9FF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                decoration: BoxDecoration(
+                  color: pColor.withOpacity(0.1),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: pColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        prioritas == 'Darurat'
+                            ? Icons.error_outline
+                            : prioritas == 'Penting'
+                                ? Icons.warning_amber_outlined
+                                : Icons.notifications_outlined,
+                        color: pColor,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item['judul'] ?? 'Pengumuman',
+                            style: GoogleFonts.lato(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: kTextDark,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: pColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  prioritas,
+                                  style: GoogleFonts.lato(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      color: pColor),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(Icons.people_outline,
+                                  size: 12, color: Colors.black38),
+                              const SizedBox(width: 4),
+                              Text(item['target'] ?? 'Semua',
+                                  style: GoogleFonts.lato(
+                                      fontSize: 11, color: Colors.black38)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item['isi'] ?? '',
+                          style: GoogleFonts.lato(
+                              fontSize: 14, height: 1.4, color: kTextDark)),
+                      const SizedBox(height: 20),
+                      const Divider(color: Colors.black12),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.person_outline,
+                              size: 14, color: Colors.black38),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text('Pengirim: $pengirim',
+                                style: GoogleFonts.lato(
+                                    fontSize: 11, color: Colors.black45),
+                                softWrap: true),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(Icons.access_time,
+                              size: 12, color: Colors.black38),
+                          const SizedBox(width: 4),
+                          Text(waktu,
+                              style: GoogleFonts.lato(
+                                  fontSize: 11, color: Colors.black45),
+                              softWrap: true),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: TextButton.styleFrom(
+                      foregroundColor: kBlue,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30)),
+                    ),
+                    child: Text('Tutup',
+                        style: GoogleFonts.lato(
+                            fontWeight: FontWeight.w800, fontSize: 13)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -179,7 +366,6 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
     );
   }
 
-  // ─── HEADER ────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     final p = _collapseProgress;
     final double eSize = 24 - (24 - 14) * p;
@@ -288,7 +474,6 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
     );
   }
 
-  // ─── SUMMARY ROW (total pengumuman) ────────────────────────────────────────
   Widget _buildSummaryRow() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('pengumuman').snapshots(),
@@ -340,7 +525,6 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
     );
   }
 
-  // ─── LIST PENGUMUMAN ──────────────────────────────────────────────────────
   Widget _buildPengumumanList() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -378,7 +562,6 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
           );
         }
 
-        // kelompokkan berdasarkan tanggal (hari ini, lebih lama)
         final now = DateTime.now();
         final today = DateTime(now.year, now.month, now.day);
         final todayList = <QueryDocumentSnapshot>[];
@@ -469,99 +652,104 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
         iconData = Icons.notifications_outlined;
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: isUnread ? const Color(0xFFFFF8E1) : kWhite,
-        borderRadius: BorderRadius.circular(16),
-        border: Border(left: BorderSide(color: borderColor, width: 4)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 3))
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                  color: borderColor.withOpacity(0.12), shape: BoxShape.circle),
-              child: Icon(iconData, color: borderColor, size: 22),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          judul,
-                          style: GoogleFonts.lato(
-                            fontSize: 13,
-                            fontWeight:
-                                isUnread ? FontWeight.w800 : FontWeight.w700,
-                            color: borderColor,
+    return GestureDetector(
+      onTap: () => _showDetailDialog(data),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: isUnread ? const Color(0xFFFFF8E1) : kWhite,
+          borderRadius: BorderRadius.circular(16),
+          border: Border(left: BorderSide(color: borderColor, width: 4)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 3))
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                    color: borderColor.withOpacity(0.12),
+                    shape: BoxShape.circle),
+                child: Icon(iconData, color: borderColor, size: 22),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            judul,
+                            style: GoogleFonts.lato(
+                              fontSize: 13,
+                              fontWeight:
+                                  isUnread ? FontWeight.w800 : FontWeight.w700,
+                              color: borderColor,
+                            ),
                           ),
                         ),
-                      ),
-                      if (isUnread)
-                        Container(
-                          width: 8,
-                          height: 8,
-                          margin: const EdgeInsets.only(left: 6, top: 2),
-                          decoration: const BoxDecoration(
-                              color: kBlue, shape: BoxShape.circle),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(isi,
-                      style:
-                          GoogleFonts.lato(fontSize: 11, color: Colors.black54),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.person_outline,
-                          size: 11, color: Colors.black38),
-                      const SizedBox(width: 4),
-                      Text(pengirim,
-                          style: GoogleFonts.lato(
-                              fontSize: 10, color: Colors.black38)),
-                      const SizedBox(width: 12),
-                      const Icon(Icons.access_time,
-                          size: 11, color: Colors.black38),
-                      const SizedBox(width: 4),
-                      Text(waktu,
-                          style: GoogleFonts.lato(
-                              fontSize: 10, color: Colors.black38)),
-                    ],
-                  ),
-                ],
+                        if (isUnread)
+                          Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.only(left: 6, top: 2),
+                            decoration: const BoxDecoration(
+                                color: kBlue, shape: BoxShape.circle),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(isi,
+                        style: GoogleFonts.lato(
+                            fontSize: 11, color: Colors.black54),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.person_outline,
+                            size: 11, color: Colors.black38),
+                        const SizedBox(width: 4),
+                        Text(pengirim,
+                            style: GoogleFonts.lato(
+                                fontSize: 10, color: Colors.black38)),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.access_time,
+                            size: 11, color: Colors.black38),
+                        const SizedBox(width: 4),
+                        Text(waktu,
+                            style: GoogleFonts.lato(
+                                fontSize: 10, color: Colors.black38)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            GestureDetector(
-              onTap: () => _hapusPengumuman(id),
-              child: Container(
-                width: 28,
-                height: 28,
-                margin: const EdgeInsets.only(left: 8),
-                decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.close, size: 15, color: Colors.black38),
+              GestureDetector(
+                onTap: () => _hapusPengumuman(id),
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  margin: const EdgeInsets.only(left: 8),
+                  decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(8)),
+                  child:
+                      const Icon(Icons.close, size: 15, color: Colors.black38),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

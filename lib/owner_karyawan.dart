@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'notifikasi_owner.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'profil_owner.dart';
 import 'owner_kalender.dart';
+import 'notif_icon.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -19,6 +20,9 @@ const kRed = Color(0xFFE53935);
 const kOrange = Color(0xFFFF9800);
 const kPurple = Color(0xFF7C4DFF);
 const kBgLight = Color(0xFFF0F4FF);
+
+// 🔥 GANTI DENGAN API KEY FIREBASE ANDA
+const String _firebaseApiKey = 'AIzaSyC30Vpz3_sU15HsDlqMuEI4ZJKlqHhkSkE';
 
 class OwnerKaryawanScreen extends StatefulWidget {
   const OwnerKaryawanScreen({super.key});
@@ -36,7 +40,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
   DateTime _today = DateTime.now();
   int _refreshKey = 0;
 
-  // Data absensi semua karyawan (uid -> data)
   Map<String, Map<String, dynamic>> _mapAbsensi = {};
   bool _loadingAbsensi = true;
 
@@ -56,9 +59,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _updateToday();
-    }
+    if (state == AppLifecycleState.resumed) _updateToday();
   }
 
   void _updateToday() {
@@ -74,14 +75,11 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     }
   }
 
-  Stream<QuerySnapshot> get _karyawanStream {
-    return FirebaseFirestore.instance
-        .collection('users')
-        .where('role', isEqualTo: 'karyawan')
-        .snapshots();
-  }
+  Stream<QuerySnapshot> get _karyawanStream => FirebaseFirestore.instance
+      .collection('users')
+      .where('role', isEqualTo: 'karyawan')
+      .snapshots();
 
-  // Load absensi semua karyawan untuk hari ini (sekali jalan)
   Future<void> _loadAllAbsensi(List<QueryDocumentSnapshot> karyawanDocs) async {
     if (karyawanDocs.isEmpty) {
       setState(() => _loadingAbsensi = false);
@@ -89,7 +87,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     }
     final todayTimestamp = Timestamp.fromDate(_today);
     final Map<String, Map<String, dynamic>> temp = {};
-
     for (var doc in karyawanDocs) {
       final uid = doc.id;
       final snapshot = await FirebaseFirestore.instance
@@ -113,27 +110,22 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         temp[uid] = {'status': 'belum', 'checkIn': null, 'hasCheckIn': false};
       }
     }
-    if (mounted) {
+    if (mounted)
       setState(() {
         _mapAbsensi = temp;
         _loadingAbsensi = false;
       });
-    }
   }
 
   Future<Map<String, int>> _getRingkasan(
-    List<QueryDocumentSnapshot> docs,
-  ) async {
-    int total = docs.length;
-    int hadir = 0;
-    int belum = 0;
+      List<QueryDocumentSnapshot> docs) async {
+    int total = docs.length, hadir = 0, belum = 0;
     for (var doc in docs) {
       final data = _mapAbsensi[doc.id];
-      if (data != null && data['hasCheckIn'] == true) {
+      if (data != null && data['hasCheckIn'] == true)
         hadir++;
-      } else {
+      else
         belum++;
-      }
     }
     return {'total': total, 'hadir': hadir, 'belum': belum};
   }
@@ -153,17 +145,14 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
           children: [
             _buildHeader(),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: _buildSummaryRow(),
-            ),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: _buildSummaryRow()),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: _buildSearchBar(),
-            ),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: _buildSearchBar()),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: _buildTabBar(),
-            ),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: _buildTabBar()),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 key: ValueKey(_refreshKey),
@@ -172,43 +161,33 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  if (snapshot.hasError) {
+                  if (snapshot.hasError)
                     return Center(child: Text('Error: ${snapshot.error}'));
-                  }
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return const Center(
                       child: Padding(
                         padding: EdgeInsets.symmetric(vertical: 40),
                         child: Column(
                           children: [
-                            Icon(
-                              Icons.people_outline,
-                              size: 48,
-                              color: Colors.black26,
-                            ),
+                            Icon(Icons.people_outline,
+                                size: 48, color: Colors.black26),
                             SizedBox(height: 12),
-                            Text(
-                              'Belum ada karyawan',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.black38,
-                              ),
-                            ),
+                            Text('Belum ada karyawan',
+                                style: TextStyle(
+                                    fontSize: 14, color: Colors.black38)),
                           ],
                         ),
                       ),
                     );
                   }
                   final docs = snapshot.data!.docs;
-                  if (_mapAbsensi.isEmpty && _loadingAbsensi) {
+                  if (_mapAbsensi.isEmpty && _loadingAbsensi)
                     _loadAllAbsensi(docs);
-                  }
                   final filtered = docs.where((doc) {
                     final data = doc.data() as Map<String, dynamic>;
                     final nama = data['nama']?.toLowerCase() ?? '';
                     final jabatan = data['jabatan']?.toLowerCase() ?? '';
-                    final matchSearch =
-                        _searchQuery.isEmpty ||
+                    final matchSearch = _searchQuery.isEmpty ||
                         nama.contains(_searchQuery.toLowerCase()) ||
                         jabatan.contains(_searchQuery.toLowerCase());
                     if (!matchSearch) return false;
@@ -223,23 +202,16 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                     return const Center(
                       child: Padding(
                         padding: EdgeInsets.symmetric(vertical: 40),
-                        child: Text(
-                          'Tidak ditemukan',
-                          style: TextStyle(fontSize: 14, color: Colors.black38),
-                        ),
+                        child: Text('Tidak ditemukan',
+                            style:
+                                TextStyle(fontSize: 14, color: Colors.black38)),
                       ),
                     );
                   }
-                  if (_loadingAbsensi) {
+                  if (_loadingAbsensi)
                     return const Center(child: CircularProgressIndicator());
-                  }
                   return ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(
-                      16,
-                      0,
-                      16,
-                      80,
-                    ), // padding bottom lebih besar agar tidak tertutup FAB
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
                     itemCount: filtered.length,
                     itemBuilder: (context, index) {
                       final doc = filtered[index];
@@ -271,25 +243,24 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               style: GoogleFonts.playfairDisplay(color: kWhite, height: 1.0),
               children: const [
                 TextSpan(
-                  text: 'E',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w400),
-                ),
+                    text: 'E',
+                    style:
+                        TextStyle(fontSize: 24, fontWeight: FontWeight.w400)),
                 TextSpan(
-                  text: 'X',
-                  style: TextStyle(fontSize: 40, fontWeight: FontWeight.w700),
-                ),
+                    text: 'X',
+                    style:
+                        TextStyle(fontSize: 40, fontWeight: FontWeight.w700)),
                 TextSpan(
-                  text: 'OTIC',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w400),
-                ),
+                    text: 'OTIC',
+                    style:
+                        TextStyle(fontSize: 24, fontWeight: FontWeight.w400)),
               ],
             ),
           ),
           const SizedBox(width: 8),
-          const Text(
-            'GAMING & CAFE',
-            style: TextStyle(fontSize: 11, color: kWhiteDim, letterSpacing: 3),
-          ),
+          const Text('GAMING & CAFE',
+              style:
+                  TextStyle(fontSize: 11, color: kWhiteDim, letterSpacing: 3)),
           const Spacer(),
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -297,21 +268,12 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               _headerIconBtn(
                 Icons.settings_outlined,
                 onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfilOwnerScreen()),
-                ),
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ProfilOwnerScreen())),
               ),
               const SizedBox(width: 6),
-              _headerIconBtn(
-                Icons.notifications_outlined,
-                badge: 3,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const NotifikasiOwnerScreen(),
-                  ),
-                ),
-              ),
+              const NotifIcon(),
             ],
           ),
         ],
@@ -319,11 +281,8 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     );
   }
 
-  Widget _headerIconBtn(
-    IconData icon, {
-    int badge = 0,
-    required VoidCallback onTap,
-  }) {
+  Widget _headerIconBtn(IconData icon,
+      {int badge = 0, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Stack(
@@ -333,9 +292,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: kWhite.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
+                color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
             child: Icon(icon, color: kWhite, size: 20),
           ),
           if (badge > 0)
@@ -345,19 +302,14 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               child: Container(
                 width: 16,
                 height: 16,
-                decoration: const BoxDecoration(
-                  color: kRed,
-                  shape: BoxShape.circle,
-                ),
+                decoration:
+                    const BoxDecoration(color: kRed, shape: BoxShape.circle),
                 child: Center(
-                  child: Text(
-                    '$badge',
-                    style: GoogleFonts.lato(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      color: kWhite,
-                    ),
-                  ),
+                  child: Text('$badge',
+                      style: GoogleFonts.lato(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          color: kWhite)),
                 ),
               ),
             ),
@@ -380,39 +332,23 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
             if (sumSnap.connectionState != ConnectionState.done ||
                 _loadingAbsensi) {
               return const SizedBox(
-                height: 80,
-                child: Center(child: CircularProgressIndicator()),
-              );
+                  height: 80,
+                  child: Center(child: CircularProgressIndicator()));
             }
             final data = sumSnap.data ?? {'total': 0, 'hadir': 0, 'belum': 0};
             return Row(
               children: [
                 Expanded(
-                  child: _summaryCard(
-                    'TOTAL',
-                    data['total'].toString(),
-                    Icons.people,
-                    kBlue,
-                  ),
-                ),
+                    child: _summaryCard('TOTAL', data['total'].toString(),
+                        Icons.people, kBlue)),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: _summaryCard(
-                    'HADIR',
-                    data['hadir'].toString(),
-                    Icons.check_circle,
-                    kGreen,
-                  ),
-                ),
+                    child: _summaryCard('HADIR', data['hadir'].toString(),
+                        Icons.check_circle, kGreen)),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: _summaryCard(
-                    'BELUM HADIR',
-                    data['belum'].toString(),
-                    Icons.hourglass_empty,
-                    kOrange,
-                  ),
-                ),
+                    child: _summaryCard('BELUM HADIR', data['belum'].toString(),
+                        Icons.hourglass_empty, kOrange)),
               ],
             );
           },
@@ -429,33 +365,24 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 3)),
         ],
       ),
       child: Column(
         children: [
           Icon(icon, color: color, size: 22),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: GoogleFonts.lato(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: kTextDark,
-            ),
-          ),
+          Text(value,
+              style: GoogleFonts.lato(
+                  fontSize: 20, fontWeight: FontWeight.w900, color: kTextDark)),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: GoogleFonts.lato(
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              color: Colors.black38,
-            ),
-          ),
+          Text(label,
+              style: GoogleFonts.lato(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black38)),
         ],
       ),
     );
@@ -469,10 +396,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: TextField(
@@ -489,11 +415,8 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                     _searchQuery = '';
                     _searchCtrl.clear();
                   }),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.black38,
-                    size: 18,
-                  ),
+                  child:
+                      const Icon(Icons.close, color: Colors.black38, size: 18),
                 )
               : null,
           border: InputBorder.none,
@@ -519,10 +442,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2)),
                 ],
               ),
               child: Text(
@@ -542,9 +464,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
   }
 
   Widget _karyawanCard(
-    QueryDocumentSnapshot doc,
-    Map<String, dynamic>? absenData,
-  ) {
+      QueryDocumentSnapshot doc, Map<String, dynamic>? absenData) {
     final data = doc.data() as Map<String, dynamic>;
     final uid = doc.id;
     final nama = data['nama'] ?? 'Tanpa Nama';
@@ -589,10 +509,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3)),
         ],
       ),
       child: Row(
@@ -606,41 +525,30 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               border: Border.all(color: statusColor.withOpacity(0.5), width: 2),
             ),
             child: Center(
-              child: Text(
-                avatar,
-                style: GoogleFonts.lato(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: kBlue,
-                ),
-              ),
-            ),
+                child: Text(avatar,
+                    style: GoogleFonts.lato(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: kBlue))),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  nama,
-                  style: GoogleFonts.lato(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: kTextDark,
-                  ),
-                ),
+                Text(nama,
+                    style: GoogleFonts.lato(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: kTextDark)),
                 const SizedBox(height: 3),
                 Row(
                   children: [
                     Icon(Icons.work_outline, size: 11, color: Colors.black38),
                     const SizedBox(width: 4),
-                    Text(
-                      jabatan,
-                      style: GoogleFonts.lato(
-                        fontSize: 11,
-                        color: Colors.black45,
-                      ),
-                    ),
+                    Text(jabatan,
+                        style: GoogleFonts.lato(
+                            fontSize: 11, color: Colors.black45)),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -648,14 +556,11 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                   children: [
                     Icon(statusIcon, size: 12, color: statusColor),
                     const SizedBox(width: 4),
-                    Text(
-                      statusText,
-                      style: GoogleFonts.lato(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: statusColor,
-                      ),
-                    ),
+                    Text(statusText,
+                        style: GoogleFonts.lato(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: statusColor)),
                   ],
                 ),
               ],
@@ -667,28 +572,19 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               Row(
                 children: [
                   _actionBtn(
-                    Icons.calendar_month,
-                    kBlue,
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            OwnerKalenderScreen(uid: uid, nama: nama),
-                      ),
-                    ),
-                  ),
+                      Icons.calendar_month,
+                      kBlue,
+                      () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  OwnerKalenderScreen(uid: uid, nama: nama)))),
                   const SizedBox(width: 6),
-                  _actionBtn(
-                    Icons.edit_outlined,
-                    kBlue,
-                    () => _showEditDialog(uid, data),
-                  ),
+                  _actionBtn(Icons.edit_outlined, kBlue,
+                      () => _showEditDialog(uid, data)),
                   const SizedBox(width: 6),
-                  _actionBtn(
-                    Icons.delete_outline,
-                    kRed,
-                    () => _showDeleteDialog(uid, nama),
-                  ),
+                  _actionBtn(Icons.delete_outline, kRed,
+                      () => _showDeleteDialog(uid, nama)),
                 ],
               ),
             ],
@@ -705,9 +601,8 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         width: 30,
         height: 30,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8)),
         child: Icon(icon, size: 16, color: color),
       ),
     );
@@ -718,15 +613,13 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       onPressed: _showTambahDialog,
       backgroundColor: kBlue,
       icon: const Icon(Icons.person_add, color: kWhite),
-      label: Text(
-        'Tambah',
-        style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite),
-      ),
+      label: Text('Tambah',
+          style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite)),
     );
   }
 
   // =========================================================================
-  // TAMBAH KARYAWAN
+  // TAMBAH KARYAWAN (REST API, tidak mengubah session)
   // =========================================================================
   void _showTambahDialog() {
     final emailCtrl = TextEditingController();
@@ -745,20 +638,15 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         builder: (ctx, setDlg) => AlertDialog(
           backgroundColor: kWhite,
           surfaceTintColor: kWhite,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
               Icon(Icons.person_add, color: kBlue),
               const SizedBox(width: 10),
-              Text(
-                'Tambah Karyawan',
-                style: GoogleFonts.lato(
-                  fontWeight: FontWeight.w900,
-                  color: kTextDark,
-                ),
-              ),
+              Text('Tambah Karyawan',
+                  style: GoogleFonts.lato(
+                      fontWeight: FontWeight.w900, color: kTextDark)),
             ],
           ),
           content: SizedBox(
@@ -768,34 +656,24 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'INFORMASI AKUN',
-                    style: GoogleFonts.lato(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: kTextDark,
-                    ),
-                  ),
+                  Text('INFORMASI AKUN',
+                      style: GoogleFonts.lato(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: kTextDark)),
                   const SizedBox(height: 10),
                   _dialogField(namaCtrl, 'Nama Lengkap', Icons.person_outline),
                   const SizedBox(height: 12),
                   _dialogField(usernameCtrl, 'Username', Icons.alternate_email),
                   const SizedBox(height: 12),
-                  _dialogField(
-                    emailCtrl,
-                    'Email',
-                    Icons.email_outlined,
-                    keyboardType: TextInputType.emailAddress,
-                  ),
+                  _dialogField(emailCtrl, 'Email', Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress),
                   const SizedBox(height: 16),
-                  Text(
-                    'KEAMANAN',
-                    style: GoogleFonts.lato(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: kTextDark,
-                    ),
-                  ),
+                  Text('KEAMANAN',
+                      style: GoogleFonts.lato(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: kTextDark)),
                   const SizedBox(height: 10),
                   _dialogField(
                     passwordCtrl,
@@ -804,9 +682,8 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                     obscure: obscurePass,
                     suffix: IconButton(
                       icon: Icon(
-                        obscurePass ? Icons.visibility_off : Icons.visibility,
-                        size: 18,
-                      ),
+                          obscurePass ? Icons.visibility_off : Icons.visibility,
+                          size: 18),
                       onPressed: () => setDlg(() => obscurePass = !obscurePass),
                     ),
                   ),
@@ -818,39 +695,32 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                     obscure: obscureKonfirmasi,
                     suffix: IconButton(
                       icon: Icon(
-                        obscureKonfirmasi
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        size: 18,
-                      ),
+                          obscureKonfirmasi
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          size: 18),
                       onPressed: () =>
                           setDlg(() => obscureKonfirmasi = !obscureKonfirmasi),
                     ),
                   ),
                   if (isLoading)
                     const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
+                        padding: EdgeInsets.all(8),
+                        child: Center(child: CircularProgressIndicator())),
                 ],
               ),
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Batal',
-                style: GoogleFonts.lato(color: Colors.black45),
-              ),
-            ),
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Batal',
+                    style: GoogleFonts.lato(color: Colors.black45))),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: kBlue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+                  backgroundColor: kBlue,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
               onPressed: isLoading
                   ? null
                   : () async {
@@ -864,79 +734,80 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                           email.isEmpty ||
                           password.isEmpty ||
                           konfirmasi.isEmpty) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
+                        ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
                             content: Text('Semua field wajib diisi'),
-                            backgroundColor: kRed,
-                          ),
-                        );
+                            backgroundColor: kRed));
                         return;
                       }
                       if (password != konfirmasi) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
+                        ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
                             content: Text('Password tidak cocok'),
-                            backgroundColor: kRed,
-                          ),
-                        );
+                            backgroundColor: kRed));
                         return;
                       }
                       if (password.length < 6) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
+                        ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
                             content: Text('Password minimal 6 karakter'),
-                            backgroundColor: kRed,
-                          ),
-                        );
+                            backgroundColor: kRed));
                         return;
                       }
                       setDlg(() => isLoading = true);
+
                       try {
-                        UserCredential userCredential = await FirebaseAuth
-                            .instance
-                            .createUserWithEmailAndPassword(
-                              email: email,
-                              password: password,
-                            );
-                        String uid = userCredential.user!.uid;
+                        // 🔥 Buat akun menggunakan Firebase REST API (tidak mengubah session)
+                        final url = Uri.parse(
+                            'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$_firebaseApiKey');
+                        final response = await http.post(
+                          url,
+                          body: jsonEncode({
+                            'email': email,
+                            'password': password,
+                            'returnSecureToken': false,
+                          }),
+                          headers: {'Content-Type': 'application/json'},
+                        );
+
+                        if (response.statusCode != 200) {
+                          final error =
+                              jsonDecode(response.body)['error']['message'];
+                          throw Exception('Gagal membuat akun: $error');
+                        }
+
+                        final data = jsonDecode(response.body);
+                        final uid = data['localId'];
+
+                        // Simpan data karyawan ke Firestore
                         await FirebaseFirestore.instance
                             .collection('users')
                             .doc(uid)
                             .set({
-                              'nama': nama,
-                              'username': username,
-                              'email': email,
-                              'role': 'karyawan',
-                              'jabatan': null,
-                              'createdAt': FieldValue.serverTimestamp(),
-                            });
+                          'nama': nama,
+                          'username': username,
+                          'email': email,
+                          'role': 'karyawan',
+                          'jabatan': null,
+                          'createdAt': FieldValue.serverTimestamp(),
+                        });
+
                         if (ctx.mounted) Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Karyawan berhasil ditambahkan'),
-                            backgroundColor: kGreen,
-                          ),
-                        );
+                            const SnackBar(
+                                content: Text('Karyawan berhasil ditambahkan'),
+                                backgroundColor: kGreen));
+                        setState(() {}); // refresh daftar karyawan
                       } catch (e) {
-                        String msg = e is FirebaseAuthException
-                            ? (e.code == 'email-already-in-use'
-                                  ? 'Email sudah digunakan'
-                                  : 'Gagal: ${e.message}')
-                            : 'Terjadi kesalahan: $e';
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(content: Text(msg), backgroundColor: kRed),
-                        );
+                        String msg = e.toString().contains('EMAIL_EXISTS')
+                            ? 'Email sudah digunakan'
+                            : 'Gagal: $e';
+                        ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                            content: Text(msg), backgroundColor: kRed));
                         setDlg(() => isLoading = false);
                       }
                     },
               icon: const Icon(Icons.person_add, color: kWhite, size: 18),
-              label: Text(
-                'Buat Akun',
-                style: GoogleFonts.lato(
-                  fontWeight: FontWeight.w800,
-                  color: kWhite,
-                ),
-              ),
+              label: Text('Buat Akun',
+                  style: GoogleFonts.lato(
+                      fontWeight: FontWeight.w800, color: kWhite)),
             ),
           ],
         ),
@@ -960,48 +831,40 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         builder: (ctx, setDlg) => AlertDialog(
           backgroundColor: kWhite,
           surfaceTintColor: kWhite,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'Edit Karyawan',
-            style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Edit Karyawan',
+              style: GoogleFonts.lato(
+                  fontWeight: FontWeight.w900, color: kTextDark)),
           content: SizedBox(
             width: MediaQuery.of(ctx).size.width,
             child: SingleChildScrollView(
               child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _dialogField(namaCtrl, 'Nama Lengkap', Icons.person_outline),
-                const SizedBox(height: 12),
-                _dialogField(usernameCtrl, 'Username', Icons.alternate_email),
-                const SizedBox(height: 12),
-                _dialogField(jabatanCtrl, 'Jabatan', Icons.work_outline),
-                if (isLoading)
-                  const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: CircularProgressIndicator(),
-                  ),
-              ],
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _dialogField(namaCtrl, 'Nama Lengkap', Icons.person_outline),
+                  const SizedBox(height: 12),
+                  _dialogField(usernameCtrl, 'Username', Icons.alternate_email),
+                  const SizedBox(height: 12),
+                  _dialogField(jabatanCtrl, 'Jabatan', Icons.work_outline),
+                  if (isLoading)
+                    const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator()),
+                ],
+              ),
             ),
-          ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Batal',
-                style: GoogleFonts.lato(color: Colors.black45),
-              ),
-            ),
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Batal',
+                    style: GoogleFonts.lato(color: Colors.black45))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: kBlue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+                  backgroundColor: kBlue,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
               onPressed: isLoading
                   ? null
                   : () async {
@@ -1011,36 +874,27 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                             .collection('users')
                             .doc(uid)
                             .update({
-                              'nama': namaCtrl.text.trim(),
-                              'username': usernameCtrl.text.trim(),
-                              'jabatan': jabatanCtrl.text.trim().isEmpty
-                                  ? null
-                                  : jabatanCtrl.text.trim(),
-                            });
+                          'nama': namaCtrl.text.trim(),
+                          'username': usernameCtrl.text.trim(),
+                          'jabatan': jabatanCtrl.text.trim().isEmpty
+                              ? null
+                              : jabatanCtrl.text.trim(),
+                        });
                         if (ctx.mounted) Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Data karyawan diperbarui'),
-                            backgroundColor: kGreen,
-                          ),
-                        );
+                            const SnackBar(
+                                content: Text('Data karyawan diperbarui'),
+                                backgroundColor: kGreen));
                       } catch (e) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(
+                        ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                             content: Text('Gagal update: $e'),
-                            backgroundColor: kRed,
-                          ),
-                        );
+                            backgroundColor: kRed));
                         setDlg(() => isLoading = false);
                       }
                     },
-              child: Text(
-                'Simpan',
-                style: GoogleFonts.lato(
-                  fontWeight: FontWeight.w800,
-                  color: kWhite,
-                ),
-              ),
+              child: Text('Simpan',
+                  style: GoogleFonts.lato(
+                      fontWeight: FontWeight.w800, color: kWhite)),
             ),
           ],
         ),
@@ -1058,37 +912,30 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         backgroundColor: kWhite,
         surfaceTintColor: kWhite,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Hapus Karyawan',
-          style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark),
-        ),
+        title: Text('Hapus Karyawan',
+            style: GoogleFonts.lato(
+                fontWeight: FontWeight.w900, color: kTextDark)),
         content: SizedBox(
           width: MediaQuery.of(ctx).size.width,
           child: RichText(
-          text: TextSpan(
-            style: GoogleFonts.lato(fontSize: 13, color: Colors.black54),
-            children: [
-              const TextSpan(text: 'Yakin hapus '),
-              TextSpan(
-                text: nama,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: kTextDark,
-                ),
-              ),
-              const TextSpan(text: '?'),
-            ],
+            text: TextSpan(
+              style: GoogleFonts.lato(fontSize: 13, color: Colors.black54),
+              children: [
+                const TextSpan(text: 'Yakin hapus '),
+                TextSpan(
+                    text: nama,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, color: kTextDark)),
+                const TextSpan(text: '?'),
+              ],
+            ),
           ),
-        ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Batal',
-              style: GoogleFonts.lato(color: Colors.black45),
-            ),
-          ),
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Batal',
+                  style: GoogleFonts.lato(color: Colors.black45))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: kRed),
             onPressed: () async {
@@ -1097,20 +944,12 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                   .doc(uid)
                   .delete();
               if (ctx.mounted) Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Karyawan dihapus'),
-                  backgroundColor: kRed,
-                ),
-              );
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Karyawan dihapus'), backgroundColor: kRed));
             },
-            child: Text(
-              'Hapus',
-              style: GoogleFonts.lato(
-                fontWeight: FontWeight.w800,
-                color: kWhite,
-              ),
-            ),
+            child: Text('Hapus',
+                style: GoogleFonts.lato(
+                    fontWeight: FontWeight.w800, color: kWhite)),
           ),
         ],
       ),
@@ -1120,19 +959,13 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
   // =========================================================================
   // FIELD FORM
   // =========================================================================
-  Widget _dialogField(
-    TextEditingController ctrl,
-    String hint,
-    IconData icon, {
-    bool obscure = false,
-    TextInputType keyboardType = TextInputType.text,
-    Widget? suffix,
-  }) {
+  Widget _dialogField(TextEditingController ctrl, String hint, IconData icon,
+      {bool obscure = false,
+      TextInputType keyboardType = TextInputType.text,
+      Widget? suffix}) {
     return Container(
       decoration: BoxDecoration(
-        color: kBgLight,
-        borderRadius: BorderRadius.circular(12),
-      ),
+          color: kBgLight, borderRadius: BorderRadius.circular(12)),
       child: TextField(
         controller: ctrl,
         obscureText: obscure,

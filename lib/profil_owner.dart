@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login.dart';
 
-// Warna konsisten dengan tema
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
 const kYellow = Color(0xFFF5C842);
@@ -40,11 +39,11 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
       _headerExpanded -
       (_headerExpanded - _headerCollapsed) * _collapseProgress;
   Map<String, dynamic>? _userData;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _userData = widget.userData;
     _fadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -54,6 +53,35 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
     _scrollCtrl.addListener(
       () => setState(() => _scrollOffset = _scrollCtrl.offset),
     );
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    // Jika data dikirim dari parameter, gunakan langsung
+    if (widget.userData != null) {
+      setState(() {
+        _userData = widget.userData;
+        _isLoading = false;
+      });
+      return;
+    }
+    // Jika tidak, ambil dari Firestore
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (doc.exists && mounted) {
+        setState(() {
+          _userData = doc.data();
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -77,7 +105,15 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildOwnerCard(),
+                  if (_isLoading)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: CircularProgressIndicator(color: kBlue),
+                      ),
+                    )
+                  else
+                    _buildOwnerCard(),
                   const SizedBox(height: 20),
                   _sectionLabel('AKUN'),
                   const SizedBox(height: 10),
@@ -94,15 +130,7 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
                         ),
                       );
                       if (result == true) {
-                        final uid = FirebaseAuth.instance.currentUser?.uid;
-                        if (uid != null) {
-                          final doc = await FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(uid)
-                              .get();
-                          if (doc.exists && mounted)
-                            setState(() => _userData = doc.data());
-                        }
+                        await _loadData(); // refresh data setelah edit
                       }
                     },
                   ),
@@ -129,7 +157,9 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
                     subtitle: 'Kelola profil toko',
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const InfoTokoScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const InfoTokoScreen(),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -212,36 +242,35 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
   }
 
   Widget _backBtn() => GestureDetector(
-    onTap: () => Navigator.pop(context),
-    child: Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: kWhite.withOpacity(0.2),
-        shape: BoxShape.circle,
-      ),
-      child: const Icon(Icons.arrow_back_ios_new, color: kWhite, size: 16),
-    ),
-  );
+        onTap: () => Navigator.pop(context),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: kWhite.withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.arrow_back_ios_new, color: kWhite, size: 16),
+        ),
+      );
 
   Widget _chip(String label) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-    decoration: BoxDecoration(
-      color: kWhite.withOpacity(0.2),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Text(
-      label,
-      style: GoogleFonts.lato(
-        fontSize: 9,
-        fontWeight: FontWeight.w900,
-        color: kWhite,
-        letterSpacing: 0.8,
-      ),
-    ),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: kWhite.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.lato(
+            fontSize: 9,
+            fontWeight: FontWeight.w900,
+            color: kWhite,
+            letterSpacing: 0.8,
+          ),
+        ),
+      );
 
-  // Kartu profil owner (foto statis)
   Widget _buildOwnerCard() {
     final nama = _userData?['nama'] ?? 'Owner';
     final username = _userData?['username'] ?? 'username';
@@ -320,23 +349,23 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
   }
 
   Widget _sectionLabel(String label) => Row(
-    children: [
-      Expanded(child: Divider(color: Colors.black12, thickness: 1)),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Text(
-          label,
-          style: GoogleFonts.lato(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: Colors.black38,
-            letterSpacing: 0.8,
+        children: [
+          Expanded(child: Divider(color: Colors.black12, thickness: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(
+              label,
+              style: GoogleFonts.lato(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.black38,
+                letterSpacing: 0.8,
+              ),
+            ),
           ),
-        ),
-      ),
-      Expanded(child: Divider(color: Colors.black12, thickness: 1)),
-    ],
-  );
+          Expanded(child: Divider(color: Colors.black12, thickness: 1)),
+        ],
+      );
 
   Widget _menuItem({
     required IconData icon,
@@ -403,106 +432,146 @@ class _ProfilOwnerScreenState extends State<ProfilOwnerScreen>
   }
 
   Widget _buildLogoutButton() {
-    final nama = _userData?['nama'] ?? 'Owner';
-    final role = _userData?['role'] ?? 'owner';
     return GestureDetector(
       onTap: () => showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
+        builder: (ctx) => Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
           ),
-          title: Text(
-            'Keluar dari Akun',
-            style: GoogleFonts.lato(
-              fontWeight: FontWeight.w900,
-              color: kTextDark,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: kWhite,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: kBlue.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: kRed.withOpacity(0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.logout_rounded, color: kRed, size: 36),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: kYellow.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '$nama — ${role.toUpperCase()}',
-                  style: GoogleFonts.lato(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: kGold,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: kBlue.withOpacity(0.05),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: kBlue.withOpacity(0.1), width: 4),
+                  ),
+                  child: const Icon(
+                    Icons.power_settings_new_rounded,
+                    color: kBlue,
+                    size: 40,
                   ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Yakin ingin keluar dari akun?',
-                style: GoogleFonts.lato(fontSize: 13, color: Colors.black54),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Batal',
-                style: GoogleFonts.lato(color: Colors.black45),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: kRed),
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                if (ctx.mounted)
-                  Navigator.of(ctx).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-              },
-              child: Text(
-                'KELUAR',
-                style: GoogleFonts.lato(
-                  fontWeight: FontWeight.w800,
-                  color: kWhite,
+                const SizedBox(height: 20),
+                Text(
+                  'Konfirmasi Keluar',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.lato(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: kTextDark,
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 12),
+                Text(
+                  'Apakah Anda yakin ingin mengakhiri sesi dan keluar dari akun?',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.lato(
+                    fontSize: 14,
+                    color: Colors.black54,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Batal',
+                          style: GoogleFonts.lato(
+                            color: Colors.black38,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await FirebaseAuth.instance.signOut();
+                          if (ctx.mounted) {
+                            Navigator.of(ctx).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (_) => const LoginScreen(),
+                              ),
+                              (route) => false,
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kRed,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Keluar',
+                          style: GoogleFonts.lato(
+                            color: kWhite,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: kRed.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: kRed.withOpacity(0.2)),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: kRed.withOpacity(0.15), width: 1.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.logout_rounded, color: kRed, size: 20),
-            const SizedBox(width: 10),
+            const Icon(Icons.logout_rounded, color: kRed, size: 22),
+            const SizedBox(width: 12),
             Text(
               'KELUAR DARI AKUN',
               style: GoogleFonts.lato(
                 color: kRed,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w900,
                 fontSize: 14,
+                letterSpacing: 1.2,
               ),
             ),
           ],
@@ -738,23 +807,23 @@ class _EditProfilScreenState extends State<EditProfilScreen>
   }
 
   Widget _sectionLabel(String label) => Row(
-    children: [
-      Expanded(child: Divider(color: Colors.black12, thickness: 1)),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Text(
-          label,
-          style: GoogleFonts.lato(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: Colors.black38,
-            letterSpacing: 0.8,
+        children: [
+          Expanded(child: Divider(color: Colors.black12, thickness: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(
+              label,
+              style: GoogleFonts.lato(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.black38,
+                letterSpacing: 0.8,
+              ),
+            ),
           ),
-        ),
-      ),
-      Expanded(child: Divider(color: Colors.black12, thickness: 1)),
-    ],
-  );
+          Expanded(child: Divider(color: Colors.black12, thickness: 1)),
+        ],
+      );
 
   Widget _buildField({
     required IconData icon,
@@ -965,8 +1034,8 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
         e.code == 'wrong-password'
             ? 'Password lama salah'
             : e.code == 'weak-password'
-            ? 'Password baru terlalu lemah'
-            : e.message ?? 'Gagal mengubah password',
+                ? 'Password baru terlalu lemah'
+                : e.message ?? 'Gagal mengubah password',
         kRed,
       );
     } catch (e) {
@@ -1018,7 +1087,6 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
                     ctrl: _newPassCtrl,
                     show: _showNew,
                     onToggle: () => setState(() => _showNew = !_showNew),
-                    accentColor: kBlue,
                   ),
                   const SizedBox(height: 12),
                   _buildPasswordField(
@@ -1028,7 +1096,6 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
                     show: _showConfirm,
                     onToggle: () =>
                         setState(() => _showConfirm = !_showConfirm),
-                    accentColor: kGreen,
                   ),
                   const SizedBox(height: 10),
                   _buildPasswordRules(),
@@ -1127,98 +1194,98 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
   }
 
   Widget _buildInfoCard() => Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: kOrange.withOpacity(0.07),
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: kOrange.withOpacity(0.2)),
-    ),
-    child: Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: kOrange.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(Icons.info_outline, color: kOrange, size: 20),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: kBlue.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: kBlue.withOpacity(0.2)),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            'Untuk keamanan, masukkan password lama Anda terlebih dahulu sebelum mengubah password baru.',
-            style: GoogleFonts.lato(
-              fontSize: 11,
-              color: Colors.black54,
-              height: 1.5,
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: kBlue.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.info_outline, color: kBlue, size: 20),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Untuk keamanan, masukkan password lama Anda terlebih dahulu sebelum mengubah password baru.',
+                style: GoogleFonts.lato(
+                  fontSize: 11,
+                  color: Colors.black54,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 
   Widget _buildPasswordRules() => Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: kWhite,
-      borderRadius: BorderRadius.circular(14),
-      boxShadow: [
-        BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'KETENTUAN PASSWORD',
-          style: GoogleFonts.lato(
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            color: Colors.black38,
-            letterSpacing: 0.8,
-          ),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: kWhite,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8),
+          ],
         ),
-        const SizedBox(height: 8),
-        _ruleItem('Minimal 8 karakter'),
-        _ruleItem('Kombinasi huruf dan angka direkomendasikan'),
-        _ruleItem('Jangan gunakan password yang sama'),
-      ],
-    ),
-  );
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'KETENTUAN PASSWORD',
+              style: GoogleFonts.lato(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: Colors.black38,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _ruleItem('Minimal 8 karakter'),
+            _ruleItem('Kombinasi huruf dan angka direkomendasikan'),
+            _ruleItem('Jangan gunakan password yang sama'),
+          ],
+        ),
+      );
 
   Widget _ruleItem(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 4),
-    child: Row(
-      children: [
-        const Icon(Icons.check_circle_outline, color: kGreen, size: 14),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: GoogleFonts.lato(fontSize: 11, color: Colors.black54),
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle_outline, color: kGreen, size: 14),
+            const SizedBox(width: 6),
+            Text(
+              text,
+              style: GoogleFonts.lato(fontSize: 11, color: Colors.black54),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 
   Widget _sectionLabel(String label) => Row(
-    children: [
-      Expanded(child: Divider(color: Colors.black12, thickness: 1)),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Text(
-          label,
-          style: GoogleFonts.lato(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: Colors.black38,
-            letterSpacing: 0.8,
+        children: [
+          Expanded(child: Divider(color: Colors.black12, thickness: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(
+              label,
+              style: GoogleFonts.lato(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.black38,
+                letterSpacing: 0.8,
+              ),
+            ),
           ),
-        ),
-      ),
-      Expanded(child: Divider(color: Colors.black12, thickness: 1)),
-    ],
-  );
+          Expanded(child: Divider(color: Colors.black12, thickness: 1)),
+        ],
+      );
 
   Widget _buildPasswordField({
     required IconData icon,
@@ -1226,7 +1293,7 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
     required TextEditingController ctrl,
     required bool show,
     required VoidCallback onToggle,
-    Color accentColor = kOrange,
+    Color accentColor = kBlue,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -1274,14 +1341,23 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
   Widget _buildSaveButton() {
     return GestureDetector(
       onTap: _isLoading ? null : _changePassword,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [kOrange, kOrange.withRed(220)]),
+          gradient: _isLoading
+              ? LinearGradient(
+                  colors: [Colors.grey.shade400, Colors.grey.shade500],
+                )
+              : const LinearGradient(colors: [Color(0xFF4A90D9), kBlue]),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(color: kOrange.withOpacity(0.3), blurRadius: 12),
+            BoxShadow(
+              color: kBlue.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Center(
@@ -1309,6 +1385,7 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen>
                         color: kWhite,
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
@@ -1625,96 +1702,98 @@ class _InfoTokoScreenState extends State<InfoTokoScreen>
   }
 
   Widget _buildTokoCard() => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      gradient: const LinearGradient(colors: [Color(0xFF4A90D9), kBlue]),
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [BoxShadow(color: kBlue.withOpacity(0.3), blurRadius: 16)],
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            color: kWhite.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Icon(Icons.storefront_rounded, color: kWhite, size: 28),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [Color(0xFF4A90D9), kBlue]),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: kBlue.withOpacity(0.3), blurRadius: 16)],
         ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'EXOTIC',
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: kWhite,
-                  letterSpacing: 1,
-                ),
+        child: Row(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: kWhite.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(14),
               ),
-              Text(
-                'Gaming & Cafe',
-                style: GoogleFonts.lato(fontSize: 12, color: kWhiteDim),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: kGreen.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: kGreen,
-                        shape: BoxShape.circle,
-                      ),
+              child:
+                  const Icon(Icons.storefront_rounded, color: kWhite, size: 28),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'EXOTIC',
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: kWhite,
+                      letterSpacing: 1,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'AKTIF',
-                      style: GoogleFonts.lato(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        color: kGreen,
-                      ),
+                  ),
+                  Text(
+                    'Gaming & Cafe',
+                    style: GoogleFonts.lato(fontSize: 12, color: kWhiteDim),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: kGreen.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                  ],
-                ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: kGreen,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'AKTIF',
+                          style: GoogleFonts.lato(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: kGreen,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 
   Widget _sectionLabel(String label) => Row(
-    children: [
-      Expanded(child: Divider(color: Colors.black12, thickness: 1)),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Text(
-          label,
-          style: GoogleFonts.lato(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: Colors.black38,
-            letterSpacing: 0.8,
+        children: [
+          Expanded(child: Divider(color: Colors.black12, thickness: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(
+              label,
+              style: GoogleFonts.lato(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.black38,
+                letterSpacing: 0.8,
+              ),
+            ),
           ),
-        ),
-      ),
-      Expanded(child: Divider(color: Colors.black12, thickness: 1)),
-    ],
-  );
+          Expanded(child: Divider(color: Colors.black12, thickness: 1)),
+        ],
+      );
 
   Widget _buildInfoField(
     IconData icon,
@@ -1774,43 +1853,45 @@ class _InfoTokoScreenState extends State<InfoTokoScreen>
   }
 
   Widget _buildSaveButton() => GestureDetector(
-    onTap: _isLoading ? null : _saveToko,
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4CAF50), Color(0xFF388E3C)],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: kGreen.withOpacity(0.3), blurRadius: 12)],
-      ),
-      child: Center(
-        child: _isLoading
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  color: kWhite,
-                  strokeWidth: 2.5,
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.save_rounded, color: kWhite, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    'SIMPAN INFO TOKO',
-                    style: GoogleFonts.lato(
+        onTap: _isLoading ? null : _saveToko,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF4CAF50), Color(0xFF388E3C)],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(color: kGreen.withOpacity(0.3), blurRadius: 12)
+            ],
+          ),
+          child: Center(
+            child: _isLoading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
                       color: kWhite,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
+                      strokeWidth: 2.5,
                     ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.save_rounded, color: kWhite, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'SIMPAN INFO TOKO',
+                        style: GoogleFonts.lato(
+                          color: kWhite,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-      ),
-    ),
-  );
+          ),
+        ),
+      );
 }
