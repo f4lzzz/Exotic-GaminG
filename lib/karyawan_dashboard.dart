@@ -11,19 +11,20 @@ import 'menu_karyawan.dart';
 import 'quick_access_karyawan.dart';
 import 'kasir_pos_screen.dart';
 import 'profil_karyawan.dart';
+import 'registrasi_wajah_screen.dart';
 
 // ── WARNA ─────────────────────────────────────────────────────────────────────
-const kBlue     = Color(0xFF5B8DEE);
+const kBlue = Color(0xFF5B8DEE);
 const kBlueDark = Color(0xFF2C5FC4);
-const kBlueBg   = Color(0xFFDDE8F8);
-const kWhite    = Color(0xFFFFFFFF);
+const kBlueBg = Color(0xFFDDE8F8);
+const kWhite = Color(0xFFFFFFFF);
 const kWhiteDim = Color(0xFFCDD8F0);
 const kTextDark = Color(0xFF1A2A4A);
-const kTextMid  = Color(0xFF5B7AAA);
-const kGreen    = Color(0xFF27AE60);
-const kRed      = Color(0xFFE74C3C);
-const kOrange   = Color(0xFFF5A623);
-const kBgLight  = Color(0xFFDDE8F8);
+const kTextMid = Color(0xFF5B7AAA);
+const kGreen = Color(0xFF27AE60);
+const kRed = Color(0xFFE74C3C);
+const kOrange = Color(0xFFF5A623);
+const kBgLight = Color(0xFFDDE8F8);
 
 // ─── MODEL SHIFT ──────────────────────────────────────────────────────────────
 class ShiftModel {
@@ -58,36 +59,35 @@ class KaryawanDashboardScreen extends StatefulWidget {
 class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     with TickerProviderStateMixin {
   int _selectedNav = 0;
-  int _notifCount  = 2;
+  int _notifCount = 2;
 
-  User?                 _currentUser;
+  User? _currentUser;
   Map<String, dynamic>? _userData;
-  bool                  _isTokoAktif = true;
+  bool _isTokoAktif = true;
 
-  // ── state absensi (dari home_screen) ──────────────────────────
-  bool    _sudahMasuk  = false;
-  bool    _sudahPulang = false;
+  // ── state absensi ──────────────────────────────────────────────
+  bool _sudahMasuk = false;
+  bool _sudahPulang = false;
   String? _jamMasuk;
   String? _jamPulang;
 
-  // ── clock (dari home_screen) ───────────────────────────────────
-  late Timer   _clock;
-  DateTime     _now = DateTime.now();
+  // ── clock ──────────────────────────────────────────────────────
+  late Timer _clock;
+  DateTime _now = DateTime.now();
 
   late AnimationController _pulseCtrl;
-  late Animation<double>   _pulse;
+  late Animation<double> _pulse;
   late AnimationController _fadeCtrl;
-  late Animation<double>   _fadeAnim;
+  late Animation<double> _fadeAnim;
 
   final _scrollCtrl = ScrollController();
   double _scrollOffset = 0;
 
-  static const double _headerExpanded  = 120.0;
+  static const double _headerExpanded = 120.0;
   static const double _headerCollapsed = 60.0;
-  static const double _collapseAt      = 70.0;
+  static const double _collapseAt = 70.0;
 
-  double get _collapseProgress =>
-      (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
+  double get _collapseProgress => (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
   double get _headerHeight =>
       _headerExpanded -
       (_headerExpanded - _headerCollapsed) * _collapseProgress;
@@ -123,26 +123,23 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
   void initState() {
     super.initState();
 
-    // clock tiap detik
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _now = DateTime.now());
     });
 
-    // pulse animation
     _pulseCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 900))
       ..repeat(reverse: true);
-    _pulse = Tween(begin: 0.95, end: 1.05).animate(
-        CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+    _pulse = Tween(begin: 0.95, end: 1.05)
+        .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
 
-    // fade animation
     _fadeCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _fadeCtrl.forward();
 
-    _scrollCtrl.addListener(
-        () => setState(() => _scrollOffset = _scrollCtrl.offset));
+    _scrollCtrl
+        .addListener(() => setState(() => _scrollOffset = _scrollCtrl.offset));
 
     _loadUserData();
   }
@@ -189,7 +186,9 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
 
   String get _jabatan => _userData?['jabatan'] ?? 'Staff';
 
-  // ── LOGIKA ABSENSI (dari home_screen) ─────────────────────────
+  bool get _isAdmin => _userData?['role'] == 'admin';
+
+  // ── LOGIKA ABSENSI ─────────────────────────────────────────────
   void _bukaAbsensi(AbsensiType type) async {
     if (type == AbsensiType.masuk && _sudahMasuk) {
       _snack('Kamu sudah absen masuk hari ini!');
@@ -213,10 +212,10 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
       setState(() {
         if (type == AbsensiType.masuk) {
           _sudahMasuk = true;
-          _jamMasuk   = DateFormat('HH:mm').format(DateTime.now());
+          _jamMasuk = DateFormat('HH:mm').format(DateTime.now());
         } else {
           _sudahPulang = true;
-          _jamPulang   = DateFormat('HH:mm').format(DateTime.now());
+          _jamPulang = DateFormat('HH:mm').format(DateTime.now());
         }
       });
     }
@@ -224,8 +223,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
 
   void _snack(String msg, {bool isErr = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg,
-          style: const TextStyle(fontWeight: FontWeight.w700)),
+      content: Text(msg, style: const TextStyle(fontWeight: FontWeight.w700)),
       backgroundColor: isErr ? kRed : kOrange,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -254,8 +252,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
             Column(
               children: [
                 FadeTransition(
-                    opacity: _fadeAnim,
-                    child: _buildHeader(timeStr, dateStr)),
+                    opacity: _fadeAnim, child: _buildHeader(timeStr, dateStr)),
                 Expanded(
                   child: SingleChildScrollView(
                     controller: _scrollCtrl,
@@ -276,8 +273,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
                 ),
               ],
             ),
-            // Ganti placeholder dengan screen yang sebenarnya
-            const KasirPosScreen(),   
+            const KasirPosScreen(),
             const QuickAccessKaryawanScreen(),
             const MenuKaryawanScreen(),
             _buildPlaceholder('📊', 'REKAP', 'Rekap absensi & performa'),
@@ -297,12 +293,9 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
           const SizedBox(height: 12),
           Text(title,
               style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: kTextDark)),
+                  fontSize: 18, fontWeight: FontWeight.w900, color: kTextDark)),
           const SizedBox(height: 4),
-          Text(sub,
-              style: const TextStyle(fontSize: 13, color: kTextMid)),
+          Text(sub, style: const TextStyle(fontSize: 13, color: kTextMid)),
         ],
       ),
     );
@@ -310,25 +303,29 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
 
   // ─── HEADER ───────────────────────────────────────────────────
   Widget _buildHeader(String timeStr, String dateStr) {
-    final p             = _collapseProgress;
-    final double eSize      = 24 - (24 - 14) * p;
-    final double xSize      = 40 - (40 - 22) * p;
-    final double oticSize   = 24 - (24 - 14) * p;
-    final double subSize    = 11 - (11 - 9) * p;
-    final double padTop     = 36 - (36 - 16) * p;
-    final double padBot     = 16 - (16 - 10) * p;
+    final p = _collapseProgress;
+    final double eSize = 24 - (24 - 14) * p;
+    final double xSize = 40 - (40 - 22) * p;
+    final double oticSize = 24 - (24 - 14) * p;
+    final double subSize = 11 - (11 - 9) * p;
+    final double padTop = 36 - (36 - 16) * p;
+    final double padBot = 16 - (16 - 10) * p;
     final double subOpacity = (1 - p * 2).clamp(0.0, 1.0);
 
     final logoWidget = RichText(
       text: TextSpan(
         style: GoogleFonts.playfairDisplay(color: kWhite, height: 1.0),
         children: [
-          TextSpan(text: 'E',
+          TextSpan(
+              text: 'E',
               style: TextStyle(fontSize: eSize, fontWeight: FontWeight.w400)),
-          TextSpan(text: 'X',
+          TextSpan(
+              text: 'X',
               style: TextStyle(fontSize: xSize, fontWeight: FontWeight.w700)),
-          TextSpan(text: 'OTIC',
-              style: TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400)),
+          TextSpan(
+              text: 'OTIC',
+              style:
+                  TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400)),
         ],
       ),
     );
@@ -343,18 +340,17 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     final iconButtons = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // ← PERBAIKAN: ProfilKaryawanScreen tanpa parameter
         _headerIconBtn(Icons.settings_outlined,
             onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (_) => ProfilKaryawanScreen(
-                          userData: _userData,
-                          currentUser: _currentUser,
-                        )))),
+                    builder: (_) => const ProfilKaryawanScreen()))),
         const SizedBox(width: 6),
         _headerIconBtn(Icons.notifications_outlined,
             badge: _notifCount,
-            onTap: () => Navigator.push(context,
+            onTap: () => Navigator.push(
+                context,
                 MaterialPageRoute(
                     builder: (_) => const NotifikasiKaryawanScreen()))),
       ],
@@ -412,8 +408,8 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
             child: Container(
               width: 16,
               height: 16,
-              decoration: const BoxDecoration(
-                  color: kOrange, shape: BoxShape.circle),
+              decoration:
+                  const BoxDecoration(color: kOrange, shape: BoxShape.circle),
               child: Center(
                 child: Text('$badge',
                     style: const TextStyle(
@@ -429,6 +425,8 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
 
   // ─── USER INFO CARD ───────────────────────────────────────────
   Widget _buildUserInfoCard() {
+    final photoUrl = _userData?['photoUrl'] as String?;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -452,10 +450,15 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
               border: Border.all(color: kBlue.withOpacity(0.3), width: 2),
             ),
             child: ClipOval(
-              child: Image.asset('assets/images/karyawan.jpg',
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      const Icon(Icons.person, color: kBlue, size: 26)),
+              child: (photoUrl != null && photoUrl.isNotEmpty)
+                  ? Image.network(photoUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.person, color: kBlue, size: 26))
+                  : Image.asset('assets/images/karyawan.jpg',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.person, color: kBlue, size: 26)),
             ),
           ),
           const SizedBox(width: 12),
@@ -483,8 +486,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
           GestureDetector(
             onTap: () => setState(() => _isTokoAktif = !_isTokoAktif),
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: (_isTokoAktif ? kGreen : kRed).withOpacity(0.12),
                 borderRadius: BorderRadius.circular(20),
@@ -511,7 +513,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     );
   }
 
-  // ─── ABSENSI CARD (logika dari home_screen) ───────────────────
+  // ─── ABSENSI CARD ─────────────────────────────────────────────
   Widget _buildAbsensiCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -584,6 +586,40 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
               ),
             ],
           ),
+          if (_isAdmin) ...[
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const RegistrasiWajahScreen(),
+                ),
+              ),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: kBlueDark.withOpacity(0.07),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: kBlueDark.withOpacity(0.25)),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.person_add_rounded, color: kBlueDark, size: 16),
+                    SizedBox(width: 8),
+                    Text(
+                      'DAFTARKAN WAJAH KARYAWAN',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: kBlueDark),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -628,13 +664,10 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
             Text(label,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    color: kWhite,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12)),
+                    color: kWhite, fontWeight: FontWeight.w900, fontSize: 12)),
             const SizedBox(height: 8),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                   color: sudah ? kGreen : kRed,
                   borderRadius: BorderRadius.circular(20)),
@@ -661,10 +694,10 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
   // ─── STATUS ROW ───────────────────────────────────────────────
   Widget _buildStatusRow() {
     final items = [
-      {'icon': Icons.check_circle_rounded, 'label': 'TEPAT',     'color': kGreen},
-      {'icon': Icons.timer_rounded,        'label': 'TERLAMBAT', 'color': kOrange},
-      {'icon': Icons.assignment_rounded,   'label': 'izin',      'color': kTextMid},
-      {'icon': Icons.bar_chart_rounded,    'label': 'REKAP',     'color': kRed},
+      {'icon': Icons.check_circle_rounded, 'label': 'TEPAT', 'color': kGreen},
+      {'icon': Icons.timer_rounded, 'label': 'TERLAMBAT', 'color': kOrange},
+      {'icon': Icons.assignment_rounded, 'label': 'izin', 'color': kTextMid},
+      {'icon': Icons.bar_chart_rounded, 'label': 'REKAP', 'color': kRed},
     ];
 
     return Row(
@@ -679,8 +712,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
                         color: (item['color'] as Color).withOpacity(0.12),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color:
-                                (item['color'] as Color).withOpacity(0.25)),
+                            color: (item['color'] as Color).withOpacity(0.25)),
                       ),
                       child: Icon(item['icon'] as IconData,
                           color: item['color'] as Color, size: 26),
@@ -758,25 +790,25 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
   }
 
   Widget _buildShiftTile(ShiftModel shift) {
-    Color    color;
-    String   statusLabel;
+    Color color;
+    String statusLabel;
     IconData shiftIcon;
 
     switch (shift.status) {
       case StatusShift.selesai:
-        color       = Colors.black26;
+        color = Colors.black26;
         statusLabel = 'SELESAI';
-        shiftIcon   = Icons.wb_sunny_outlined;
+        shiftIcon = Icons.wb_sunny_outlined;
         break;
       case StatusShift.berlangsung:
-        color       = kGreen;
+        color = kGreen;
         statusLabel = 'BERLANGSUNG';
-        shiftIcon   = Icons.wb_cloudy_outlined;
+        shiftIcon = Icons.wb_cloudy_outlined;
         break;
       case StatusShift.akan:
-        color       = kOrange;
+        color = kOrange;
         statusLabel = 'AKAN DATANG';
-        shiftIcon   = Icons.nights_stay_outlined;
+        shiftIcon = Icons.nights_stay_outlined;
         break;
     }
 
@@ -786,9 +818,8 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isBerlangsung
-            ? kBlue.withOpacity(0.08)
-            : const Color(0xFFE8F0FB),
+        color:
+            isBerlangsung ? kBlue.withOpacity(0.08) : const Color(0xFFE8F0FB),
         borderRadius: BorderRadius.circular(14),
         border: isBerlangsung
             ? Border.all(color: kBlue.withOpacity(0.4), width: 1.5)
@@ -823,8 +854,8 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
                         fontWeight: FontWeight.w600)),
                 Container(
                   margin: const EdgeInsets.only(top: 4),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                       color: color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20)),
@@ -874,8 +905,9 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
           height: 64,
           child: Row(
             children: [
-              _navItem(0, Icons.home_outlined,          Icons.home,          'HOME'),
-              _navItem(1, Icons.point_of_sale_outlined, Icons.point_of_sale, 'KASIR'),
+              _navItem(0, Icons.home_outlined, Icons.home, 'HOME'),
+              _navItem(1, Icons.point_of_sale_outlined, Icons.point_of_sale,
+                  'KASIR'),
               Expanded(
                 child: GestureDetector(
                   onTap: () => setState(() => _selectedNav = 2),
@@ -935,7 +967,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
                   ),
                 ),
               ),
-              _navItem(3, Icons.menu_outlined,      Icons.menu,      'MENU'),
+              _navItem(3, Icons.menu_outlined, Icons.menu, 'MENU'),
               _navItem(4, Icons.bar_chart_outlined, Icons.bar_chart, 'REKAP'),
             ],
           ),
@@ -944,8 +976,8 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     );
   }
 
-  Widget _navItem(int index, IconData outlineIcon, IconData filledIcon,
-      String label) {
+  Widget _navItem(
+      int index, IconData outlineIcon, IconData filledIcon, String label) {
     final isSelected = _selectedNav == index;
     return Expanded(
       child: GestureDetector(
@@ -959,8 +991,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
             Text(label,
                 style: TextStyle(
                     fontSize: 9,
-                    fontWeight:
-                        isSelected ? FontWeight.w800 : FontWeight.w500,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
                     color: isSelected ? kBlue : Colors.black38)),
           ],
         ),

@@ -4,10 +4,10 @@ import 'package:geolocator/geolocator.dart';
 
 class LocationService {
   // ✅ Koordinat asli Exotic Gaming & Cafe Nganjuk
-  static const double storeLat    = -7.6036163;
-  static const double storeLng    = 111.900546;
-  static const double radiusMeter = 100; // radius 100 meter dari toko
-  static const String storeName    = 'Exotic Gaming & Cafe Nganjuk';
+  static const double storeLat = -7.6036163;
+  static const double storeLng = 111.900546;
+  static const double radiusMeter = 20; // radius 100 meter dari toko
+  static const String storeName = 'Exotic Gaming & Cafe Nganjuk';
   static const String storeAddress = 'Nganjuk, Jawa Timur';
 
   static Future<Position?> getPosition() async {
@@ -54,8 +54,7 @@ class LocationService {
     final dLat = _r(storeLat - lat);
     final dLng = _r(storeLng - lng);
     final a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(_r(lat)) * cos(_r(storeLat)) *
-            sin(dLng / 2) * sin(dLng / 2);
+        cos(_r(lat)) * cos(_r(storeLat)) * sin(dLng / 2) * sin(dLng / 2);
     return R * 2 * atan2(sqrt(a), sqrt(1 - a));
   }
 
