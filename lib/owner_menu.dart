@@ -279,7 +279,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       kategori: KategoriMenu.makanan,
       harga: 10000,
       deskripsi: 'Tempe mendoan dengan ',
-      image: 'images/tempe_mendoan.jpg',
+      image: 'images/Tempe_Mendoan.jpg',
     ),
     MenuItem(
       id: 'm24',
@@ -315,7 +315,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       kategori: KategoriMenu.makanan,
       harga: 12000,
       deskripsi: 'roti bakar dengan rasa taro ',
-      image: 'images/roti_bakar_taro.jpg',
+      image: 'images/roti_bakar_taro.jpeg',
     ),
     MenuItem(
       id: 'm28',
