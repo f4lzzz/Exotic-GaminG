@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'notifikasi_owner.dart';
 import 'profil_owner.dart';
-import 'notif_icon.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -30,6 +28,7 @@ class MenuItem {
   String deskripsi;
   bool tersedia;
   String? info;
+  String? image;
 
   MenuItem({
     required this.id,
@@ -38,6 +37,7 @@ class MenuItem {
     required this.kategori,
     required this.harga,
     required this.deskripsi,
+    this.image,
     this.tersedia = true,
     this.info,
   });
@@ -76,124 +76,453 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
     // ── MAKANAN ──
     MenuItem(
       id: 'm1',
-      nama: 'Nasi Goreng Spesial',
+      nama: 'Nasi Ayam Bakar Kecap Exotic',
       inisial: 'NGS',
       kategori: KategoriMenu.makanan,
-      harga: 18000,
-      deskripsi: 'Nasi goreng dengan telur, ayam, dan sayuran',
+      harga: 22000,
+      deskripsi: 'Nasi dengan ayam bakar kecap, dan sayuran',
+      image: 'images/Nasi_ayam_bakar.jpg',
     ),
     MenuItem(
       id: 'm2',
-      nama: 'Mie Goreng',
+      nama: 'Nasi Bakar Ayam Bumbu Kemangi',
       inisial: 'MG',
       kategori: KategoriMenu.makanan,
       harga: 15000,
-      deskripsi: 'Mie goreng dengan topping sesuai selera',
+      deskripsi: 'Nasi bakar dengan ayam suwir bumbu kemangi',
+      image: 'images/nasi_bakar_ayam_bumbu_kemangi.jpg',
     ),
     MenuItem(
       id: 'm3',
-      nama: 'Kentang Goreng',
+      nama: 'Nasi Bakar Ikan Bumbu Kemangi',
       inisial: 'KG',
       kategori: KategoriMenu.makanan,
-      harga: 12000,
-      deskripsi: 'Kentang goreng crispy dengan saus',
+      harga: 18000,
+      deskripsi: 'Nasi dengan Ikan bakar bumbu kemangi',
+      image: 'images/nasi_bakar_ikan_bumbu_kemangi.jpg',
     ),
     MenuItem(
       id: 'm4',
-      nama: 'Ayam Geprek',
+      nama: 'Gurame Bakar Special Exotic',
       inisial: 'AG',
       kategori: KategoriMenu.makanan,
-      harga: 20000,
-      deskripsi: 'Ayam geprek dengan sambal pilihan',
+      harga: 34000,
+      deskripsi: 'Gurame bakar special',
+      image: 'images/gurame_bakar_spesial.jpg',
     ),
     MenuItem(
       id: 'm5',
-      nama: 'Indomie Rebus',
+      nama: 'Nasi Ayam Tulang Lunak Kremes',
       inisial: 'IR',
       kategori: KategoriMenu.makanan,
-      harga: 10000,
-      deskripsi: 'Indomie rebus dengan telur dan sayuran',
+      harga: 24000,
+      deskripsi: 'Nasi putih dengan tulang ayam lunak kremes',
+      image: 'images/nasi_ayam_tulang_lunak_kremes.jpeg',
     ),
     MenuItem(
       id: 'm6',
-      nama: 'Burger Crispy',
+      nama: 'Nasi Ayam Tulang Lunak Remuk',
       inisial: 'BC',
       kategori: KategoriMenu.makanan,
-      harga: 22000,
+      harga: 24000,
       deskripsi: 'Burger dengan ayam crispy dan saus spesial',
+      image: 'images/nasi_ayam_tulang_lunak_remuk.jpeg',
     ),
     MenuItem(
       id: 'm7',
-      nama: 'Roti Bakar',
+      nama: 'Paket Nasi Sambal Bakar Ayam Geprek',
       inisial: 'RB',
       kategori: KategoriMenu.makanan,
+      harga: 17000,
+      deskripsi: 'Nasi dengan sambal bakar ayam geprek',
+      image: 'images/paket_nasi_sambal_bakar_ayam_geprek.jpeg',
+    ),
+    MenuItem(
+      id: 'm8',
+      nama: 'Paket Nasi Sambal Bakar Lele Goreng',
+      inisial: 'SLG',
+      kategori: KategoriMenu.makanan,
+      harga: 15000,
+      deskripsi: 'Nasi dengan sambal bakar lele goreng',
+      image: 'images/paket_nasi_sambal_bakar_lele_goreng.jpeg',
+    ),
+    MenuItem(
+      id: 'm9',
+      nama: 'Paket Nasi Sambal Bakar Tempe Penyet',
+      inisial: 'STP',
+      kategori: KategoriMenu.makanan,
+      harga: 14000,
+      deskripsi: 'Nasi dengan sambal bakar tempe penyet',
+      image: 'images/paket_nasi_sambal_bakar_tempe_penyet.jpg',
+    ),
+    MenuItem(
+      id: 'm10',
+      nama: 'Paket Nasi Sambal Bakar Bakwan Goreng',
+      inisial: 'SBG',
+      kategori: KategoriMenu.makanan,
+      harga: 14000,
+      deskripsi: 'Nasi dengan sambal bakar bakwan goreng',
+      image: 'images/nasi_sambal_bakwan_goreng.jpg',
+    ),
+    MenuItem(
+      id: 'm11',
+      nama: 'Pizza All Over Meat (premium/reguler)',
+      inisial: 'SBG',
+      kategori: KategoriMenu.makanan,
+      harga: 35000,
+      deskripsi: 'Premium 35K reguler 26k',
+      image: 'images/pizza_over_meat.jpeg',
+    ),
+    MenuItem(
+      id: 'm12',
+      nama: 'Pizza Chessy Meat (premium/reguler)',
+      inisial: 'SBG',
+      kategori: KategoriMenu.makanan,
+      harga: 35000,
+      deskripsi: 'Premium 35K reguler 26k',
+      image: 'images/chessy_meat.jpg',
+    ),
+    MenuItem(
+      id: 'm13',
+      nama: 'Spaghetti Bolognese',
+      inisial: 'SB',
+      kategori: KategoriMenu.makanan,
+      harga: 22000,
+      deskripsi: 'spagetti',
+      image: 'images/spageti_bolognase.jpg',
+    ),
+    MenuItem(
+      id: 'm14',
+      nama: 'Spaghetti Carbonara',
+      inisial: 'SB',
+      kategori: KategoriMenu.makanan,
+      harga: 22000,
+      deskripsi: 'spagetti carbonara',
+      image: 'images/spageti_carbonara.jpg',
+    ),
+    MenuItem(
+      id: 'm15',
+      nama: 'Indomie Goreng Original',
+      inisial: 'IGO',
+      kategori: KategoriMenu.makanan,
       harga: 12000,
-      deskripsi: 'Roti bakar dengan berbagai topping',
+      deskripsi: 'Indomie goreng original',
+      image: 'images/indomie_goreng_original.jpg',
+    ),
+    MenuItem(
+      id: 'm16',
+      nama: 'Mix Platter',
+      inisial: 'MP',
+      kategori: KategoriMenu.makanan,
+      harga: 18000,
+      deskripsi: 'Nugget, kentang dengan saos sambal tomat dan cabai',
+      image: 'images/mix_platter.jpg',
+    ),
+    MenuItem(
+      id: 'm17',
+      nama: 'french fries',
+      inisial: 'MP',
+      kategori: KategoriMenu.makanan,
+      harga: 14000,
+      deskripsi: 'kentang goreng di lengkapi dengan caos tomat dan cabai',
+      image: 'images/french_fries.jpg',
+    ),
+    MenuItem(
+      id: 'm18',
+      nama: 'cireng',
+      inisial: 'c',
+      kategori: KategoriMenu.makanan,
+      harga: 12000,
+      deskripsi: 'cireng goreng dengan caos',
+      image: 'images/cireng.jpg',
+    ),
+    MenuItem(
+      id: 'm19',
+      nama: 'Nugget',
+      inisial: 'C',
+      kategori: KategoriMenu.makanan,
+      harga: 12000,
+      deskripsi: 'nuget goreng dengan caos',
+      image: 'images/nugget.jpg',
+    ),
+    MenuItem(
+      id: 'm20',
+      nama: 'Tahu Susu',
+      inisial: 'TS',
+      kategori: KategoriMenu.makanan,
+      harga: 12000,
+      deskripsi: 'tahu susu degan caos pedas',
+      image: 'images/tahu_susu.jpg',
+    ),
+    MenuItem(
+      id: 'm21',
+      nama: 'Toppoki + Odeng',
+      inisial: 'TO',
+      kategori: KategoriMenu.makanan,
+      harga: 18000,
+      deskripsi: 'Toppoki dengan odeng',
+      image: 'images/topoki_odeng.jpg',
+    ),
+    MenuItem(
+      id: 'm22',
+      nama: 'Tahu Bumbu Special',
+      inisial: 'TBS',
+      kategori: KategoriMenu.makanan,
+      harga: 15000,
+      deskripsi: 'Tahu bumbu special',
+      image: 'images/tahu_bumbu_spesial.jpeg',
+    ),
+    MenuItem(
+      id: 'm23',
+      nama: 'Tempe Mendoan',
+      inisial: 'TBS',
+      kategori: KategoriMenu.makanan,
+      harga: 10000,
+      deskripsi: 'Tempe mendoan dengan ',
+      image: 'images/tempe_mendoan.jpg',
+    ),
+    MenuItem(
+      id: 'm24',
+      nama: 'Bakso Goreng',
+      inisial: 'TBS',
+      kategori: KategoriMenu.makanan,
+      harga: 10000,
+      deskripsi: 'bakso goreng dengan ',
+      image: 'images/Bakso_Goreng.jpg',
+    ),
+    MenuItem(
+      id: 'm25',
+      nama: 'Pisang Coklat',
+      inisial: 'PC',
+      kategori: KategoriMenu.makanan,
+      harga: 10000,
+      deskripsi: 'bakso goreng dengan ',
+      image: 'images/pisang_coklat.jpg',
+    ),
+    MenuItem(
+      id: 'm26',
+      nama: 'Roti Bakar Coklat',
+      inisial: 'RBC',
+      kategori: KategoriMenu.makanan,
+      harga: 12000,
+      deskripsi: 'roti bakar dengan rasa coklat ',
+      image: 'images/roti_bakar_coklat.jpg',
+    ),
+    MenuItem(
+      id: 'm27',
+      nama: 'Roti Bakar Taro',
+      inisial: 'RBT',
+      kategori: KategoriMenu.makanan,
+      harga: 12000,
+      deskripsi: 'roti bakar dengan rasa taro ',
+      image: 'images/roti_bakar_taro.jpg',
+    ),
+    MenuItem(
+      id: 'm28',
+      nama: 'Roti Bakar Strawberry',
+      inisial: 'RBT',
+      kategori: KategoriMenu.makanan,
+      harga: 12000,
+      deskripsi: 'roti bakar dengan rasa taro ',
+      image: 'images/roti_bakar_strawberry.jpg',
+    ),
+    MenuItem(
+      id: 'm29',
+      nama: 'Popcorn Manis/Asin',
+      inisial: 'P',
+      kategori: KategoriMenu.makanan,
+      harga: 12000,
+      deskripsi: 'popcorn dengan rasa manis dan asin ',
+      image: 'images/pop_corn.jpg',
     ),
     // ── MINUMAN ──
     MenuItem(
       id: 'mn1',
-      nama: 'Es Teh Manis',
-      inisial: 'ETM',
+      nama: 'Americano',
+      inisial: 'A',
       kategori: KategoriMenu.minuman,
-      harga: 5000,
-      deskripsi: 'Teh manis dingin segar',
+      harga: 13000,
+      deskripsi: 'kopi americano',
+      image: 'images/americano.jpg',
     ),
     MenuItem(
-      id: 'mn2',
-      nama: 'Kopi Hitam',
-      inisial: 'KH',
-      kategori: KategoriMenu.minuman,
-      harga: 8000,
-      deskripsi: 'Kopi hitam panas/dingin',
-    ),
+        id: 'mn2',
+        nama: 'chocolate',
+        inisial: 'KH',
+        kategori: KategoriMenu.minuman,
+        harga: 17000,
+        deskripsi: 'Kopi hitam panas/dingin',
+        image: 'images/chocolate.jpg'),
     MenuItem(
       id: 'mn3',
-      nama: 'Matcha Latte',
+      nama: 'Pandan',
       inisial: 'ML',
       kategori: KategoriMenu.minuman,
-      harga: 18000,
+      harga: 17000,
       deskripsi: 'Minuman matcha dengan susu',
+      image: 'images/pandan.jpg',
     ),
     MenuItem(
       id: 'mn4',
-      nama: 'Es Coklat',
+      nama: 'Gula aren',
       inisial: 'EC',
       kategori: KategoriMenu.minuman,
-      harga: 12000,
-      deskripsi: 'Coklat dingin dengan susu',
+      harga: 17000,
+      deskripsi: 'gula aren',
+      image: 'images/gula_aren.jpeg',
     ),
     MenuItem(
       id: 'mn5',
-      nama: 'Jus Alpukat',
-      inisial: 'JA',
+      nama: 'Coconut Gula Aren',
+      inisial: 'CGA',
       kategori: KategoriMenu.minuman,
-      harga: 15000,
-      deskripsi: 'Jus alpukat segar dengan susu',
+      harga: 18000,
+      deskripsi: 'coconut gula aren',
+      image: 'images/coconut_gula_aren.jpg',
     ),
     MenuItem(
       id: 'mn6',
-      nama: 'Air Mineral',
-      inisial: 'AM',
+      nama: 'tiramisu',
+      inisial: 'T',
       kategori: KategoriMenu.minuman,
-      harga: 5000,
-      deskripsi: 'Air mineral botol',
+      harga: 18000,
+      deskripsi: 'tiramisu',
+      image: 'images/ice_tiramisu.jpg',
     ),
     MenuItem(
       id: 'mn7',
-      nama: 'Boba Brown Sugar',
+      nama: 'Ice Choco Cookies',
       inisial: 'BBS',
       kategori: KategoriMenu.minuman,
       harga: 20000,
-      deskripsi: 'Boba dengan brown sugar milk tea',
+      deskripsi: 'Es Choco Cookies',
+      image: 'images/ice_choco_cookies.jpeg',
     ),
     MenuItem(
       id: 'mn8',
-      nama: 'Red Velvet Latte',
+      nama: 'Ice Green Tea',
       inisial: 'RVL',
       kategori: KategoriMenu.minuman,
       harga: 18000,
-      deskripsi: 'Red velvet dengan latte',
+      deskripsi: 'es grean tea',
+      image: 'images/ice_green_tea.jpg',
+    ),
+    MenuItem(
+      id: 'mn9',
+      nama: 'Ice Milky Taro',
+      inisial: 'RVL',
+      kategori: KategoriMenu.minuman,
+      harga: 18000,
+      deskripsi: 'es susu rasa taro',
+      image: 'images/ice_milky_taro.jpeg',
+    ),
+    MenuItem(
+      id: 'mn10',
+      nama: 'Ice Thai Milk Tea',
+      inisial: 'RVL',
+      kategori: KategoriMenu.minuman,
+      harga: 15000,
+      deskripsi: 'es susu rasa taro',
+      image: 'images/ice_thai_milk_tea.webp',
+    ),
+    MenuItem(
+      id: 'mn11',
+      nama: 'Ice Caramello',
+      inisial: 'ic',
+      kategori: KategoriMenu.minuman,
+      harga: 15000,
+      deskripsi: 'es susu rasa taro',
+      image: 'images/ice_caramelo.webp',
+    ),
+    MenuItem(
+      id: 'mn12',
+      nama: 'Ice milk tea',
+      inisial: 'MT',
+      kategori: KategoriMenu.minuman,
+      harga: 15000,
+      deskripsi: 'es rasa milk tea',
+      image: 'images/ice_milk_tea.jpg',
+    ),
+    MenuItem(
+      id: 'mn13',
+      nama: 'Ice bubble gum',
+      inisial: 'BG',
+      kategori: KategoriMenu.minuman,
+      harga: 15000,
+      deskripsi: 'es rasa bubble gum',
+      image: 'images/ice_bubble_gum.jpeg',
+    ),
+    MenuItem(
+      id: 'mn14',
+      nama: 'Ice blueberry',
+      inisial: 'BG',
+      kategori: KategoriMenu.minuman,
+      harga: 15000,
+      deskripsi: 'es rasa blueberry',
+      image: 'images/ice_blueberry.jpeg',
+    ),
+    MenuItem(
+      id: 'mn15',
+      nama: 'Ice Durian',
+      inisial: 'D',
+      kategori: KategoriMenu.minuman,
+      harga: 15000,
+      deskripsi: 'es rasa buah durian',
+      image: 'images/ice_durian.jpeg',
+    ),
+    MenuItem(
+      id: 'mn16',
+      nama: 'Ice Manggo',
+      inisial: 'G',
+      kategori: KategoriMenu.minuman,
+      harga: 15000,
+      deskripsi: 'es rasa buah mangga',
+      image: 'images/ice_manggo.jpeg',
+    ),
+    MenuItem(
+      id: 'mn17',
+      nama: 'Ice Orange',
+      inisial: 'O',
+      kategori: KategoriMenu.minuman,
+      harga: 15000,
+      deskripsi: 'es rasa buah jeruk',
+      image: 'images/ice_orange.jpg',
+    ),
+    MenuItem(
+      id: 'mn18',
+      nama: 'Ice Teler',
+      inisial: 'IT',
+      kategori: KategoriMenu.minuman,
+      harga: 15000,
+      deskripsi: 'es teler',
+      image: 'images/ice_teler.jpeg',
+    ),
+    MenuItem(
+      id: 'mn19',
+      nama: 'Ice Lecy Tea',
+      inisial: 'IC',
+      kategori: KategoriMenu.minuman,
+      harga: 12000,
+      deskripsi: 'es lecy tea',
+      image: 'images/ice_lecy_tea.jpeg',
+    ),
+    MenuItem(
+      id: 'mn20',
+      nama: 'Ice Lemon Tea',
+      inisial: 'LT',
+      kategori: KategoriMenu.minuman,
+      harga: 12000,
+      deskripsi: 'es lemon tea',
+      image: 'images/ice_lemon_tea.jpeg',
+    ),
+    MenuItem(
+      id: 'mn21',
+      nama: 'Ice Peach Tea',
+      inisial: 'PT',
+      kategori: KategoriMenu.minuman,
+      harga: 12000,
+      deskripsi: 'es Peach tea',
+      image: 'images/ice_peach_tea.jpg',
     ),
     // ── REGULER ──
     MenuItem(
@@ -204,6 +533,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 10000,
       deskripsi: 'PlayStation 4',
       info: 'Harga per jam',
+      image: 'images/ps1.jpg',
     ),
     MenuItem(
       id: 'r2',
@@ -213,87 +543,107 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 10000,
       deskripsi: 'PlayStation 4',
       info: 'Harga per jam',
+      image: 'images/ps02.jpg',
     ),
     MenuItem(
       id: 'r3',
-      nama: 'Meja 3 — PS4',
+      nama: 'Meja 3_05 — PS4',
       inisial: 'R3',
       kategori: KategoriMenu.reguler,
       harga: 10000,
       deskripsi: 'PlayStation 4',
       info: 'Harga per jam',
+      image: 'images/ps3_05.jpg',
     ),
     MenuItem(
       id: 'r4',
+      nama: 'Meja 3 — PS4',
+      inisial: 'R4',
+      kategori: KategoriMenu.reguler,
+      harga: 12000,
+      deskripsi: 'PlayStation 4',
+      info: 'Harga per jam',
+      image: 'images/ps03.jpg',
+    ),
+    MenuItem(
+      id: 'r5',
       nama: 'Meja 4 — PS4 Pro',
       inisial: 'R4',
       kategori: KategoriMenu.reguler,
       harga: 12000,
       deskripsi: 'PlayStation 4 Pro',
       info: 'Harga per jam',
+      image: 'images/ps04.jpg',
     ),
     MenuItem(
-      id: 'r5',
+      id: 'r6',
       nama: 'Meja Simulator Racing',
       inisial: 'SR',
       kategori: KategoriMenu.reguler,
       harga: 27000,
       deskripsi: 'Racing Simulator',
       info: 'Harga per jam',
+      image: 'images/simulator.jpg',
     ),
     MenuItem(
-      id: 'r6',
+      id: 'r7',
       nama: 'Meja 5 — PS3',
       inisial: 'R5',
       kategori: KategoriMenu.reguler,
       harga: 8000,
       deskripsi: 'PlayStation 3',
       info: 'Harga per jam',
+      image: 'images/ps05.jpg',
     ),
     MenuItem(
-      id: 'r7',
+      id: 'r8',
       nama: 'Meja 6 — PS4',
       inisial: 'R6',
       kategori: KategoriMenu.reguler,
       harga: 10000,
       deskripsi: 'PlayStation 4',
       info: 'Harga per jam',
+      image: 'images/ps06.jpg',
     ),
     MenuItem(
-      id: 'r8',
+      id: 'r9',
       nama: 'Meja 7 — PS4',
       inisial: 'R7',
       kategori: KategoriMenu.reguler,
       harga: 10000,
       deskripsi: 'PlayStation 4',
       info: 'Harga per jam',
+      image: 'images/ps07.jpg',
     ),
     MenuItem(
-      id: 'r9',
+      id: 'r10',
       nama: 'Meja 8 — PS4',
       inisial: 'R8',
       kategori: KategoriMenu.reguler,
       harga: 10000,
       deskripsi: 'PlayStation 4',
       info: 'Harga per jam',
+      image: 'images/ps08.jpg',
     ),
     MenuItem(
-      id: 'r10',
+      id: 'r11',
       nama: 'Meja 9 — PS4',
       inisial: 'R9',
       kategori: KategoriMenu.reguler,
       harga: 10000,
       deskripsi: 'PlayStation 4',
       info: 'Harga per jam',
+      image: 'images/ps09.jpg',
     ),
     MenuItem(
-      id: 'r11',
+      id: 'r12',
       nama: 'Meja 10 — PS4',
       inisial: 'R10',
       kategori: KategoriMenu.reguler,
       harga: 10000,
       deskripsi: 'PlayStation 4',
       info: 'Harga per jam',
+      image: 'images/ps10.jpg',
     ),
     // ── SUITE ROOM ──
     MenuItem(
@@ -304,6 +654,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 25000,
       deskripsi: 'PS4 Pro + Nyanyi',
       info: 'Include Netflix',
+      image: 'images/suite1.jpg',
     ),
     MenuItem(
       id: 's2',
@@ -313,6 +664,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 25000,
       deskripsi: 'Nintendo Switch + Nyanyi',
       info: 'Include Netflix',
+      image: 'images/suite2.jpg',
     ),
     MenuItem(
       id: 's3',
@@ -322,6 +674,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 25000,
       deskripsi: 'PS4 Pro + Nyanyi',
       info: 'Include Netflix',
+      image: 'images/suite3.jpg',
     ),
     MenuItem(
       id: 's4',
@@ -331,6 +684,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 25000,
       deskripsi: 'PS5 + Soundsystem',
       info: 'Include Netflix',
+      image: 'images/suite4.jpg',
     ),
     MenuItem(
       id: 's5',
@@ -340,6 +694,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 25000,
       deskripsi: 'PS5 + Soundsystem',
       info: 'Include Netflix',
+      image: 'images/suite5.jpg',
     ),
     MenuItem(
       id: 's6',
@@ -349,6 +704,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 30000,
       deskripsi: 'PS5 + Nyanyi',
       info: 'Include Netflix • NO SMOKING',
+      image: 'images/suite6.jpg',
     ),
     MenuItem(
       id: 's7',
@@ -358,6 +714,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 25000,
       deskripsi: 'PS4 Pro + Nyanyi',
       info: 'Include Netflix • NO SMOKING',
+      image: 'images/suite7.jpg',
     ),
     MenuItem(
       id: 's8',
@@ -367,6 +724,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 25000,
       deskripsi: 'Nintendo Switch + Nyanyi',
       info: 'Include Netflix • NO SMOKING',
+      image: 'images/suite8.jpg',
     ),
     MenuItem(
       id: 's9',
@@ -376,6 +734,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 25000,
       deskripsi: 'PS4 Pro + Nyanyi',
       info: 'Include Netflix',
+      image: 'images/suite9.jpg',
     ),
     MenuItem(
       id: 's10',
@@ -385,6 +744,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 25000,
       deskripsi: 'Nintendo Switch + Nyanyi',
       info: 'Include Netflix',
+      image: 'images/suite10.jpg',
     ),
     MenuItem(
       id: 's11',
@@ -394,12 +754,9 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       harga: 40000,
       deskripsi: 'PS5 + Netflix + Nyanyi',
       info: 'Include Netflix • Kapasitas 10 orang',
+      image: 'images/suite11.jpg',
     ),
   ];
-
-  // --- tambahan untuk user data ---
-  Map<String, dynamic>? _userData;
-  User? _currentUser;
 
   @override
   void initState() {
@@ -413,23 +770,6 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
     _scrollCtrl.addListener(
       () => setState(() => _scrollOffset = _scrollCtrl.offset),
     );
-    _loadUserData();
-  }
-
-  Future<void> _loadUserData() async {
-    _currentUser = FirebaseAuth.instance.currentUser;
-    if (_currentUser == null) return;
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .get();
-      if (doc.exists && mounted) {
-        setState(() {
-          _userData = doc.data();
-        });
-      }
-    } catch (_) {}
   }
 
   @override
@@ -478,8 +818,10 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
     );
   }
 
+  // ─── HEADER (sama persis owner dashboard) ────────────────────────────────
   Widget _buildHeader() {
     final p = _collapseProgress;
+
     final double eSize = 24 - (24 - 14) * p;
     final double xSize = 40 - (40 - 22) * p;
     final double oticSize = 24 - (24 - 14) * p;
@@ -525,12 +867,18 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
           Icons.settings_outlined,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(
-                builder: (_) => ProfilOwnerScreen(userData: _userData)),
+            MaterialPageRoute(builder: (_) => const ProfilOwnerScreen()),
           ),
         ),
         const SizedBox(width: 6),
-        const NotifIcon(),
+        _headerIconBtn(
+          Icons.notifications_outlined,
+          badge: 3,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotifikasiOwnerScreen()),
+          ),
+        ),
       ],
     );
 
@@ -539,7 +887,11 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       height: _headerHeight,
       width: double.infinity,
       decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [Color(0xFF4A90D9), kBlue]),
+        gradient: LinearGradient(
+          colors: [Color(0xFF4A90D9), kBlue],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(20, padTop, 20, padBot),
@@ -559,6 +911,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
               ],
             )
           : Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 logoWidget,
                 const SizedBox(width: 8),
@@ -570,8 +923,11 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
     );
   }
 
-  Widget _headerIconBtn(IconData icon,
-      {int badge = 0, required VoidCallback onTap}) {
+  Widget _headerIconBtn(
+    IconData icon, {
+    int badge = 0,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Stack(
@@ -581,7 +937,9 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-                color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
+              color: kWhite.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: kWhite, size: 20),
           ),
           if (badge > 0)
@@ -591,15 +949,18 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
               child: Container(
                 width: 16,
                 height: 16,
-                decoration:
-                    const BoxDecoration(color: kRed, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: kRed,
+                  shape: BoxShape.circle,
+                ),
                 child: Center(
                   child: Text(
                     '$badge',
                     style: GoogleFonts.lato(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                        color: kWhite),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                      color: kWhite,
+                    ),
                   ),
                 ),
               ),
@@ -639,9 +1000,10 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2)),
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
                 ],
               ),
               child: Row(
@@ -651,9 +1013,10 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                   Text(
                     t.$3,
                     style: GoogleFonts.lato(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: isActive ? kWhite : Colors.black45),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: isActive ? kWhite : Colors.black45,
+                    ),
                   ),
                 ],
               ),
@@ -673,9 +1036,10 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: TextField(
@@ -692,8 +1056,11 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                     _searchQuery = '';
                     _searchCtrl.clear();
                   }),
-                  child:
-                      const Icon(Icons.close, color: Colors.black38, size: 18),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.black38,
+                    size: 18,
+                  ),
                 )
               : null,
           border: InputBorder.none,
@@ -713,12 +1080,16 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20)),
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Text(
             '$total item • $tersedia tersedia',
             style: GoogleFonts.lato(
-                fontSize: 11, fontWeight: FontWeight.w700, color: color),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
         ),
       ],
@@ -736,8 +1107,10 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
             children: [
               Icon(Icons.search_off, size: 48, color: Colors.black26),
               const SizedBox(height: 12),
-              Text('Tidak ada menu',
-                  style: GoogleFonts.lato(fontSize: 14, color: Colors.black38)),
+              Text(
+                'Tidak ada menu',
+                style: GoogleFonts.lato(fontSize: 14, color: Colors.black38),
+              ),
             ],
           ),
         ),
@@ -762,25 +1135,25 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
         border: isVIP ? Border.all(color: kGold, width: 1.5) : null,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 3)),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Row(
         children: [
-          // Inisial menu
+          // Gambar menu
           Container(
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12)),
-            child: Center(
-              child: Text(
-                _getInisial(m.inisial),
-                style: GoogleFonts.lato(
-                    fontSize: 14, fontWeight: FontWeight.w900, color: color),
+              borderRadius: BorderRadius.circular(12),
+              image: DecorationImage(
+                image: AssetImage(
+                  m.image ?? 'images/default.jpg',
+                ),
+                fit: BoxFit.cover,
               ),
             ),
           ),
@@ -796,32 +1169,38 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                       child: Text(
                         m.nama,
                         style: GoogleFonts.lato(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: isVIP ? kGold : kTextDark),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: isVIP ? kGold : kTextDark,
+                        ),
                       ),
                     ),
                     if (isVIP)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                            color: kGold,
-                            borderRadius: BorderRadius.circular(20)),
+                          color: kGold,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                         child: Text(
                           'VIP',
                           style: GoogleFonts.lato(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                              color: kWhite),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            color: kWhite,
+                          ),
                         ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 3),
-                Text(m.deskripsi,
-                    style:
-                        GoogleFonts.lato(fontSize: 11, color: Colors.black45)),
+                Text(
+                  m.deskripsi,
+                  style: GoogleFonts.lato(fontSize: 11, color: Colors.black45),
+                ),
                 if (m.info != null) ...[
                   const SizedBox(height: 4),
                   Row(
@@ -834,9 +1213,10 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                         child: Text(
                           m.info!,
                           style: GoogleFonts.lato(
-                              fontSize: 10,
-                              color: isNoSmoke ? kGreen : Colors.black38,
-                              fontWeight: FontWeight.w600),
+                            fontSize: 10,
+                            color: isNoSmoke ? kGreen : Colors.black38,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -853,19 +1233,25 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
               Text(
                 'Rp ${_formatHarga(m.harga)}',
                 style: GoogleFonts.lato(
-                    fontSize: 13, fontWeight: FontWeight.w900, color: color),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                ),
               ),
               if (isJam)
-                Text('/jam',
-                    style:
-                        GoogleFonts.lato(fontSize: 10, color: Colors.black38)),
+                Text(
+                  '/jam',
+                  style: GoogleFonts.lato(fontSize: 10, color: Colors.black38),
+                ),
               const SizedBox(height: 6),
               // Toggle tersedia
               GestureDetector(
                 onTap: () => setState(() => m.tersedia = !m.tersedia),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: m.tersedia
                         ? kGreen.withOpacity(0.1)
@@ -875,9 +1261,10 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                   child: Text(
                     m.tersedia ? 'TERSEDIA' : 'HABIS',
                     style: GoogleFonts.lato(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        color: m.tersedia ? kGreen : kRed),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: m.tersedia ? kGreen : kRed,
+                    ),
                   ),
                 ),
               ),
@@ -885,10 +1272,16 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
               Row(
                 children: [
                   _actionBtn(
-                      Icons.edit_outlined, kBlue, () => _showEditDialog(m)),
+                    Icons.edit_outlined,
+                    kBlue,
+                    () => _showEditDialog(m),
+                  ),
                   const SizedBox(width: 6),
                   _actionBtn(
-                      Icons.delete_outline, kRed, () => _showDeleteDialog(m)),
+                    Icons.delete_outline,
+                    kRed,
+                    () => _showDeleteDialog(m),
+                  ),
                 ],
               ),
             ],
@@ -905,8 +1298,9 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8)),
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Icon(icon, size: 15, color: color),
       ),
     );
@@ -918,8 +1312,10 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       onPressed: () => _showTambahDialog(),
       backgroundColor: _kategoriColor(_selectedKategori),
       icon: const Icon(Icons.add, color: kWhite),
-      label: Text('Tambah Menu',
-          style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite)),
+      label: Text(
+        'Tambah Menu',
+        style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite),
+      ),
     );
   }
 
@@ -962,11 +1358,16 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Tambah Menu',
-              style: GoogleFonts.lato(
-                  fontWeight: FontWeight.w900, color: kTextDark)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Tambah Menu',
+            style: GoogleFonts.lato(
+              fontWeight: FontWeight.w900,
+              color: kTextDark,
+            ),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -974,16 +1375,26 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                 _dialogField(namaCtrl, 'Nama Menu', Icons.restaurant_menu),
                 const SizedBox(height: 10),
                 _dialogField(
-                    inisialCtrl, 'Inisial (maks 3 huruf)', Icons.text_fields,
-                    maxLength: 3),
+                  inisialCtrl,
+                  'Inisial (maks 3 huruf)',
+                  Icons.text_fields,
+                  maxLength: 3,
+                ),
                 const SizedBox(height: 10),
-                _dialogField(hargaCtrl, 'Harga (Rp)', Icons.attach_money,
-                    isNumber: true),
+                _dialogField(
+                  hargaCtrl,
+                  'Harga (Rp)',
+                  Icons.attach_money,
+                  isNumber: true,
+                ),
                 const SizedBox(height: 10),
                 _dialogField(deskCtrl, 'Deskripsi', Icons.info_outline),
                 const SizedBox(height: 10),
                 _dialogField(
-                    infoCtrl, 'Info Tambahan (opsional)', Icons.label_outline),
+                  infoCtrl,
+                  'Info Tambahan (opsional)',
+                  Icons.label_outline,
+                ),
                 const SizedBox(height: 10),
                 _dialogDropdown<KategoriMenu>(
                   label: 'Kategori',
@@ -997,14 +1408,19 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text('Batal',
-                    style: GoogleFonts.lato(color: Colors.black45))),
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Batal',
+                style: GoogleFonts.lato(color: Colors.black45),
+              ),
+            ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                  backgroundColor: kBlue,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10))),
+                backgroundColor: kBlue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
               onPressed: () {
                 if (namaCtrl.text.isNotEmpty && hargaCtrl.text.isNotEmpty) {
                   final nama = namaCtrl.text.trim();
@@ -1035,9 +1451,13 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                   Navigator.pop(ctx);
                 }
               },
-              child: Text('Simpan',
-                  style: GoogleFonts.lato(
-                      fontWeight: FontWeight.w800, color: kWhite)),
+              child: Text(
+                'Simpan',
+                style: GoogleFonts.lato(
+                  fontWeight: FontWeight.w800,
+                  color: kWhite,
+                ),
+              ),
             ),
           ],
         ),
@@ -1058,11 +1478,16 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Edit Menu',
-              style: GoogleFonts.lato(
-                  fontWeight: FontWeight.w900, color: kTextDark)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Edit Menu',
+            style: GoogleFonts.lato(
+              fontWeight: FontWeight.w900,
+              color: kTextDark,
+            ),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1070,16 +1495,26 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                 _dialogField(namaCtrl, 'Nama Menu', Icons.restaurant_menu),
                 const SizedBox(height: 10),
                 _dialogField(
-                    inisialCtrl, 'Inisial (maks 3 huruf)', Icons.text_fields,
-                    maxLength: 3),
+                  inisialCtrl,
+                  'Inisial (maks 3 huruf)',
+                  Icons.text_fields,
+                  maxLength: 3,
+                ),
                 const SizedBox(height: 10),
-                _dialogField(hargaCtrl, 'Harga (Rp)', Icons.attach_money,
-                    isNumber: true),
+                _dialogField(
+                  hargaCtrl,
+                  'Harga (Rp)',
+                  Icons.attach_money,
+                  isNumber: true,
+                ),
                 const SizedBox(height: 10),
                 _dialogField(deskCtrl, 'Deskripsi', Icons.info_outline),
                 const SizedBox(height: 10),
                 _dialogField(
-                    infoCtrl, 'Info Tambahan (opsional)', Icons.label_outline),
+                  infoCtrl,
+                  'Info Tambahan (opsional)',
+                  Icons.label_outline,
+                ),
                 const SizedBox(height: 10),
                 _dialogDropdown<KategoriMenu>(
                   label: 'Kategori',
@@ -1093,14 +1528,19 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text('Batal',
-                    style: GoogleFonts.lato(color: Colors.black45))),
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Batal',
+                style: GoogleFonts.lato(color: Colors.black45),
+              ),
+            ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                  backgroundColor: kBlue,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10))),
+                backgroundColor: kBlue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
               onPressed: () {
                 setState(() {
                   m.nama = namaCtrl.text.trim();
@@ -1116,9 +1556,13 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
                 });
                 Navigator.pop(ctx);
               },
-              child: Text('Simpan',
-                  style: GoogleFonts.lato(
-                      fontWeight: FontWeight.w800, color: kWhite)),
+              child: Text(
+                'Simpan',
+                style: GoogleFonts.lato(
+                  fontWeight: FontWeight.w800,
+                  color: kWhite,
+                ),
+              ),
             ),
           ],
         ),
@@ -1132,39 +1576,55 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Hapus Menu',
-            style: GoogleFonts.lato(
-                fontWeight: FontWeight.w900, color: kTextDark)),
+        title: Text(
+          'Hapus Menu',
+          style: GoogleFonts.lato(
+            fontWeight: FontWeight.w900,
+            color: kTextDark,
+          ),
+        ),
         content: RichText(
           text: TextSpan(
             style: GoogleFonts.lato(fontSize: 13, color: Colors.black54),
             children: [
               const TextSpan(text: 'Yakin hapus '),
               TextSpan(
-                  text: m.nama,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w800, color: kTextDark)),
+                text: m.nama,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: kTextDark,
+                ),
+              ),
               const TextSpan(text: '?'),
             ],
           ),
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('Batal',
-                  style: GoogleFonts.lato(color: Colors.black45))),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Batal',
+              style: GoogleFonts.lato(color: Colors.black45),
+            ),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-                backgroundColor: kRed,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10))),
+              backgroundColor: kRed,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
             onPressed: () {
               setState(() => _menuList.removeWhere((e) => e.id == m.id));
               Navigator.pop(ctx);
             },
-            child: Text('Hapus',
-                style: GoogleFonts.lato(
-                    fontWeight: FontWeight.w800, color: kWhite)),
+            child: Text(
+              'Hapus',
+              style: GoogleFonts.lato(
+                fontWeight: FontWeight.w800,
+                color: kWhite,
+              ),
+            ),
           ),
         ],
       ),
@@ -1181,7 +1641,9 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
   }) {
     return Container(
       decoration: BoxDecoration(
-          color: kBgLight, borderRadius: BorderRadius.circular(12)),
+        color: kBgLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: TextField(
         controller: ctrl,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
@@ -1209,18 +1671,21 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-          color: kBgLight, borderRadius: BorderRadius.circular(12)),
+        color: kBgLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,
           isExpanded: true,
           style: GoogleFonts.lato(fontSize: 13, color: kTextDark),
           items: items
-              .map((e) => DropdownMenuItem<T>(
-                    value: e,
-                    child:
-                        Text(itemLabel != null ? itemLabel(e) : e.toString()),
-                  ))
+              .map(
+                (e) => DropdownMenuItem<T>(
+                  value: e,
+                  child: Text(itemLabel != null ? itemLabel(e) : e.toString()),
+                ),
+              )
               .toList(),
           onChanged: onChanged,
         ),
