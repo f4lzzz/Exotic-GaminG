@@ -41,6 +41,7 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
       (_headerExpanded - _headerCollapsed) * _collapseProgress;
 
   bool _isDeletingAll = false;
+  bool _isMarkingAllRead = false;
 
   @override
   void initState() {
@@ -109,6 +110,64 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
     }
   }
 
+  Future<void> _markAsRead(String id) async {
+    try {
+      await FirebaseFirestore.instance.collection('pengumuman').doc(id).update({
+        'dibaca': 1,
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  Future<void> _markAllAsRead() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Tandai Semua Telah Dibaca?',
+          style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kBlue),
+        ),
+        content: Text(
+          'Semua pengumuman akan ditandai sebagai sudah dibaca.',
+          style: GoogleFonts.lato(fontSize: 13, color: kTextDark),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child:
+                Text('Batal', style: GoogleFonts.lato(color: Colors.black45)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: kBlue),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Ya', style: GoogleFonts.lato(color: kWhite)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    setState(() => _isMarkingAllRead = true);
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('pengumuman')
+          .where('dibaca', isEqualTo: 0)
+          .get();
+      final batch = FirebaseFirestore.instance.batch();
+      for (var doc in snapshot.docs) {
+        batch.update(doc.reference, {'dibaca': 1});
+      }
+      await batch.commit();
+      _showSnack('Semua pengumuman ditandai telah dibaca', kGreen);
+    } catch (e) {
+      _showSnack('Gagal: $e', kRed);
+    } finally {
+      if (mounted) setState(() => _isMarkingAllRead = false);
+    }
+  }
+
   Future<void> _hapusPengumuman(String id) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -154,7 +213,12 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
   }
 
   // ========== DETAIL DIALOG (scrollable) ==========
-  void _showDetailDialog(Map<String, dynamic> item) {
+  void _showDetailDialog(Map<String, dynamic> item, String id) async {
+    // Tandai sudah dibaca sebelum dialog muncul
+    if (item['dibaca'] == 0) {
+      await _markAsRead(id);
+      // Refresh stream builder akan otomatis update UI
+    }
     final prioritas = item['prioritas'] ?? 'Normal';
     final Color pColor = prioritas == 'Darurat'
         ? kRed
@@ -404,20 +468,44 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
       ),
     );
 
-    final actionButtons = GestureDetector(
-      onTap: _hapusSemuaPengumuman,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-            color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
-        child: _isDeletingAll
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: kWhite))
-            : const Icon(Icons.delete_sweep_rounded, color: kWhite, size: 20),
-      ),
+    final actionButtons = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: _markAllAsRead,
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+                color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
+            child: _isMarkingAllRead
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: kWhite))
+                : const Icon(Icons.done_all_rounded, color: kWhite, size: 20),
+          ),
+        ),
+        const SizedBox(width: 6),
+        GestureDetector(
+          onTap: _hapusSemuaPengumuman,
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+                color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
+            child: _isDeletingAll
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: kWhite))
+                : const Icon(Icons.delete_sweep_rounded,
+                    color: kWhite, size: 20),
+          ),
+        ),
+      ],
     );
 
     return AnimatedContainer(
@@ -653,7 +741,14 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
     }
 
     return GestureDetector(
-      onTap: () => _showDetailDialog(data),
+      onTap: () async {
+        // Tandai sudah dibaca jika belum
+        if (isUnread) {
+          await _markAsRead(id);
+          // Update UI akan terjadi karena stream
+        }
+        _showDetailDialog(data, id);
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
