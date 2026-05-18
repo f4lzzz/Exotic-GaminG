@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'notifikasi_owner.dart';
 import 'profil_owner.dart';
+import 'notif_icon.dart'; // widget notifikasi reusable
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -279,7 +279,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       kategori: KategoriMenu.makanan,
       harga: 10000,
       deskripsi: 'Tempe mendoan dengan ',
-      image: 'images/Tempe_Mendoan.jpg',
+      image: 'images/tempe_mendoan.jpg',
     ),
     MenuItem(
       id: 'm24',
@@ -315,7 +315,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       kategori: KategoriMenu.makanan,
       harga: 12000,
       deskripsi: 'roti bakar dengan rasa taro ',
-      image: 'images/roti_bakar_taro.jpeg',
+      image: 'images/roti_bakar_taro.jpg',
     ),
     MenuItem(
       id: 'm28',
@@ -871,14 +871,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
           ),
         ),
         const SizedBox(width: 6),
-        _headerIconBtn(
-          Icons.notifications_outlined,
-          badge: 3,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NotifikasiOwnerScreen()),
-          ),
-        ),
+        const NotifIcon(), // widget notifikasi reusable
       ],
     );
 
