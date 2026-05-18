@@ -13,10 +13,8 @@ class CloudinaryService {
   /// [imageFile] : file gambar yang akan diupload
   /// [folder]    : folder di Cloudinary (opsional, default 'uploads')
   /// Return: URL gambar yang sudah diupload, atau null jika gagal.
-  Future<String?> uploadImage({
-    required File imageFile,
-    String folder = 'uploads',
-  }) async {
+  Future<String?> uploadImage(
+      {required File imageFile, String folder = 'uploads', z}) async {
     try {
       final uri =
           Uri.parse('https://api.cloudinary.com/v1_1/$_cloudName/image/upload');

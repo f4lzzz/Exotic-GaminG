@@ -1,17 +1,17 @@
-import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'absensi_screen.dart';
-import 'login.dart';
-import 'notifikasi_karyawan.dart';
-import 'menu_karyawan.dart';
-import 'quick_access_karyawan.dart';
-import 'kasir_pos_screen.dart';
-import 'profil_karyawan.dart';
-import 'registrasi_wajah_screen.dart';
+import 'dart:async'; // jam dan timer
+import 'package:flutter/material.dart'; // untuk  tampilan ui
+import 'package:google_fonts/google_fonts.dart'; // untuk font
+import 'package:intl/intl.dart'; // untuk format tanggal dan waktu
+import 'package:firebase_auth/firebase_auth.dart'; // untuk autentikasi user
+import 'package:cloud_firestore/cloud_firestore.dart'; // untuk ambil data user dari firestore atau calud
+import 'absensi_screen.dart'; // panggil sccren absen
+import 'login.dart'; // panggil screen login
+import 'notifikasi_karyawan.dart'; // panggil notiv
+import 'menu_karyawan.dart'; // panggil menu
+import 'quick_access_karyawan.dart'; // panggil menu cepat
+import 'kasir_pos_screen.dart'; // pangggil kasir
+import 'profil_karyawan.dart'; // panggil profil karyawan
+import 'registrasi_wajah_screen.dart'; // pamggol regristasi wajah
 
 // ── WARNA ─────────────────────────────────────────────────────────────────────
 const kBlue = Color(0xFF5B8DEE);
@@ -28,6 +28,7 @@ const kBgLight = Color(0xFFDDE8F8);
 
 // ─── MODEL SHIFT ──────────────────────────────────────────────────────────────
 class ShiftModel {
+  // membuat cetakan agar lebih rapi
   final String nama;
   final String jamMulai;
   final String jamSelesai;
@@ -49,45 +50,57 @@ enum StatusShift { selesai, berlangsung, akan }
 
 // ─── SCREEN ───────────────────────────────────────────────────────────────────
 class KaryawanDashboardScreen extends StatefulWidget {
+  // deklarasi halaman dapat berubah
   const KaryawanDashboardScreen({super.key});
 
   @override
-  State<KaryawanDashboardScreen> createState() =>
-      _KaryawanDashboardScreenState();
+  State<KaryawanDashboardScreen>
+      createState() => //  menghubungkan statefulwidget dengan statenya "ini tampilan dan ini daya yag bisa berubah"
+          _KaryawanDashboardScreenState();
 }
 
 class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     with TickerProviderStateMixin {
-  int _selectedNav = 0;
-  int _notifCount = 2;
+  // class private dan  membuat animasi dengan triker provider
+  int _selectedNav =
+      0; //  menentukan buutom navigasi mana yang aktif 0-> home,halam yang pertama kali di buka
+  int _notifCount = 2; // jumlah notivikasi yang belum dibaca
 
-  User? _currentUser;
-  Map<String, dynamic>? _userData;
-  bool _isTokoAktif = true;
+  User?
+      _currentUser; // user  yang sedang login dari firebase auth ,jika tidak ada bernilai nul
+  Map<String, dynamic>?
+      _userData; // data  tambahan dari firestore (nama,jabatan,foto)
+  bool _isTokoAktif = true; // status toko bisa di ubah
 
   // ── state absensi ──────────────────────────────────────────────
-  bool _sudahMasuk = false;
-  bool _sudahPulang = false;
-  String? _jamMasuk;
-  String? _jamPulang;
+  bool _sudahMasuk = false; // apakah karyawan sudah absen masuk hari ini
+  bool _sudahPulang = false; // apakah karyawan sudah apsen pulang hari ini
+  String? _jamMasuk; // jam masuk absen yang ditampilkan
+  String? _jamPulang; // jam pulang absen
 
   // ── clock ──────────────────────────────────────────────────────
-  late Timer _clock;
+  late Timer _clock; // timer update jam tiap detik
   DateTime _now = DateTime.now();
 
-  late AnimationController _pulseCtrl;
-  late Animation<double> _pulse;
-  late AnimationController _fadeCtrl;
-  late Animation<double> _fadeAnim;
+  late AnimationController _pulseCtrl; // untuk  animasi pulse pada tombol absen
+  late Animation<double> _pulse; // nilai anamasi yang membesar mengecil
+  late AnimationController
+      _fadeCtrl; // mengontrol animasi yang muncul perlahan saat halaman dibuka
+  late Animation<double> _fadeAnim; // nilai animasi (0->1) untuk transisi halus
 
-  final _scrollCtrl = ScrollController();
-  double _scrollOffset = 0;
+  final _scrollCtrl = ScrollController(); //deteksi posisi scroll
+  double _scrollOffset =
+      0; // menyimpan posisis seberapa jauh user scroll dalam pixel
 
-  static const double _headerExpanded = 120.0;
-  static const double _headerCollapsed = 60.0;
-  static const double _collapseAt = 70.0;
+  static const double _headerExpanded =
+      120.0; // tinggi herder saat  belum di scroll
+  static const double _headerCollapsed =
+      60.0; // tinggi herder saat sudah di scroll penuh
+  static const double _collapseAt =
+      70.0; // scroll sejauh 70PX untuk mengecilkan herder
 
-  double get _collapseProgress => (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
+  double get _collapseProgress => (_scrollOffset / _collapseAt)
+      .clamp(0.0, 1.0); //menghitung seberapa jauh proses pengecilan herder
   double get _headerHeight =>
       _headerExpanded -
       (_headerExpanded - _headerCollapsed) * _collapseProgress;

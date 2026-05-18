@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'notifikasi_owner.dart';
 import 'profil_owner.dart';
 import 'owner_kalender.dart';
+import 'registrasi_wajah_screen.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -207,8 +208,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                     final data = doc.data() as Map<String, dynamic>;
                     final nama = data['nama']?.toLowerCase() ?? '';
                     final jabatan = data['jabatan']?.toLowerCase() ?? '';
-                    final matchSearch =
-                        _searchQuery.isEmpty ||
+                    final matchSearch = _searchQuery.isEmpty ||
                         nama.contains(_searchQuery.toLowerCase()) ||
                         jabatan.contains(_searchQuery.toLowerCase());
                     if (!matchSearch) return false;
@@ -689,6 +689,20 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                     kRed,
                     () => _showDeleteDialog(uid, nama),
                   ),
+                  const SizedBox(width: 6),
+                  _actionBtn(
+                    Icons.face_retouching_natural,
+                    kGreen,
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RegistrasiWajahScreen(
+                          uid: uid,
+                          namaKaryawan: nama,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -895,21 +909,21 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                         UserCredential userCredential = await FirebaseAuth
                             .instance
                             .createUserWithEmailAndPassword(
-                              email: email,
-                              password: password,
-                            );
+                          email: email,
+                          password: password,
+                        );
                         String uid = userCredential.user!.uid;
                         await FirebaseFirestore.instance
                             .collection('users')
                             .doc(uid)
                             .set({
-                              'nama': nama,
-                              'username': username,
-                              'email': email,
-                              'role': 'karyawan',
-                              'jabatan': null,
-                              'createdAt': FieldValue.serverTimestamp(),
-                            });
+                          'nama': nama,
+                          'username': username,
+                          'email': email,
+                          'role': 'karyawan',
+                          'jabatan': null,
+                          'createdAt': FieldValue.serverTimestamp(),
+                        });
                         if (ctx.mounted) Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -920,8 +934,8 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                       } catch (e) {
                         String msg = e is FirebaseAuthException
                             ? (e.code == 'email-already-in-use'
-                                  ? 'Email sudah digunakan'
-                                  : 'Gagal: ${e.message}')
+                                ? 'Email sudah digunakan'
+                                : 'Gagal: ${e.message}')
                             : 'Terjadi kesalahan: $e';
                         ScaffoldMessenger.of(ctx).showSnackBar(
                           SnackBar(content: Text(msg), backgroundColor: kRed),
@@ -965,27 +979,28 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
           ),
           title: Text(
             'Edit Karyawan',
-            style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark),
+            style:
+                GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark),
           ),
           content: SizedBox(
             width: MediaQuery.of(ctx).size.width,
             child: SingleChildScrollView(
               child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _dialogField(namaCtrl, 'Nama Lengkap', Icons.person_outline),
-                const SizedBox(height: 12),
-                _dialogField(usernameCtrl, 'Username', Icons.alternate_email),
-                const SizedBox(height: 12),
-                _dialogField(jabatanCtrl, 'Jabatan', Icons.work_outline),
-                if (isLoading)
-                  const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: CircularProgressIndicator(),
-                  ),
-              ],
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _dialogField(namaCtrl, 'Nama Lengkap', Icons.person_outline),
+                  const SizedBox(height: 12),
+                  _dialogField(usernameCtrl, 'Username', Icons.alternate_email),
+                  const SizedBox(height: 12),
+                  _dialogField(jabatanCtrl, 'Jabatan', Icons.work_outline),
+                  if (isLoading)
+                    const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: CircularProgressIndicator(),
+                    ),
+                ],
+              ),
             ),
-          ),
           ),
           actions: [
             TextButton(
@@ -1011,12 +1026,12 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                             .collection('users')
                             .doc(uid)
                             .update({
-                              'nama': namaCtrl.text.trim(),
-                              'username': usernameCtrl.text.trim(),
-                              'jabatan': jabatanCtrl.text.trim().isEmpty
-                                  ? null
-                                  : jabatanCtrl.text.trim(),
-                            });
+                          'nama': namaCtrl.text.trim(),
+                          'username': usernameCtrl.text.trim(),
+                          'jabatan': jabatanCtrl.text.trim().isEmpty
+                              ? null
+                              : jabatanCtrl.text.trim(),
+                        });
                         if (ctx.mounted) Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -1060,26 +1075,27 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Hapus Karyawan',
-          style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark),
+          style:
+              GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark),
         ),
         content: SizedBox(
           width: MediaQuery.of(ctx).size.width,
           child: RichText(
-          text: TextSpan(
-            style: GoogleFonts.lato(fontSize: 13, color: Colors.black54),
-            children: [
-              const TextSpan(text: 'Yakin hapus '),
-              TextSpan(
-                text: nama,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: kTextDark,
+            text: TextSpan(
+              style: GoogleFonts.lato(fontSize: 13, color: Colors.black54),
+              children: [
+                const TextSpan(text: 'Yakin hapus '),
+                TextSpan(
+                  text: nama,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: kTextDark,
+                  ),
                 ),
-              ),
-              const TextSpan(text: '?'),
-            ],
+                const TextSpan(text: '?'),
+              ],
+            ),
           ),
-        ),
         ),
         actions: [
           TextButton(

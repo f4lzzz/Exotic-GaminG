@@ -12,14 +12,15 @@ class FaceOvalPainter extends CustomPainter {
     final cy = size.height / 2;
     final rx = size.width * 0.32;
     final ry = size.height * 0.42;
-    final rect = Rect.fromCenter(
-        center: Offset(cx, cy), width: rx * 2, height: ry * 2);
+    final rect =
+        Rect.fromCenter(center: Offset(cx, cy), width: rx * 2, height: ry * 2);
 
     // oval utama
     final ovalPaint = Paint()
       ..color = detected
           ? const Color(0xFF2ECC71)
-          : Colors.white.withOpacity(0.7)
+          // ✅ FIX: withOpacity() diganti withValues(alpha:)
+          : Colors.white.withValues(alpha: 0.7)
       ..style = PaintingStyle.stroke
       ..strokeWidth = detected ? 3.5 : 2.5;
     canvas.drawOval(rect, ovalPaint);
@@ -57,12 +58,11 @@ class FaceOvalPainter extends CustomPainter {
       final scanPaint = Paint()
         ..shader = LinearGradient(colors: [
           Colors.transparent,
-          const Color(0xFF2ECC71).withOpacity(0.8),
+          // ✅ FIX: withOpacity() diganti withValues(alpha:)
+          const Color(0xFF2ECC71).withValues(alpha: 0.8),
           Colors.transparent,
-        ]).createShader(
-            Rect.fromLTWH(cx - rx, scanY - 1, rx * 2, 2));
-      canvas.drawRect(
-          Rect.fromLTWH(cx - rx, scanY - 1, rx * 2, 2), scanPaint);
+        ]).createShader(Rect.fromLTWH(cx - rx, scanY - 1, rx * 2, 2));
+      canvas.drawRect(Rect.fromLTWH(cx - rx, scanY - 1, rx * 2, 2), scanPaint);
       canvas.restore();
     }
 
