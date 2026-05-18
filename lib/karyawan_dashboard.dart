@@ -82,18 +82,11 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
   late Timer _clock; // timer update jam tiap detik
   DateTime _now = DateTime.now();
 
-<<<<<<< HEAD
   late AnimationController _pulseCtrl; // untuk  animasi pulse pada tombol absen
   late Animation<double> _pulse; // nilai anamasi yang membesar mengecil
   late AnimationController
       _fadeCtrl; // mengontrol animasi yang muncul perlahan saat halaman dibuka
   late Animation<double> _fadeAnim; // nilai animasi (0->1) untuk transisi halus
-=======
-  late AnimationController _pulseCtrl;
-  late Animation<double> _pulse;
-  late AnimationController _fadeCtrl;
-  late Animation<double>   _fadeAnim;
->>>>>>> 6c6d98b221ca52fe263c914cfa76aa13c6b21e5a
 
   final _scrollCtrl = ScrollController(); //deteksi posisi scroll
   double _scrollOffset =

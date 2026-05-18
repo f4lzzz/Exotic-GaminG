@@ -6,11 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'profil_owner.dart';
 import 'owner_kalender.dart';
-<<<<<<< HEAD
-import 'registrasi_wajah_screen.dart';
-=======
 import 'notif_icon.dart';
->>>>>>> 6c6d98b221ca52fe263c914cfa76aa13c6b21e5a
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -587,30 +583,8 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                   _actionBtn(Icons.edit_outlined, kBlue,
                       () => _showEditDialog(uid, data)),
                   const SizedBox(width: 6),
-<<<<<<< HEAD
-                  _actionBtn(
-                    Icons.delete_outline,
-                    kRed,
-                    () => _showDeleteDialog(uid, nama),
-                  ),
-                  const SizedBox(width: 6),
-                  _actionBtn(
-                    Icons.face_retouching_natural,
-                    kGreen,
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => RegistrasiWajahScreen(
-                          uid: uid,
-                          namaKaryawan: nama,
-                        ),
-                      ),
-                    ),
-                  ),
-=======
                   _actionBtn(Icons.delete_outline, kRed,
                       () => _showDeleteDialog(uid, nama)),
->>>>>>> 6c6d98b221ca52fe263c914cfa76aa13c6b21e5a
                 ],
               ),
             ],
@@ -780,15 +754,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                       setDlg(() => isLoading = true);
 
                       try {
-<<<<<<< HEAD
-                        UserCredential userCredential = await FirebaseAuth
-                            .instance
-                            .createUserWithEmailAndPassword(
-                          email: email,
-                          password: password,
-                        );
-                        String uid = userCredential.user!.uid;
-=======
                         // 🔥 Buat akun menggunakan Firebase REST API (tidak mengubah session)
                         final url = Uri.parse(
                             'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$_firebaseApiKey');
@@ -812,7 +777,6 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                         final uid = data['localId'];
 
                         // Simpan data karyawan ke Firestore
->>>>>>> 6c6d98b221ca52fe263c914cfa76aa13c6b21e5a
                         await FirebaseFirestore.instance
                             .collection('users')
                             .doc(uid)
@@ -824,10 +788,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                           'jabatan': null,
                           'createdAt': FieldValue.serverTimestamp(),
                         });
-<<<<<<< HEAD
-=======
 
->>>>>>> 6c6d98b221ca52fe263c914cfa76aa13c6b21e5a
                         if (ctx.mounted) Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -835,22 +796,11 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                                 backgroundColor: kGreen));
                         setState(() {}); // refresh daftar karyawan
                       } catch (e) {
-<<<<<<< HEAD
-                        String msg = e is FirebaseAuthException
-                            ? (e.code == 'email-already-in-use'
-                                ? 'Email sudah digunakan'
-                                : 'Gagal: ${e.message}')
-                            : 'Terjadi kesalahan: $e';
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(content: Text(msg), backgroundColor: kRed),
-                        );
-=======
                         String msg = e.toString().contains('EMAIL_EXISTS')
                             ? 'Email sudah digunakan'
                             : 'Gagal: $e';
                         ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                             content: Text(msg), backgroundColor: kRed));
->>>>>>> 6c6d98b221ca52fe263c914cfa76aa13c6b21e5a
                         setDlg(() => isLoading = false);
                       }
                     },
@@ -881,22 +831,11 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         builder: (ctx, setDlg) => AlertDialog(
           backgroundColor: kWhite,
           surfaceTintColor: kWhite,
-<<<<<<< HEAD
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'Edit Karyawan',
-            style:
-                GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark),
-          ),
-=======
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text('Edit Karyawan',
               style: GoogleFonts.lato(
                   fontWeight: FontWeight.w900, color: kTextDark)),
->>>>>>> 6c6d98b221ca52fe263c914cfa76aa13c6b21e5a
           content: SizedBox(
             width: MediaQuery.of(ctx).size.width,
             child: SingleChildScrollView(
@@ -910,14 +849,8 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                   _dialogField(jabatanCtrl, 'Jabatan', Icons.work_outline),
                   if (isLoading)
                     const Padding(
-<<<<<<< HEAD
-                      padding: EdgeInsets.all(8),
-                      child: CircularProgressIndicator(),
-                    ),
-=======
                         padding: EdgeInsets.all(8),
                         child: CircularProgressIndicator()),
->>>>>>> 6c6d98b221ca52fe263c914cfa76aa13c6b21e5a
                 ],
               ),
             ),
@@ -979,17 +912,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         backgroundColor: kWhite,
         surfaceTintColor: kWhite,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-<<<<<<< HEAD
-        title: Text(
-          'Hapus Karyawan',
-          style:
-              GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark),
-        ),
-=======
         title: Text('Hapus Karyawan',
             style: GoogleFonts.lato(
                 fontWeight: FontWeight.w900, color: kTextDark)),
->>>>>>> 6c6d98b221ca52fe263c914cfa76aa13c6b21e5a
         content: SizedBox(
           width: MediaQuery.of(ctx).size.width,
           child: RichText(
@@ -998,18 +923,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               children: [
                 const TextSpan(text: 'Yakin hapus '),
                 TextSpan(
-<<<<<<< HEAD
-                  text: nama,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: kTextDark,
-                  ),
-                ),
-=======
                     text: nama,
                     style: const TextStyle(
                         fontWeight: FontWeight.w800, color: kTextDark)),
->>>>>>> 6c6d98b221ca52fe263c914cfa76aa13c6b21e5a
                 const TextSpan(text: '?'),
               ],
             ),
