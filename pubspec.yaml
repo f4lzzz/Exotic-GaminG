@@ -27,6 +27,7 @@ dependencies:
   google_maps_flutter: ^2.6.1
   http: ^1.1.0
 
+  crypto: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
