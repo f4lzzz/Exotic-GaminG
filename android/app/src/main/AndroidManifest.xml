@@ -17,7 +17,7 @@
     <uses-feature android:name="android.hardware.camera.front" android:required="false"/>
 
     <application
-        android:label="apk"
+        android:label="Exotic Gaming & Cafe"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
