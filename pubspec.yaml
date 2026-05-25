@@ -27,6 +27,11 @@ dependencies:
   google_maps_flutter: ^2.6.1
   http: ^1.1.0
 
+  pdf: ^3.11.1
+  printing: ^5.13.1
+  open_file: ^3.3.2
+  provider: ^6.1.2
+
   crypto: any
 dev_dependencies:
   flutter_test:

@@ -4,8 +4,8 @@ import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image/image.dart' as img;
 import 'package:firebase_auth/firebase_auth.dart';
-import 'service/face_net_service.dart';
-import 'service/firestore_service.dart';
+import 'services/face_net_service.dart';
+import 'services/firestore_service.dart';
 import 'face_oval_painter.dart';
 
 class RegistrasiWajahScreen extends StatefulWidget {

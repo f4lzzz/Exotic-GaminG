@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../theme/app_theme.dart';
 import 'registrasi_wajah_screen.dart';
 import 'login.dart';
-import 'service/cloudinary_service.dart';
+import 'services/cloudinary_service.dart';
 
 // ==================== DATA MODEL ====================
 class _MenuTileData {

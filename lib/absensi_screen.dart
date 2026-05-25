@@ -9,10 +9,10 @@ import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image/image.dart' as img;
-import 'service/location_service.dart';
+import 'services/location_service.dart';
 import 'face_oval_painter.dart';
-import 'service/face_net_service.dart';
-import 'service/firestore_service.dart';
+import 'services/face_net_service.dart';
+import 'services/firestore_service.dart';
 
 const _kBlue = Color(0xFF5B8DEE);
 const _kBlueDark = Color(0xFF2C5FC4);

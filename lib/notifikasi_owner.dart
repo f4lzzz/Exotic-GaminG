@@ -742,10 +742,8 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
 
     return GestureDetector(
       onTap: () async {
-        // Tandai sudah dibaca jika belum
         if (isUnread) {
           await _markAsRead(id);
-          // Update UI akan terjadi karena stream
         }
         _showDetailDialog(data, id);
       },
@@ -830,12 +828,12 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: () => _hapusPengumuman(id),
                 child: Container(
                   width: 28,
                   height: 28,
-                  margin: const EdgeInsets.only(left: 8),
                   decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(8)),

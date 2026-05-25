@@ -1,17 +1,18 @@
-import 'dart:async'; // jam dan timer
-import 'package:flutter/material.dart'; // untuk  tampilan ui
-import 'package:google_fonts/google_fonts.dart'; // untuk font
-import 'package:intl/intl.dart'; // untuk format tanggal dan waktu
-import 'package:firebase_auth/firebase_auth.dart'; // untuk autentikasi user
-import 'package:cloud_firestore/cloud_firestore.dart'; // untuk ambil data user dari firestore atau calud
-import 'absensi_screen.dart'; // panggil sccren absen
-import 'login.dart'; // panggil screen login
-import 'notifikasi_karyawan.dart'; // panggil notiv
-import 'menu_karyawan.dart'; // panggil menu
-import 'quick_access_karyawan.dart'; // panggil menu cepat
-import 'kasir_pos_screen.dart'; // pangggil kasir
-import 'profil_karyawan.dart'; // panggil profil karyawan
-import 'registrasi_wajah_screen.dart'; // pamggol regristasi wajah
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'absensi_screen.dart';
+import 'login.dart';
+import 'notifikasi_karyawan.dart';
+import 'menu_karyawan.dart';
+import 'quick_access_karyawan.dart';
+import 'kasir_data_page.dart'; // <-- import kasir_data_page
+import 'rekap_screen.dart'; // <-- import rekap_screen
+import 'profil_karyawan.dart';
+import 'registrasi_wajah_screen.dart';
 
 // ── WARNA ─────────────────────────────────────────────────────────────────────
 const kBlue = Color(0xFF5B8DEE);
@@ -28,7 +29,6 @@ const kBgLight = Color(0xFFDDE8F8);
 
 // ─── MODEL SHIFT ──────────────────────────────────────────────────────────────
 class ShiftModel {
-  // membuat cetakan agar lebih rapi
   final String nama;
   final String jamMulai;
   final String jamSelesai;
@@ -50,57 +50,45 @@ enum StatusShift { selesai, berlangsung, akan }
 
 // ─── SCREEN ───────────────────────────────────────────────────────────────────
 class KaryawanDashboardScreen extends StatefulWidget {
-  // deklarasi halaman dapat berubah
   const KaryawanDashboardScreen({super.key});
 
   @override
-  State<KaryawanDashboardScreen>
-      createState() => //  menghubungkan statefulwidget dengan statenya "ini tampilan dan ini daya yag bisa berubah"
-          _KaryawanDashboardScreenState();
+  State<KaryawanDashboardScreen> createState() =>
+      _KaryawanDashboardScreenState();
 }
 
 class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     with TickerProviderStateMixin {
-  // class private dan  membuat animasi dengan triker provider
-  int _selectedNav =
-      0; //  menentukan buutom navigasi mana yang aktif 0-> home,halam yang pertama kali di buka
-  int _notifCount = 2; // jumlah notivikasi yang belum dibaca
+  int _selectedNav = 0;
+  int _notifCount = 2;
 
-  User?
-      _currentUser; // user  yang sedang login dari firebase auth ,jika tidak ada bernilai nul
-  Map<String, dynamic>?
-      _userData; // data  tambahan dari firestore (nama,jabatan,foto)
-  bool _isTokoAktif = true; // status toko bisa di ubah
+  User? _currentUser;
+  Map<String, dynamic>? _userData;
+  bool _isTokoAktif = true;
 
   // ── state absensi ──────────────────────────────────────────────
-  bool _sudahMasuk = false; // apakah karyawan sudah absen masuk hari ini
-  bool _sudahPulang = false; // apakah karyawan sudah apsen pulang hari ini
-  String? _jamMasuk; // jam masuk absen yang ditampilkan
-  String? _jamPulang; // jam pulang absen
+  bool _sudahMasuk = false;
+  bool _sudahPulang = false;
+  String? _jamMasuk;
+  String? _jamPulang;
 
   // ── clock ──────────────────────────────────────────────────────
-  late Timer _clock; // timer update jam tiap detik
+  late Timer _clock;
   DateTime _now = DateTime.now();
 
-  late AnimationController _pulseCtrl; // untuk  animasi pulse pada tombol absen
-  late Animation<double> _pulse; // nilai anamasi yang membesar mengecil
-  late AnimationController
-      _fadeCtrl; // mengontrol animasi yang muncul perlahan saat halaman dibuka
-  late Animation<double> _fadeAnim; // nilai animasi (0->1) untuk transisi halus
+  late AnimationController _pulseCtrl;
+  late Animation<double> _pulse;
+  late AnimationController _fadeCtrl;
+  late Animation<double> _fadeAnim;
 
-  final _scrollCtrl = ScrollController(); //deteksi posisi scroll
-  double _scrollOffset =
-      0; // menyimpan posisis seberapa jauh user scroll dalam pixel
+  final _scrollCtrl = ScrollController();
+  double _scrollOffset = 0;
 
-  static const double _headerExpanded =
-      120.0; // tinggi herder saat  belum di scroll
-  static const double _headerCollapsed =
-      60.0; // tinggi herder saat sudah di scroll penuh
-  static const double _collapseAt =
-      70.0; // scroll sejauh 70PX untuk mengecilkan herder
+  static const double _headerExpanded = 120.0;
+  static const double _headerCollapsed = 60.0;
+  static const double _collapseAt = 70.0;
 
-  double get _collapseProgress => (_scrollOffset / _collapseAt)
-      .clamp(0.0, 1.0); //menghitung seberapa jauh proses pengecilan herder
+  double get _collapseProgress => (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
   double get _headerHeight =>
       _headerExpanded -
       (_headerExpanded - _headerCollapsed) * _collapseProgress;
@@ -286,31 +274,21 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
                 ),
               ],
             ),
-            const KasirPosScreen(),
+            // Tab 1 — KASIR (menggunakan KasirDataPage seperti kode lama)
+            KasirDataPage(
+              kasirName: _displayName,
+              shift: _jabatan,
+            ),
+            // Tab 2 — QUICK ACCESS
             const QuickAccessKaryawanScreen(),
+            // Tab 3 — MENU
             const MenuKaryawanScreen(),
-            _buildPlaceholder('📊', 'REKAP', 'Rekap absensi & performa'),
+            // Tab 4 — REKAP (menggunakan RekapScreen dengan role karyawan)
+            const RekapScreen(role: 'karyawan'),
           ],
         ),
       ),
       bottomNavigationBar: _buildBottomNav(),
-    );
-  }
-
-  Widget _buildPlaceholder(String emoji, String title, String sub) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 52)),
-          const SizedBox(height: 12),
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.w900, color: kTextDark)),
-          const SizedBox(height: 4),
-          Text(sub, style: const TextStyle(fontSize: 13, color: kTextMid)),
-        ],
-      ),
     );
   }
 
@@ -353,7 +331,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     final iconButtons = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // ← PERBAIKAN: ProfilKaryawanScreen tanpa parameter
         _headerIconBtn(Icons.settings_outlined,
             onTap: () => Navigator.push(
                 context,
@@ -709,34 +686,40 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     final items = [
       {'icon': Icons.check_circle_rounded, 'label': 'TEPAT', 'color': kGreen},
       {'icon': Icons.timer_rounded, 'label': 'TERLAMBAT', 'color': kOrange},
-      {'icon': Icons.assignment_rounded, 'label': 'izin', 'color': kTextMid},
+      {'icon': Icons.assignment_rounded, 'label': 'IZIN', 'color': kTextMid},
       {'icon': Icons.bar_chart_rounded, 'label': 'REKAP', 'color': kRed},
     ];
 
     return Row(
       children: items
           .map((item) => Expanded(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        color: (item['color'] as Color).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                            color: (item['color'] as Color).withOpacity(0.25)),
+                child: GestureDetector(
+                  onTap: item['label'] == 'REKAP'
+                      ? () => setState(() => _selectedNav = 4)
+                      : null,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: (item['color'] as Color).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color:
+                                  (item['color'] as Color).withOpacity(0.25)),
+                        ),
+                        child: Icon(item['icon'] as IconData,
+                            color: item['color'] as Color, size: 26),
                       ),
-                      child: Icon(item['icon'] as IconData,
-                          color: item['color'] as Color, size: 26),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(item['label'] as String,
-                        style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: kTextMid)),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(item['label'] as String,
+                          style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: kTextMid)),
+                    ],
+                  ),
                 ),
               ))
           .toList(),
