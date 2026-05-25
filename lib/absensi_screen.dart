@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
@@ -86,7 +85,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
   late AnimationController _pulseAnim;
 
   final _namaCtrl = TextEditingController();
-  GoogleMapController? _mapCtrl;
 
   // ═══════════════════════ INIT ════════════════════════════════════════════════
   @override
@@ -472,7 +470,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
                     },
                     zoomControlsEnabled: false,
                     myLocationButtonEnabled: false,
-                    onMapCreated: (c) => _mapCtrl = c,
                   ),
                 ),
               ),
@@ -1148,7 +1145,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
                 },
                 zoomControlsEnabled: false,
                 myLocationButtonEnabled: false,
-                onMapCreated: (c) => _mapCtrl = c,
               ),
             ),
           ),

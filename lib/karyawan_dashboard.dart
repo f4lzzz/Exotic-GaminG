@@ -9,8 +9,8 @@ import 'login.dart';
 import 'notifikasi_karyawan.dart';
 import 'menu_karyawan.dart';
 import 'quick_access_karyawan.dart';
-import 'kasir_data_page.dart'; // <-- import kasir_data_page
-import 'rekap_screen.dart'; // <-- import rekap_screen
+import 'kasir_data_page.dart';
+import 'rekap_screen.dart';
 import 'profil_karyawan.dart';
 import 'registrasi_wajah_screen.dart';
 
@@ -66,18 +66,15 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
   Map<String, dynamic>? _userData;
   bool _isTokoAktif = true;
 
-  // ── state absensi ──────────────────────────────────────────────
   bool _sudahMasuk = false;
   bool _sudahPulang = false;
   String? _jamMasuk;
   String? _jamPulang;
 
-  // ── clock ──────────────────────────────────────────────────────
   late Timer _clock;
   DateTime _now = DateTime.now();
 
-  late AnimationController _pulseCtrl;
-  late Animation<double> _pulse;
+  // Hapus _pulseCtrl dan _pulse karena tidak digunakan
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
 
@@ -128,12 +125,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
       if (mounted) setState(() => _now = DateTime.now());
     });
 
-    _pulseCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 900))
-      ..repeat(reverse: true);
-    _pulse = Tween(begin: 0.95, end: 1.05)
-        .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
-
     _fadeCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
@@ -168,7 +159,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
   @override
   void dispose() {
     _clock.cancel();
-    _pulseCtrl.dispose();
     _fadeCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
@@ -189,7 +179,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
 
   bool get _isAdmin => _userData?['role'] == 'admin';
 
-  // ── LOGIKA ABSENSI ─────────────────────────────────────────────
   void _bukaAbsensi(AbsensiType type) async {
     if (type == AbsensiType.masuk && _sudahMasuk) {
       _snack('Kamu sudah absen masuk hari ini!');
@@ -231,7 +220,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     ));
   }
 
-  // ─── BUILD ────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final timeStr = DateFormat('HH:mm').format(_now);
@@ -249,7 +237,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
         child: IndexedStack(
           index: _selectedNav,
           children: [
-            // Tab 0 — HOME
             Column(
               children: [
                 FadeTransition(
@@ -274,16 +261,12 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
                 ),
               ],
             ),
-            // Tab 1 — KASIR (menggunakan KasirDataPage seperti kode lama)
             KasirDataPage(
               kasirName: _displayName,
               shift: _jabatan,
             ),
-            // Tab 2 — QUICK ACCESS
             const QuickAccessKaryawanScreen(),
-            // Tab 3 — MENU
             const MenuKaryawanScreen(),
-            // Tab 4 — REKAP (menggunakan RekapScreen dengan role karyawan)
             const RekapScreen(role: 'karyawan'),
           ],
         ),
@@ -292,7 +275,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     );
   }
 
-  // ─── HEADER ───────────────────────────────────────────────────
   Widget _buildHeader(String timeStr, String dateStr) {
     final p = _collapseProgress;
     final double eSize = 24 - (24 - 14) * p;
@@ -413,7 +395,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     );
   }
 
-  // ─── USER INFO CARD ───────────────────────────────────────────
   Widget _buildUserInfoCard() {
     final photoUrl = _userData?['photoUrl'] as String?;
 
@@ -503,7 +484,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     );
   }
 
-  // ─── ABSENSI CARD ─────────────────────────────────────────────
   Widget _buildAbsensiCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -681,7 +661,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     );
   }
 
-  // ─── STATUS ROW ───────────────────────────────────────────────
   Widget _buildStatusRow() {
     final items = [
       {'icon': Icons.check_circle_rounded, 'label': 'TEPAT', 'color': kGreen},
@@ -726,7 +705,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     );
   }
 
-  // ─── SHIFT CARD ───────────────────────────────────────────────
   Widget _buildShiftCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -884,7 +862,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     );
   }
 
-  // ─── BOTTOM NAV ───────────────────────────────────────────────
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(

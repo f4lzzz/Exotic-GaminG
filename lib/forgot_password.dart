@@ -16,12 +16,9 @@ const kGold = Color(0xFFD4A017);
 const kTextDark = Color(0xFF1A237E);
 const kGreen = Color(0xFF4CAF50);
 
-// ── EmailJS Config (UPDATED) ─────────────────────────────────────────────────
 const _emailjsServiceId = 'service_s5exapm';
 const _emailjsTemplateId = 'template_j5jdo9w';
 const _emailjsPublicKey = 'bTVRlfkOstj6icTA1';
-
-// ── OTP Expiry: 1 Menit ───────────────────────────────────────────────────────
 const _otpExpirySeconds = 60;
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -33,7 +30,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     with SingleTickerProviderStateMixin {
-  int _currentStep = 1; // 1: Email, 2: OTP, 3: New Password, 4: Success
+  int _currentStep = 1;
 
   // Step 1
   final _emailCtrl = TextEditingController();
@@ -46,17 +43,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   int _resendCountdown = 60;
   Timer? _resendTimer;
 
-  // OTP data
   String _generatedOtp = '';
-  DateTime? _otpExpiredAt; // ✅ Waktu expired OTP
+  DateTime? _otpExpiredAt;
   bool _isVerifying = false;
 
-  // Step 3
-  final _newPassCtrl = TextEditingController();
-  final _confirmPassCtrl = TextEditingController();
-  bool _obscureNew = true;
-  bool _obscureConfirm = true;
-  String? _passError;
+  // Step 3 (field yang tidak digunakan dihapus)
   bool _isSavingPass = false;
 
   late AnimationController _fadeCtrl;
@@ -87,8 +78,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     _emailCtrl.dispose();
     for (final c in _otpCtrls) c.dispose();
     for (final f in _otpFocus) f.dispose();
-    _newPassCtrl.dispose();
-    _confirmPassCtrl.dispose();
     _fadeCtrl.dispose();
     _scrollCtrl.dispose();
     _resendTimer?.cancel();
@@ -100,15 +89,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       _headerExpanded -
       (_headerExpanded - _headerCollapsed) * _collapseProgress;
 
-  // ── Generate OTP 6 digit ──────────────────────────────────────────────────
   String _generateOtp() {
     final rng = Random.secure();
     return List.generate(6, (_) => rng.nextInt(10)).join();
   }
 
-  // Tidak ada cek email — Firebase handle sendiri via sendPasswordResetEmail di Step 3
-
-  // ── Kirim OTP via EmailJS ─────────────────────────────────────────────────
   Future<bool> _sendOtpEmail(String email, String otp) async {
     try {
       final body = jsonEncode({
@@ -140,7 +125,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     }
   }
 
-  // ── Timer resend (60 detik) ───────────────────────────────────────────────
   void _startResendTimer() {
     _resendCountdown = 60;
     _resendTimer?.cancel();
@@ -159,7 +143,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     _fadeCtrl.forward();
   }
 
-  // ── Step 1: Kirim OTP (dengan cek Firebase) ───────────────────────────────
   Future<void> _handleSendOtp() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty) {
@@ -173,7 +156,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
     setState(() => _isSendingOtp = true);
 
-    // Generate OTP & set expired 1 menit
     _generatedOtp = _generateOtp();
     _otpExpiredAt = DateTime.now().add(
       const Duration(seconds: _otpExpirySeconds),
@@ -193,7 +175,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     _goToStep(2);
   }
 
-  // ── Step 2: Resend OTP ────────────────────────────────────────────────────
   Future<void> _handleResend() async {
     if (_resendCountdown > 0) return;
     final email = _emailCtrl.text.trim();
@@ -214,7 +195,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     }
   }
 
-  // ── Step 2: Verifikasi OTP ────────────────────────────────────────────────
   void _handleVerifyOtp() {
     final otp = _otpCtrls.map((c) => c.text).join();
 
@@ -223,7 +203,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       return;
     }
 
-    // ✅ Cek apakah OTP sudah expired (1 menit)
     if (_otpExpiredAt == null || DateTime.now().isAfter(_otpExpiredAt!)) {
       _showSnackbar('Kode OTP sudah kadaluarsa, minta kode baru',
           isError: true);
@@ -239,33 +218,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       return;
     }
 
-    // OTP valid → hapus agar tidak bisa dipakai lagi
     _generatedOtp = '';
     _otpExpiredAt = null;
     _goToStep(3);
   }
 
-  // ── Step 3: Simpan Password Baru via Firebase ─────────────────────────────
   Future<void> _handleSavePassword() async {
-    if (_newPassCtrl.text.length < 6) {
-      setState(() => _passError = 'Password minimal 6 karakter!');
-      return;
-    }
-    if (_newPassCtrl.text != _confirmPassCtrl.text) {
-      setState(() => _passError = 'Password tidak cocok!');
-      return;
-    }
-    setState(() {
-      _passError = null;
-      _isSavingPass = true;
-    });
+    setState(() => _isSavingPass = true);
 
     try {
       final email = _emailCtrl.text.trim();
-
-      // Kirim link reset password via Firebase
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-
       setState(() => _isSavingPass = false);
       _goToStep(4);
     } on FirebaseAuthException catch (e) {
@@ -297,7 +260,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     );
   }
 
-  // ── BUILD ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -369,7 +331,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     );
   }
 
-  // ── HEADER ────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     final p = _collapseProgress;
     final double eSize = 24 - (24 - 14) * p;
@@ -440,7 +401,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     );
   }
 
-  // ── STEP INDICATOR ────────────────────────────────────────────────────────
   Widget _buildStepIndicator() {
     return Row(
       children: [
@@ -528,7 +488,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     );
   }
 
-  // ── STEP 1: EMAIL ─────────────────────────────────────────────────────────
   Widget _buildStep1() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -582,7 +541,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     );
   }
 
-  // ── STEP 2: OTP ───────────────────────────────────────────────────────────
   Widget _buildStep2() {
     final email = _emailCtrl.text.trim();
     final masked = email.length > 4
@@ -609,7 +567,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
           ),
         ),
         const SizedBox(height: 10),
-        // ✅ Info OTP berlaku 1 menit
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
@@ -716,7 +673,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     );
   }
 
-  // ── STEP 3: NEW PASSWORD ──────────────────────────────────────────────────
   Widget _buildStep3() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -780,7 +736,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     );
   }
 
-  // ── STEP 4: SUCCESS ───────────────────────────────────────────────────────
   Widget _buildStep4() {
     return Column(
       children: [
@@ -836,7 +791,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     );
   }
 
-  // ── SHARED WIDGETS ────────────────────────────────────────────────────────
   Widget _sectionLabel(String text) => Text(
         text,
         style: GoogleFonts.lato(
