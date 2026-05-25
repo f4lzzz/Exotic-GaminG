@@ -59,3 +59,5 @@ linux/flutter/generated_plugins.cmake
 
 # macOS generated plugin registrant
 macos/Flutter/GeneratedPluginRegistrant.swift
+
+windows/flutter/
