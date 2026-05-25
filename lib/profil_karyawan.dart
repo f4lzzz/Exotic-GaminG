@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
-import '../theme/app_theme.dart';
 import 'registrasi_wajah_screen.dart';
 import 'login.dart';
 import 'services/cloudinary_service.dart';
@@ -14,7 +13,6 @@ class _MenuTileData {
   final String icon, title, subtitle;
   final Color iconBg;
   final Color? titleColor;
-  final Color? bgColor;
   final VoidCallback onTap;
   const _MenuTileData({
     required this.icon,
@@ -23,7 +21,6 @@ class _MenuTileData {
     required this.iconBg,
     required this.onTap,
     this.titleColor,
-    this.bgColor,
   });
 }
 
@@ -166,7 +163,6 @@ class _ProfilKaryawanScreenState extends State<ProfilKaryawanScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
               Row(
                 children: [
                   const SizedBox(width: 4),
@@ -178,7 +174,6 @@ class _ProfilKaryawanScreenState extends State<ProfilKaryawanScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              // Avatar & Info
               Center(
                 child: Column(
                   children: [
@@ -487,7 +482,6 @@ class _EditProfilKaryawanScreenState extends State<EditProfilKaryawanScreen> {
         child: Column(
           children: [
             const SizedBox(height: 12),
-            // Avatar dengan tombol kamera
             Center(
               child: Stack(
                 children: [
@@ -555,14 +549,12 @@ class _EditProfilKaryawanScreenState extends State<EditProfilKaryawanScreen> {
               style: GoogleFonts.poppins(fontSize: 12, color: Colors.white38),
             ),
             const SizedBox(height: 28),
-            // Form Nama
             _buildInputField(
               label: 'Nama Lengkap',
               controller: _namaCtrl,
               hint: 'Masukkan nama lengkap',
             ),
             const SizedBox(height: 16),
-            // Email (read-only)
             _buildInputField(
               label: 'Email',
               controller: TextEditingController(text: widget.emailAwal),
@@ -570,7 +562,6 @@ class _EditProfilKaryawanScreenState extends State<EditProfilKaryawanScreen> {
               readOnly: true,
             ),
             const SizedBox(height: 36),
-            // Tombol Simpan
             SizedBox(
               width: double.infinity,
               height: 52,
