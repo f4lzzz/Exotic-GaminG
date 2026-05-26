@@ -85,7 +85,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
   late AnimationController _pulseAnim;
 
   final _namaCtrl = TextEditingController();
-  GoogleMapController? _mapCtrl;
 
   // ═══════════════════════ INIT ════════════════════════════════════════════════
   @override
@@ -121,7 +120,7 @@ class _AbsensiScreenState extends State<AbsensiScreen>
     _karyawanList = await _firestoreService.getAllKaryawan();
     debugPrint('📋 Loaded ${_karyawanList.length} karyawan dari Firestore');
 
-    // FIX: Debug cek apakah embedding tersimpan
+    // Debug cek apakah embedding tersimpan
     for (final k in _karyawanList) {
       final hasEmbedding = k['faceEmbedding'] != null;
       final embLen = hasEmbedding ? (k['faceEmbedding'] as List).length : 0;
@@ -157,7 +156,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
         front,
         ResolutionPreset.medium,
         enableAudio: false,
-        // FIX: Samakan format dengan registrasi
         imageFormatGroup: ImageFormatGroup.nv21,
       );
       await ctrl.initialize();
@@ -271,7 +269,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
           final embDb = List<double>.from(raw);
           final score = _faceNet.compareFaces(embeddingCam, embDb);
 
-          // FIX: Debug score setiap karyawan
           debugPrint(
               '🔍 Score ${karyawan['namaKaryawan'] ?? karyawan['nama']}: ${score.toStringAsFixed(4)}');
 
@@ -284,7 +281,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
         debugPrint(
             '🏆 Best score: ${bestScore.toStringAsFixed(4)} → ${matched?['namaKaryawan'] ?? matched?['nama'] ?? 'tidak ada'}');
 
-        // FIX: Threshold dinaikkan dari 0.3 → 0.6 (lebih realistis)
         if (bestScore < 0.6 && matched != null && mounted) {
           setState(() {
             _faceDetected = true;
@@ -311,7 +307,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
     });
   }
 
-  // FIX: Konversi frame → sama persis seperti di registrasi_wajah.dart
   InputImage? _convertFrameToInputImage(CameraImage image) {
     if (_camCtrl == null) return null;
     try {
@@ -326,7 +321,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
       final format = InputImageFormatValue.fromRawValue(image.format.raw);
       if (format == null) return null;
 
-      // FIX: Pakai plane[0] saja, SAMA seperti registrasi_wajah.dart
       final plane = image.planes[0];
 
       return InputImage.fromBytes(
@@ -498,7 +492,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
                     },
                     zoomControlsEnabled: false,
                     myLocationButtonEnabled: false,
-                    onMapCreated: (c) => _mapCtrl = c,
                   ),
                 ),
               ),
@@ -1174,7 +1167,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
                 },
                 zoomControlsEnabled: false,
                 myLocationButtonEnabled: false,
-                onMapCreated: (c) => _mapCtrl = c,
               ),
             ),
           ),
