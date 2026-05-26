@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -7,14 +7,8 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 class FaceNetService {
   static const _modelPath = 'assets/models/facenet.tflite';
   static const _inputSize = 160; // FaceNet input: 160×160
-
-  // ⚠️ FIX 1: Sesuaikan dengan output model kamu
-  // Cek dulu: kalau model output 512 → ganti jadi 512
-  // Kalau model output 128 → biarkan 128
-  static const _embeddingSize = 128;
-
-  // FIX 2: Threshold untuk isSamePerson (tidak dipakai di absensi, tapi tetap konsisten)
-  static const _threshold = 0.6;
+  static const _embeddingSize = 512; // output vector
+  static const _threshold = 0.8; // jarak max = cocok
 
   Interpreter? _interpreter;
   bool _isLoaded = false;
@@ -28,15 +22,8 @@ class FaceNetService {
         _modelPath,
         options: options,
       );
-
-      // FIX 3: Cek output shape model secara otomatis
-      final outputShape = _interpreter!.getOutputTensor(0).shape;
-      debugPrint('✅ FaceNet model loaded');
-      debugPrint('📐 Output shape: $outputShape');
-      // Jika outputShape = [1, 512] → ubah _embeddingSize ke 512
-      // Jika outputShape = [1, 128] → ubah _embeddingSize ke 128
-
       _isLoaded = true;
+      debugPrint('✅ FaceNet model loaded');
     } catch (e) {
       debugPrint('❌ Gagal load model: $e');
     }
@@ -57,7 +44,7 @@ class FaceNetService {
       // 2. Konversi ke input tensor [1, 160, 160, 3]
       final input = _imageToInput(resized);
 
-      // FIX 4: Output tensor harus sesuai _embeddingSize
+      // 3. Siapkan output tensor [1, 512]
       final output = List.generate(
         1,
         (_) => List.filled(_embeddingSize, 0.0),
@@ -68,9 +55,7 @@ class FaceNetService {
 
       // 5. Normalize (L2)
       final embedding = output[0];
-      final normalized = _l2Normalize(embedding);
-      debugPrint('📊 Embedding generated, size: ${normalized.length}');
-      return normalized;
+      return _l2Normalize(embedding);
     } catch (e) {
       debugPrint('❌ Error generate embedding: $e');
       return null;
@@ -98,25 +83,14 @@ class FaceNetService {
 
   // ─── Bandingkan dua embedding (cosine similarity) ────────────
   double compareFaces(List<double> e1, List<double> e2) {
-    // FIX 5: Guard kalau panjang embedding beda (misalnya data lama vs baru)
-    if (e1.length != e2.length) {
-      debugPrint('⚠️ Embedding size mismatch: ${e1.length} vs ${e2.length}');
-      return 1.0; // return max distance = tidak cocok
-    }
-
     double dot = 0, n1 = 0, n2 = 0;
     for (int i = 0; i < e1.length; i++) {
       dot += e1[i] * e2[i];
       n1 += e1[i] * e1[i];
       n2 += e2[i] * e2[i];
     }
-
-    final denom = sqrt(n1) * sqrt(n2);
-    if (denom == 0) return 1.0;
-
     // cosine distance (0 = identik, 2 = sangat berbeda)
-    final distance = 1 - (dot / denom);
-    return distance;
+    return 1 - (dot / (sqrt(n1) * sqrt(n2)));
   }
 
   // ─── Cek apakah dua wajah cocok ──────────────────────────────
@@ -131,6 +105,7 @@ class FaceNetService {
             _inputSize,
             (y) => List.generate(_inputSize, (x) {
                   final pixel = image.getPixel(x, y);
+                  // ✅ FIX: cast eksplisit ke double agar tidak type mismatch
                   return [
                     (pixel.r.toDouble() / 127.5) - 1.0,
                     (pixel.g.toDouble() / 127.5) - 1.0,

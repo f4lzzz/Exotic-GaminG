@@ -85,6 +85,7 @@ class _AbsensiScreenState extends State<AbsensiScreen>
   late AnimationController _pulseAnim;
 
   final _namaCtrl = TextEditingController();
+  GoogleMapController? _mapCtrl;
 
   // ═══════════════════════ INIT ════════════════════════════════════════════════
   @override
@@ -118,6 +119,15 @@ class _AbsensiScreenState extends State<AbsensiScreen>
 
   Future<void> _loadKaryawanData() async {
     _karyawanList = await _firestoreService.getAllKaryawan();
+    debugPrint('📋 Loaded ${_karyawanList.length} karyawan dari Firestore');
+
+    // FIX: Debug cek apakah embedding tersimpan
+    for (final k in _karyawanList) {
+      final hasEmbedding = k['faceEmbedding'] != null;
+      final embLen = hasEmbedding ? (k['faceEmbedding'] as List).length : 0;
+      debugPrint(
+          '👤 ${k['namaKaryawan'] ?? k['nama']} → embedding: $hasEmbedding (size: $embLen)');
+    }
   }
 
   // ═══════════════════════ CAMERA ══════════════════════════════════════════════
@@ -143,8 +153,13 @@ class _AbsensiScreenState extends State<AbsensiScreen>
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => _cameras.first,
       );
-      final ctrl =
-          CameraController(front, ResolutionPreset.medium, enableAudio: false);
+      final ctrl = CameraController(
+        front,
+        ResolutionPreset.medium,
+        enableAudio: false,
+        // FIX: Samakan format dengan registrasi
+        imageFormatGroup: ImageFormatGroup.nv21,
+      );
       await ctrl.initialize();
       _camCtrl = ctrl;
       if (!mounted) return;
@@ -187,7 +202,7 @@ class _AbsensiScreenState extends State<AbsensiScreen>
 
   void _startFaceDetection() {
     if (_camCtrl == null || !_camActive) return;
-    if (_camCtrl!.value.isStreamingImages) return; // ✅ cegah double stream
+    if (_camCtrl!.value.isStreamingImages) return;
 
     _camCtrl!.startImageStream((CameraImage frame) async {
       if (_isProcessingFrame || _faceDetected) return;
@@ -252,22 +267,34 @@ class _AbsensiScreenState extends State<AbsensiScreen>
         for (final karyawan in _karyawanList) {
           final raw = karyawan['faceEmbedding'];
           if (raw == null) continue;
+
           final embDb = List<double>.from(raw);
           final score = _faceNet.compareFaces(embeddingCam, embDb);
+
+          // FIX: Debug score setiap karyawan
+          debugPrint(
+              '🔍 Score ${karyawan['namaKaryawan'] ?? karyawan['nama']}: ${score.toStringAsFixed(4)}');
+
           if (score < bestScore) {
             bestScore = score;
             matched = karyawan;
           }
         }
 
-        if (bestScore < 0.3 && matched != null && mounted) {
+        debugPrint(
+            '🏆 Best score: ${bestScore.toStringAsFixed(4)} → ${matched?['namaKaryawan'] ?? matched?['nama'] ?? 'tidak ada'}');
+
+        // FIX: Threshold dinaikkan dari 0.3 → 0.6 (lebih realistis)
+        if (bestScore < 0.6 && matched != null && mounted) {
           setState(() {
             _faceDetected = true;
             _matchedKaryawanId = matched!['uid'];
             _namaCtrl.text = matched['namaKaryawan'] ?? matched['nama'] ?? '';
           });
+          debugPrint('✅ Wajah cocok: ${_namaCtrl.text} (score: $bestScore)');
         } else if (mounted) {
-          // ✅ Tampilkan peringatan wajah tidak sesuai
+          debugPrint(
+              '❌ Wajah tidak cocok. Best score: $bestScore (threshold: 0.6)');
           _snack(
               '⚠️ Wajah tidak dikenali! Pastikan wajah kamu sudah terdaftar.',
               isErr: true);
@@ -275,7 +302,7 @@ class _AbsensiScreenState extends State<AbsensiScreen>
           if (_camActive && mounted) _startFaceDetection();
         }
       } catch (e) {
-        debugPrint('Error face recognition: $e');
+        debugPrint('❌ Error face recognition: $e');
         await Future.delayed(const Duration(seconds: 1));
         if (_camActive && mounted) _startFaceDetection();
       } finally {
@@ -284,34 +311,35 @@ class _AbsensiScreenState extends State<AbsensiScreen>
     });
   }
 
-  // ─── Konversi frame kamera → InputImage ───────────────────────────────────
+  // FIX: Konversi frame → sama persis seperti di registrasi_wajah.dart
   InputImage? _convertFrameToInputImage(CameraImage image) {
     if (_camCtrl == null) return null;
     try {
       final camera = _cameras.firstWhere(
           (c) => c.lensDirection == CameraLensDirection.front,
           orElse: () => _cameras.first);
+
       final rotation =
           InputImageRotationValue.fromRawValue(camera.sensorOrientation) ??
-              InputImageRotation.rotation270deg;
+              InputImageRotation.rotation0deg;
 
-      // ✅ Gabungkan semua planes (fix Samsung NV21 format)
-      final WriteBuffer allBytes = WriteBuffer();
-      for (final Plane plane in image.planes) {
-        allBytes.putUint8List(plane.bytes);
-      }
-      final bytes = allBytes.done().buffer.asUint8List();
+      final format = InputImageFormatValue.fromRawValue(image.format.raw);
+      if (format == null) return null;
+
+      // FIX: Pakai plane[0] saja, SAMA seperti registrasi_wajah.dart
+      final plane = image.planes[0];
 
       return InputImage.fromBytes(
-        bytes: bytes,
+        bytes: plane.bytes,
         metadata: InputImageMetadata(
           size: Size(image.width.toDouble(), image.height.toDouble()),
           rotation: rotation,
-          format: InputImageFormat.nv21,
-          bytesPerRow: image.planes[0].bytesPerRow,
+          format: format,
+          bytesPerRow: plane.bytesPerRow,
         ),
       );
     } catch (e) {
+      debugPrint('❌ Error convert frame: $e');
       return null;
     }
   }
@@ -470,6 +498,7 @@ class _AbsensiScreenState extends State<AbsensiScreen>
                     },
                     zoomControlsEnabled: false,
                     myLocationButtonEnabled: false,
+                    onMapCreated: (c) => _mapCtrl = c,
                   ),
                 ),
               ),
@@ -1145,6 +1174,7 @@ class _AbsensiScreenState extends State<AbsensiScreen>
                 },
                 zoomControlsEnabled: false,
                 myLocationButtonEnabled: false,
+                onMapCreated: (c) => _mapCtrl = c,
               ),
             ),
           ),

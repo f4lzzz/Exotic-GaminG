@@ -75,6 +75,7 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
         front,
         ResolutionPreset.high,
         enableAudio: false,
+        // FIX: Format NV21 eksplisit, konsisten dengan absensi
         imageFormatGroup: ImageFormatGroup.nv21,
       );
       await _camCtrl!.initialize();
@@ -110,6 +111,7 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
     _isProcessing = false;
   }
 
+  // FIX: Konsisten dengan _convertFrameToInputImage di absensi_screen.dart
   InputImage? _buildInputImage(CameraImage image) {
     try {
       final camera = _camCtrl!.description;
@@ -121,6 +123,7 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
       final format = InputImageFormatValue.fromRawValue(image.format.raw);
       if (format == null) return null;
 
+      // Pakai plane[0] saja (konsisten dengan absensi_screen.dart)
       final plane = image.planes[0];
       return InputImage.fromBytes(
         bytes: plane.bytes,
@@ -146,6 +149,7 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
     try {
       // Ambil snapshot dari kamera
       await _camCtrl!.stopImageStream();
+      await Future.delayed(const Duration(milliseconds: 300)); // FIX: beri jeda
       final xFile = await _camCtrl!.takePicture();
       final bytes = await xFile.readAsBytes();
 
@@ -153,13 +157,22 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
       final fullImage = img.decodeImage(Uint8List.fromList(bytes));
       if (fullImage == null) throw Exception('Gagal decode gambar');
 
-      // Crop wajah
-      final croppedFace = _faceNet.cropFace(fullImage, _faces.first);
+      // FIX: Deteksi ulang wajah dari foto (bukan dari stream frame)
+      final inputImg2 = InputImage.fromFilePath(xFile.path);
+      final freshFaces = await _faceDetector.processImage(inputImg2);
+      if (freshFaces.isEmpty) throw Exception('Wajah tidak terdeteksi di foto');
+
+      // Crop wajah dari foto
+      final croppedFace = _faceNet.cropFace(fullImage, freshFaces.first);
       if (croppedFace == null) throw Exception('Gagal crop wajah');
 
       // Generate embedding
       final embedding = _faceNet.generateEmbedding(croppedFace);
       if (embedding == null) throw Exception('Gagal generate embedding');
+
+      // Debug: cek embedding
+      debugPrint('✅ Embedding size: ${embedding.length}');
+      debugPrint('📊 Sample values: ${embedding.take(5).toList()}');
 
       // Simpan ke Firestore
       final uid = widget.uid ?? FirebaseAuth.instance.currentUser?.uid;
@@ -183,7 +196,11 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
         _statusMessage = 'Error: $e';
         _isSaving = false;
       });
-      _camCtrl!.startImageStream(_onFrame);
+      // FIX: restart stream setelah error
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted && _camCtrl != null) {
+        _camCtrl!.startImageStream(_onFrame);
+      }
     }
   }
 
@@ -304,7 +321,6 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
                           fit: StackFit.expand,
                           children: [
                             CameraPreview(_camCtrl!),
-                            // Oval overlay
                             AnimatedBuilder(
                               animation: _pulseAnim,
                               builder: (_, __) => CustomPaint(
@@ -314,7 +330,6 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
                                 ),
                               ),
                             ),
-                            // Status badge
                             Positioned(
                               bottom: 16,
                               left: 16,
