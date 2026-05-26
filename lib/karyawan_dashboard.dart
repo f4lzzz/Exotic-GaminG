@@ -8,26 +8,26 @@ import 'absensi_screen.dart';
 import 'login.dart';
 import 'notifikasi_karyawan.dart';
 import 'menu_karyawan.dart';
-import 'quick_access_karyawan.dart';
 import 'kasir_data_page.dart';
 import 'rekap_screen.dart';
 import 'profil_karyawan.dart';
 import 'registrasi_wajah_screen.dart';
 
-// ── WARNA ─────────────────────────────────────────────────────────────────────
-const kBlue = Color(0xFF5B8DEE);
-const kBlueDark = Color(0xFF2C5FC4);
-const kBlueBg = Color(0xFFDDE8F8);
+// ── WARNA (disamakan dengan owner dashboard) ─────────────────────────────────
+const kBlue = Color(0xFF1A5EBF);
+const kBlueDark = Color(0xFF0F3B8C);
+const kBlueBg = Color(0xFF4A90D9);
+const kYellow = Color(0xFFF5C842);
 const kWhite = Color(0xFFFFFFFF);
-const kWhiteDim = Color(0xFFCDD8F0);
-const kTextDark = Color(0xFF1A2A4A);
-const kTextMid = Color(0xFF5B7AAA);
-const kGreen = Color(0xFF27AE60);
-const kRed = Color(0xFFE74C3C);
+const kWhiteDim = Color(0xFFDDE8FF);
+const kGold = Color(0xFFD4A017);
+const kTextDark = Color(0xFF1A237E);
+const kGreen = Color(0xFF4CAF50);
+const kRed = Color(0xFFE53935);
 const kOrange = Color(0xFFF5A623);
-const kBgLight = Color(0xFFDDE8F8);
+const kBgLight = Color(0xFFF0F4FF);
 
-// ─── MODEL SHIFT ──────────────────────────────────────────────────────────────
+// ─── MODEL SHIFT ────────────────────────────────────────────────────────────
 class ShiftModel {
   final String nama;
   final String jamMulai;
@@ -35,7 +35,6 @@ class ShiftModel {
   final String hari;
   final String tanggal;
   final StatusShift status;
-
   const ShiftModel({
     required this.nama,
     required this.jamMulai,
@@ -48,7 +47,7 @@ class ShiftModel {
 
 enum StatusShift { selesai, berlangsung, akan }
 
-// ─── SCREEN ───────────────────────────────────────────────────────────────────
+// ─── SCREEN ─────────────────────────────────────────────────────────────────
 class KaryawanDashboardScreen extends StatefulWidget {
   const KaryawanDashboardScreen({super.key});
 
@@ -74,7 +73,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
   late Timer _clock;
   DateTime _now = DateTime.now();
 
-  // Hapus _pulseCtrl dan _pulse karena tidak digunakan
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
 
@@ -92,7 +90,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
 
   final List<ShiftModel> _shifts = const [
     ShiftModel(
-      nama: 'SIFT PAGI',
+      nama: 'SHIFT PAGI',
       jamMulai: '07.00',
       jamSelesai: '12.00',
       hari: 'SELASA',
@@ -100,7 +98,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
       status: StatusShift.selesai,
     ),
     ShiftModel(
-      nama: 'SIFT SIANG',
+      nama: 'SHIFT SIANG',
       jamMulai: '12.00',
       jamSelesai: '16.00',
       hari: 'RABU',
@@ -108,7 +106,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
       status: StatusShift.berlangsung,
     ),
     ShiftModel(
-      nama: 'SIFT SORE',
+      nama: 'SHIFT SORE',
       jamMulai: '16.00',
       jamSelesai: '21.00',
       hari: 'KAMIS',
@@ -120,19 +118,17 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
   @override
   void initState() {
     super.initState();
-
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _now = DateTime.now());
     });
-
     _fadeCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 600));
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _fadeCtrl.forward();
-
     _scrollCtrl
         .addListener(() => setState(() => _scrollOffset = _scrollCtrl.offset));
-
     _loadUserData();
   }
 
@@ -166,7 +162,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
 
   String get _displayName =>
       _userData?['nama'] ?? _userData?['username'] ?? 'Karyawan';
-
   String get _greeting {
     final h = _now.hour;
     if (h < 11) return 'selamat pagi';
@@ -176,7 +171,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
   }
 
   String get _jabatan => _userData?['jabatan'] ?? 'Staff';
-
   bool get _isAdmin => _userData?['role'] == 'admin';
 
   void _bukaAbsensi(AbsensiType type) async {
@@ -192,12 +186,10 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
       _snack('Absen masuk dulu sebelum absen pulang!', isErr: true);
       return;
     }
-
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => AbsensiScreen(type: type)),
     );
-
     if (result == true && mounted) {
       setState(() {
         if (type == AbsensiType.masuk) {
@@ -213,7 +205,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
 
   void _snack(String msg, {bool isErr = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: const TextStyle(fontWeight: FontWeight.w700)),
+      content: Text(msg, style: GoogleFonts.lato(fontWeight: FontWeight.w700)),
       backgroundColor: isErr ? kRed : kOrange,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -222,60 +214,45 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final timeStr = DateFormat('HH:mm').format(_now);
-    final dateStr = DateFormat('EEEE, MMMM d, yyyy').format(_now);
-
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFB8D4F8), kBgLight, Color(0xFFCDD8F0)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: IndexedStack(
-          index: _selectedNav,
-          children: [
-            Column(
-              children: [
-                FadeTransition(
-                    opacity: _fadeAnim, child: _buildHeader(timeStr, dateStr)),
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: _scrollCtrl,
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
-                    child: Column(
-                      children: [
-                        _buildUserInfoCard(),
-                        const SizedBox(height: 14),
-                        _buildAbsensiCard(),
-                        const SizedBox(height: 14),
-                        _buildStatusRow(),
-                        const SizedBox(height: 14),
-                        _buildShiftCard(),
-                      ],
-                    ),
+      backgroundColor: kBgLight,
+      body: IndexedStack(
+        index: _selectedNav,
+        children: [
+          Column(
+            children: [
+              FadeTransition(opacity: _fadeAnim, child: _buildHeader()),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _scrollCtrl,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildUserInfoCard(),
+                      const SizedBox(height: 16),
+                      _buildAbsensiCard(),
+                      const SizedBox(height: 16),
+                      _buildShiftCard(),
+                    ],
                   ),
                 ),
-              ],
-            ),
-            KasirDataPage(
-              kasirName: _displayName,
-              shift: _jabatan,
-            ),
-            const QuickAccessKaryawanScreen(),
-            const MenuKaryawanScreen(),
-            const RekapScreen(role: 'karyawan'),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const KasirDataPage(kasirName: '', shift: ''),
+          const NotifikasiKaryawanScreen(),
+          const MenuKaryawanScreen(),
+          const RekapScreen(role: 'karyawan'),
+        ],
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
-  Widget _buildHeader(String timeStr, String dateStr) {
+  // ========================= HEADER =========================
+  Widget _buildHeader() {
     final p = _collapseProgress;
     final double eSize = 24 - (24 - 14) * p;
     final double xSize = 40 - (40 - 22) * p;
@@ -303,28 +280,35 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
       ),
     );
 
-    final subWidget = Text('GAMING & CAFE',
-        style: GoogleFonts.playfairDisplay(
-            fontSize: subSize,
-            color: kWhiteDim,
-            letterSpacing: 3,
-            fontWeight: FontWeight.w400));
+    final subWidget = Text(
+      'GAMING & CAFE',
+      style: GoogleFonts.playfairDisplay(
+        fontSize: subSize,
+        color: kWhiteDim,
+        letterSpacing: 3,
+        fontWeight: FontWeight.w400,
+      ),
+    );
 
     final iconButtons = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _headerIconBtn(Icons.settings_outlined,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const ProfilKaryawanScreen()))),
+        _headerIconBtn(
+          Icons.settings_outlined,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ProfilKaryawanScreen()),
+          ),
+        ),
         const SizedBox(width: 6),
-        _headerIconBtn(Icons.notifications_outlined,
-            badge: _notifCount,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const NotifikasiKaryawanScreen()))),
+        _headerIconBtn(
+          Icons.notifications_outlined,
+          badge: _notifCount,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotifikasiKaryawanScreen()),
+          ),
+        ),
       ],
     );
 
@@ -333,31 +317,34 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
       height: _headerHeight,
       width: double.infinity,
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF6BAAF5), Color(0xFF3A72D4)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+        gradient: LinearGradient(colors: [Color(0xFF4A90D9), kBlue]),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(20, padTop, 20, padBot),
       child: p < 0.5
-          ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Row(children: [
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  children: [
+                    logoWidget,
+                    const SizedBox(width: 6),
+                    Opacity(opacity: subOpacity, child: subWidget),
+                    const Spacer(),
+                    iconButtons,
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              children: [
                 logoWidget,
-                const SizedBox(width: 6),
-                Opacity(opacity: subOpacity, child: subWidget),
+                const SizedBox(width: 8),
+                subWidget,
                 const Spacer(),
                 iconButtons,
-              ])
-            ])
-          : Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              logoWidget,
-              const SizedBox(width: 8),
-              subWidget,
-              const Spacer(),
-              iconButtons,
-            ]),
+              ],
+            ),
     );
   }
 
@@ -365,49 +352,53 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
       {int badge = 0, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: Stack(clipBehavior: Clip.none, children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-              color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
-          child: Icon(icon, color: kWhite, size: 20),
-        ),
-        if (badge > 0)
-          Positioned(
-            top: -2,
-            right: -2,
-            child: Container(
-              width: 16,
-              height: 16,
-              decoration:
-                  const BoxDecoration(color: kOrange, shape: BoxShape.circle),
-              child: Center(
-                child: Text('$badge',
-                    style: const TextStyle(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+                color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
+            child: Icon(icon, color: kWhite, size: 20),
+          ),
+          if (badge > 0)
+            Positioned(
+              top: -2,
+              right: -2,
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration:
+                    const BoxDecoration(color: kRed, shape: BoxShape.circle),
+                child: Center(
+                  child: Text(
+                    '$badge',
+                    style: GoogleFonts.lato(
                         fontSize: 9,
                         fontWeight: FontWeight.w900,
-                        color: kWhite)),
+                        color: kWhite),
+                  ),
+                ),
               ),
             ),
-          ),
-      ]),
+        ],
+      ),
     );
   }
 
+  // ========================= USER INFO CARD =========================
   Widget _buildUserInfoCard() {
-    final photoUrl = _userData?['photoUrl'] as String?;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: kWhite.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(20),
+        color: kWhite,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: kBlue.withOpacity(0.1),
-              blurRadius: 12,
-              offset: const Offset(0, 4))
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3))
         ],
       ),
       child: Row(
@@ -417,19 +408,16 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
             height: 46,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: kBlue.withOpacity(0.1),
-              border: Border.all(color: kBlue.withOpacity(0.3), width: 2),
+              color: kYellow.withOpacity(0.2),
+              border: Border.all(color: kYellow, width: 2),
             ),
             child: ClipOval(
-              child: (photoUrl != null && photoUrl.isNotEmpty)
-                  ? Image.network(photoUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.person, color: kBlue, size: 26))
-                  : Image.asset('assets/images/karyawan.jpg',
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.person, color: kBlue, size: 26)),
+              child: Image.asset(
+                'assets/images/karyawan.jpg',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.person, color: kGold, size: 26),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -438,45 +426,51 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(_greeting,
-                    style: const TextStyle(fontSize: 11, color: kTextMid)),
+                    style:
+                        GoogleFonts.lato(fontSize: 11, color: Colors.black45)),
                 Text(_displayName,
-                    style: const TextStyle(
+                    style: GoogleFonts.lato(
                         fontSize: 15,
                         fontWeight: FontWeight.w900,
-                        color: kTextDark),
-                    overflow: TextOverflow.ellipsis),
-                Row(children: [
-                  const Icon(Icons.work_outline, size: 10, color: kTextMid),
-                  const SizedBox(width: 4),
-                  Text(_jabatan,
-                      style: const TextStyle(fontSize: 10, color: kTextMid)),
-                ]),
+                        color: kTextDark)),
+                Row(
+                  children: [
+                    const Icon(Icons.work_outline,
+                        size: 10, color: Colors.black38),
+                    const SizedBox(width: 4),
+                    Text(_jabatan,
+                        style: GoogleFonts.lato(
+                            fontSize: 10, color: Colors.black38)),
+                  ],
+                ),
               ],
             ),
           ),
           GestureDetector(
             onTap: () => setState(() => _isTokoAktif = !_isTokoAktif),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
                 color: (_isTokoAktif ? kGreen : kRed).withOpacity(0.12),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                      color: _isTokoAktif ? kGreen : kRed,
-                      shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 5),
-                Text(_isTokoAktif ? 'AKTIF' : 'TUTUP',
-                    style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: _isTokoAktif ? kGreen : kRed)),
-              ]),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                          color: _isTokoAktif ? kGreen : kRed,
+                          shape: BoxShape.circle)),
+                  const SizedBox(width: 5),
+                  Text(_isTokoAktif ? 'AKTIF' : 'TUTUP',
+                      style: GoogleFonts.lato(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: _isTokoAktif ? kGreen : kRed)),
+                ],
+              ),
             ),
           ),
         ],
@@ -484,17 +478,18 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     );
   }
 
+  // ========================= ABSENSI CARD =========================
   Widget _buildAbsensiCard() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kWhite.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(20),
+        color: kWhite,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: kBlue.withOpacity(0.1),
-              blurRadius: 12,
-              offset: const Offset(0, 4))
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3))
         ],
       ),
       child: Column(
@@ -503,10 +498,10 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('ABSENSI HARIAN',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w900,
+              Text('ABSENSI HARIAN',
+                  style: GoogleFonts.lato(
                       fontSize: 13,
+                      fontWeight: FontWeight.w900,
                       color: kTextDark)),
               Container(
                 padding:
@@ -514,19 +509,21 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
                 decoration: BoxDecoration(
                     color: kGreen.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20)),
-                child: Row(children: [
-                  Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                          color: kGreen, shape: BoxShape.circle)),
-                  const SizedBox(width: 5),
-                  const Text('AKTIF',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: kGreen)),
-                ]),
+                child: Row(
+                  children: [
+                    Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                            color: kGreen, shape: BoxShape.circle)),
+                    const SizedBox(width: 5),
+                    Text('AKTIF',
+                        style: GoogleFonts.lato(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: kGreen)),
+                  ],
+                ),
               ),
             ],
           ),
@@ -536,10 +533,10 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
               Expanded(
                 child: _absenButton(
                   label: 'ABSEN MASUK',
+                  icon: Icons.door_front_door,
                   sudah: _sudahMasuk,
                   jam: _jamMasuk,
                   color: kBlue,
-                  imagePath: 'assets/images/go_orion.png',
                   onTap: () => _bukaAbsensi(AbsensiType.masuk),
                 ),
               ),
@@ -547,10 +544,10 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
               Expanded(
                 child: _absenButton(
                   label: 'ABSEN KELUAR',
+                  icon: Icons.exit_to_app,
                   sudah: _sudahPulang,
                   jam: _jamPulang,
-                  color: kBlueDark,
-                  imagePath: 'assets/images/go_orion.png',
+                  color: kBlue,
                   onTap: () => _bukaAbsensi(AbsensiType.pulang),
                 ),
               ),
@@ -562,29 +559,27 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const RegistrasiWajahScreen(),
-                ),
+                    builder: (_) => const RegistrasiWajahScreen()),
               ),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: kBlueDark.withOpacity(0.07),
+                  color: kBlue.withOpacity(0.07),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: kBlueDark.withOpacity(0.25)),
+                  border: Border.all(color: kBlue.withOpacity(0.25)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.person_add_rounded, color: kBlueDark, size: 16),
-                    SizedBox(width: 8),
-                    Text(
-                      'DAFTARKAN WAJAH KARYAWAN',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: kBlueDark),
-                    ),
+                    const Icon(Icons.person_add_rounded,
+                        color: kBlue, size: 16),
+                    const SizedBox(width: 8),
+                    Text('DAFTARKAN WAJAH KARYAWAN',
+                        style: GoogleFonts.lato(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: kBlue)),
                   ],
                 ),
               ),
@@ -597,10 +592,10 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
 
   Widget _absenButton({
     required String label,
+    required IconData icon,
     required bool sudah,
     required String? jam,
     required Color color,
-    required String imagePath,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -622,18 +617,12 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
               height: 68,
               decoration: BoxDecoration(
                   color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Image.asset(imagePath,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) =>
-                        const Text('🚀', style: TextStyle(fontSize: 34))),
-              ),
+              child: Icon(icon, color: kWhite, size: 34),
             ),
             const SizedBox(height: 10),
             Text(label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: GoogleFonts.lato(
                     color: kWhite, fontWeight: FontWeight.w900, fontSize: 12)),
             const SizedBox(height: 8),
             Container(
@@ -641,19 +630,22 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
               decoration: BoxDecoration(
                   color: sudah ? kGreen : kRed,
                   borderRadius: BorderRadius.circular(20)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                        color: kWhite, shape: BoxShape.circle)),
-                const SizedBox(width: 4),
-                Text(sudah ? '✓ $jam' : 'belum absen',
-                    style: const TextStyle(
-                        color: kWhite,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800)),
-              ]),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                          color: kWhite, shape: BoxShape.circle)),
+                  const SizedBox(width: 4),
+                  Text(sudah ? '✓ $jam' : 'belum absen',
+                      style: GoogleFonts.lato(
+                          color: kWhite,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800)),
+                ],
+              ),
             ),
           ],
         ),
@@ -661,61 +653,18 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     );
   }
 
-  Widget _buildStatusRow() {
-    final items = [
-      {'icon': Icons.check_circle_rounded, 'label': 'TEPAT', 'color': kGreen},
-      {'icon': Icons.timer_rounded, 'label': 'TERLAMBAT', 'color': kOrange},
-      {'icon': Icons.assignment_rounded, 'label': 'IZIN', 'color': kTextMid},
-      {'icon': Icons.bar_chart_rounded, 'label': 'REKAP', 'color': kRed},
-    ];
-
-    return Row(
-      children: items
-          .map((item) => Expanded(
-                child: GestureDetector(
-                  onTap: item['label'] == 'REKAP'
-                      ? () => setState(() => _selectedNav = 4)
-                      : null,
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 54,
-                        height: 54,
-                        decoration: BoxDecoration(
-                          color: (item['color'] as Color).withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                              color:
-                                  (item['color'] as Color).withOpacity(0.25)),
-                        ),
-                        child: Icon(item['icon'] as IconData,
-                            color: item['color'] as Color, size: 26),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(item['label'] as String,
-                          style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: kTextMid)),
-                    ],
-                  ),
-                ),
-              ))
-          .toList(),
-    );
-  }
-
+  // ========================= SHIFT CARD =========================
   Widget _buildShiftCard() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kWhite.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(20),
+        color: kWhite,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: kBlue.withOpacity(0.1),
-              blurRadius: 12,
-              offset: const Offset(0, 4))
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3))
         ],
       ),
       child: Column(
@@ -724,32 +673,29 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(children: [
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                      color: kBlue.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(8)),
-                  child: Image.asset('assets/images/calendar_icon.png',
-                      width: 18,
-                      height: 18,
-                      errorBuilder: (_, __, ___) => const Icon(
-                          Icons.calendar_today,
-                          color: kBlue,
-                          size: 18)),
-                ),
-                const SizedBox(width: 8),
-                const Text('JADWAL SIFT',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                        color: kTextDark)),
-              ]),
+              Row(
+                children: [
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                        color: kBlue.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.calendar_today,
+                        color: kBlue, size: 18),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('JADWAL SHIFT',
+                      style: GoogleFonts.lato(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          color: kTextDark)),
+                ],
+              ),
               GestureDetector(
                 onTap: () => _snack('Kelola Shift — Coming Soon'),
-                child: const Text('KELOLA SIFT',
-                    style: TextStyle(
+                child: Text('KELOLA SHIFT',
+                    style: GoogleFonts.lato(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
                         color: kBlue)),
@@ -767,7 +713,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     Color color;
     String statusLabel;
     IconData shiftIcon;
-
     switch (shift.status) {
       case StatusShift.selesai:
         color = Colors.black26;
@@ -785,15 +730,13 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
         shiftIcon = Icons.nights_stay_outlined;
         break;
     }
-
     final isBerlangsung = shift.status == StatusShift.berlangsung;
-
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color:
-            isBerlangsung ? kBlue.withOpacity(0.08) : const Color(0xFFE8F0FB),
+            isBerlangsung ? kBlue.withOpacity(0.08) : const Color(0xFFF5F9FF),
         borderRadius: BorderRadius.circular(14),
         border: isBerlangsung
             ? Border.all(color: kBlue.withOpacity(0.4), width: 1.5)
@@ -815,16 +758,16 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(shift.nama,
-                    style: TextStyle(
+                    style: GoogleFonts.lato(
                         fontWeight: FontWeight.w900,
                         fontSize: 12,
                         color: shift.status == StatusShift.selesai
                             ? Colors.black38
                             : kTextDark)),
                 Text('${shift.hari} ${shift.tanggal}',
-                    style: const TextStyle(
+                    style: GoogleFonts.lato(
                         fontSize: 10,
-                        color: kTextMid,
+                        color: Colors.black38,
                         fontWeight: FontWeight.w600)),
                 Container(
                   margin: const EdgeInsets.only(top: 4),
@@ -834,7 +777,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
                       color: color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20)),
                   child: Text(statusLabel,
-                      style: TextStyle(
+                      style: GoogleFonts.lato(
                           fontSize: 9,
                           fontWeight: FontWeight.w800,
                           color: color)),
@@ -846,14 +789,14 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(shift.jamMulai,
-                  style: TextStyle(
+                  style: GoogleFonts.lato(
                       fontWeight: FontWeight.w900,
                       fontSize: 15,
                       color: isBerlangsung ? kGreen : kTextDark)),
               Text('S/D ${shift.jamSelesai}',
-                  style: const TextStyle(
+                  style: GoogleFonts.lato(
                       fontSize: 10,
-                      color: kTextMid,
+                      color: Colors.black38,
                       fontWeight: FontWeight.w600)),
             ],
           ),
@@ -862,6 +805,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     );
   }
 
+  // ========================= BOTTOM NAVBAR =========================
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
@@ -881,65 +825,8 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
               _navItem(0, Icons.home_outlined, Icons.home, 'HOME'),
               _navItem(1, Icons.point_of_sale_outlined, Icons.point_of_sale,
                   'KASIR'),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _selectedNav = 2),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Transform.rotate(
-                        angle: 0.785,
-                        child: Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF6BAAF5), kBlueDark],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: kBlue.withOpacity(0.6),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 3))
-                            ],
-                          ),
-                          child: Transform.rotate(
-                            angle: -0.785,
-                            child: Center(
-                              child: RichText(
-                                text: TextSpan(
-                                  style: GoogleFonts.playfairDisplay(
-                                      color: kWhite, height: 1.0),
-                                  children: const [
-                                    TextSpan(
-                                        text: 'E',
-                                        style: TextStyle(
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.w400)),
-                                    TextSpan(
-                                        text: 'X',
-                                        style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700)),
-                                    TextSpan(
-                                        text: 'OTIC',
-                                        style: TextStyle(
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.w400)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _navItem(
+                  2, Icons.chat_bubble_outline, Icons.chat_bubble, 'ANNOUNCE'),
               _navItem(3, Icons.menu_outlined, Icons.menu, 'MENU'),
               _navItem(4, Icons.bar_chart_outlined, Icons.bar_chart, 'REKAP'),
             ],
@@ -955,18 +842,23 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => _selectedNav = index),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(isSelected ? filledIcon : outlineIcon,
-                color: isSelected ? kBlue : Colors.black38, size: 22),
-            const SizedBox(height: 3),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                    color: isSelected ? kBlue : Colors.black38)),
-          ],
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(isSelected ? filledIcon : outlineIcon,
+                  color: isSelected ? kBlue : Colors.black38, size: 22),
+              const SizedBox(height: 3),
+              Text(label,
+                  style: GoogleFonts.lato(
+                      fontSize: 9,
+                      fontWeight:
+                          isSelected ? FontWeight.w800 : FontWeight.w500,
+                      color: isSelected ? kBlue : Colors.black38)),
+            ],
+          ),
         ),
       ),
     );
