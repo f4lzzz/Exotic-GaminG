@@ -26,6 +26,9 @@ dependencies:
   google_mlkit_face_detection: ^0.11.0
   google_maps_flutter: ^2.6.1
   http: ^1.1.0
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+  audioplayers: ^6.0.0
 
   pdf: ^3.11.1
   printing: ^5.13.1
@@ -45,7 +48,7 @@ flutter:
     - assets/images/
     - images/
     - assets/models/
-
+    - assets/sounds/exotic_notif.mp3
 icons_launcher:
   image_path: "assets/images/icon/hhh.png"
   platforms:

@@ -46,7 +46,11 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
   late DateTime _focusedMonth;
   DateTime? _selectedDate;
   Map<String, String> _statusMap = {};
+  Map<String, Map<String, dynamic>> _detailMap = {}; // jam check-in/out per tgl
   bool _isLoading = false;
+
+  // Data shift karyawan
+  Map<String, dynamic>? _shiftData;
 
   static const _statusList = [
     _StatusItem('hadir', 'HADIR', kGreen, Icons.check_circle_rounded),
@@ -60,15 +64,13 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
     super.initState();
     _focusedMonth = DateTime(DateTime.now().year, DateTime.now().month);
     _fadeCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
+        vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _fadeCtrl.forward();
-    _scrollCtrl.addListener(
-      () => setState(() => _scrollOffset = _scrollCtrl.offset),
-    );
+    _scrollCtrl
+        .addListener(() => setState(() => _scrollOffset = _scrollCtrl.offset));
     _loadAbsensi();
+    _loadShift();
   }
 
   @override
@@ -78,18 +80,24 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
     super.dispose();
   }
 
+  Future<void> _loadShift() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.uid)
+        .get();
+    final data = doc.data();
+    if (mounted && data != null && data['shift'] is Map) {
+      setState(
+          () => _shiftData = Map<String, dynamic>.from(data['shift'] as Map));
+    }
+  }
+
   Future<void> _loadAbsensi() async {
     setState(() => _isLoading = true);
     try {
       final startOf = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
-      final endOf = DateTime(
-        _focusedMonth.year,
-        _focusedMonth.month + 1,
-        0,
-        23,
-        59,
-        59,
-      );
+      final endOf =
+          DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0, 23, 59, 59);
 
       final snapshot = await FirebaseFirestore.instance
           .collection('absensi')
@@ -99,32 +107,43 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
           .get();
 
       final map = <String, String>{};
+      final detail = <String, Map<String, dynamic>>{};
       for (final doc in snapshot.docs) {
         final data = doc.data();
         final tanggal = (data['tanggal'] as Timestamp).toDate();
         final key = DateFormat('yyyy-MM-dd').format(tanggal);
         map[key] = data['status'] ?? 'hadir';
+
+        // Simpan detail jam
+        final checkIn = data['checkIn'] as Timestamp?;
+        final checkOut = data['checkOut'] as Timestamp?;
+        detail[key] = {
+          'checkIn': checkIn != null
+              ? DateFormat('HH:mm').format(checkIn.toDate())
+              : null,
+          'checkOut': checkOut != null
+              ? DateFormat('HH:mm').format(checkOut.toDate())
+              : null,
+          'status': data['status'] ?? 'hadir',
+          'lokasi': data['alamat'] ?? data['lokasi'] ?? null,
+        };
       }
       setState(() {
         _statusMap = map;
+        _detailMap = detail;
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Gagal memuat data: $e',
-              style: GoogleFonts.lato(color: kWhite),
-            ),
-            backgroundColor: kRed,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Gagal memuat data: $e',
+              style: GoogleFonts.lato(color: kWhite)),
+          backgroundColor: kRed,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
       }
     }
   }
@@ -132,55 +151,40 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
   Future<void> _saveAbsensi(DateTime tanggal, String status) async {
     final key = DateFormat('yyyy-MM-dd').format(tanggal);
     final docId = '${widget.uid}_$key';
-
     try {
       await FirebaseFirestore.instance.collection('absensi').doc(docId).set({
         'uid': widget.uid,
         'nama': widget.nama,
         'tanggal': Timestamp.fromDate(
-          DateTime(tanggal.year, tanggal.month, tanggal.day),
-        ),
+            DateTime(tanggal.year, tanggal.month, tanggal.day)),
         'status': status,
         'updatedAt': FieldValue.serverTimestamp(),
-      });
-
+      }, SetOptions(merge: true));
       setState(() => _statusMap[key] = status);
-
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(_statusIcon(status), color: kWhite, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  '${DateFormat('d MMM yyyy').format(tanggal)} → ${_statusLabel(status)}',
-                  style: GoogleFonts.lato(
-                    color: kWhite,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(children: [
+            Icon(_statusIcon(status), color: kWhite, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              '${DateFormat('d MMM yyyy').format(tanggal)} → ${_statusLabel(status)}',
+              style:
+                  GoogleFonts.lato(color: kWhite, fontWeight: FontWeight.w700),
             ),
-            backgroundColor: _statusColor(status),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+          ]),
+          backgroundColor: _statusColor(status),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Gagal simpan: $e',
-              style: GoogleFonts.lato(color: kWhite),
-            ),
-            backgroundColor: kRed,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content:
+              Text('Gagal simpan: $e', style: GoogleFonts.lato(color: kWhite)),
+          backgroundColor: kRed,
+        ));
       }
     }
   }
@@ -207,7 +211,9 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
               child: Column(
                 children: [
                   _buildProfileCard(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+                  if (_shiftData != null) _buildShiftCard(),
+                  const SizedBox(height: 12),
                   _buildLegend(),
                   const SizedBox(height: 16),
                   _buildCalendar(),
@@ -222,7 +228,7 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
     );
   }
 
-  // HEADER DIPERBAIKI: hanya logo EXOTIC + tombol back + chip KALENDER
+  // ─── HEADER ──────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     final p = _collapseProgress;
     final double eSize = 24 - (24 - 14) * p;
@@ -230,56 +236,6 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
     final double oticSize = 24 - (24 - 14) * p;
     final double padTop = 36 - (36 - 16) * p;
     final double padBot = 16 - (16 - 10) * p;
-
-    final logoWidget = RichText(
-      text: TextSpan(
-        style: GoogleFonts.playfairDisplay(color: kWhite, height: 1.0),
-        children: [
-          TextSpan(
-            text: 'E',
-            style: TextStyle(fontSize: eSize, fontWeight: FontWeight.w400),
-          ),
-          TextSpan(
-            text: 'X',
-            style: TextStyle(fontSize: xSize, fontWeight: FontWeight.w700),
-          ),
-          TextSpan(
-            text: 'OTIC',
-            style: TextStyle(fontSize: oticSize, fontWeight: FontWeight.w400),
-          ),
-        ],
-      ),
-    );
-
-    final backBtn = GestureDetector(
-      onTap: () => Navigator.pop(context),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: kWhite.withOpacity(0.2),
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.arrow_back_ios_new, color: kWhite, size: 16),
-      ),
-    );
-
-    final chipWidget = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: kWhite.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        'KALENDER',
-        style: GoogleFonts.lato(
-          fontSize: 9,
-          fontWeight: FontWeight.w900,
-          color: kWhite,
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
 
     return AnimatedContainer(
       duration: Duration.zero,
@@ -297,16 +253,57 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          backBtn,
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                  color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
+              child:
+                  const Icon(Icons.arrow_back_ios_new, color: kWhite, size: 16),
+            ),
+          ),
           const SizedBox(width: 10),
-          logoWidget,
+          RichText(
+            text: TextSpan(
+              style: GoogleFonts.playfairDisplay(color: kWhite, height: 1.0),
+              children: [
+                TextSpan(
+                    text: 'E',
+                    style: TextStyle(
+                        fontSize: eSize, fontWeight: FontWeight.w400)),
+                TextSpan(
+                    text: 'X',
+                    style: TextStyle(
+                        fontSize: xSize, fontWeight: FontWeight.w700)),
+                TextSpan(
+                    text: 'OTIC',
+                    style: TextStyle(
+                        fontSize: oticSize, fontWeight: FontWeight.w400)),
+              ],
+            ),
+          ),
           const Spacer(),
-          chipWidget,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: kWhite.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text('KALENDER',
+                style: GoogleFonts.lato(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    color: kWhite,
+                    letterSpacing: 0.8)),
+          ),
         ],
       ),
     );
   }
 
+  // ─── PROFIL CARD ─────────────────────────────────────────────────────────
   Widget _buildProfileCard() {
     final initials = widget.nama
         .trim()
@@ -328,10 +325,9 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: kBlue.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
+              color: kBlue.withOpacity(0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6)),
         ],
       ),
       child: Row(
@@ -345,14 +341,11 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
               border: Border.all(color: kWhite.withOpacity(0.5), width: 2),
             ),
             child: Center(
-              child: Text(
-                initials,
-                style: GoogleFonts.lato(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: kWhite,
-                ),
-              ),
+              child: Text(initials,
+                  style: GoogleFonts.lato(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: kWhite)),
             ),
           ),
           const SizedBox(width: 14),
@@ -360,20 +353,15 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.nama,
-                  style: GoogleFonts.lato(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: kWhite,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(widget.nama,
+                    style: GoogleFonts.lato(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: kWhite),
+                    overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
-                Text(
-                  DateFormat('MMMM yyyy').format(_focusedMonth),
-                  style: GoogleFonts.lato(fontSize: 12, color: kWhiteDim),
-                ),
+                Text(DateFormat('MMMM yyyy').format(_focusedMonth),
+                    style: GoogleFonts.lato(fontSize: 12, color: kWhiteDim)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -393,19 +381,86 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: kWhite.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
+                  color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
               child: _isLoading
                   ? const Padding(
                       padding: EdgeInsets.all(8),
                       child: CircularProgressIndicator(
-                        color: kWhite,
-                        strokeWidth: 2,
-                      ),
-                    )
+                          color: kWhite, strokeWidth: 2))
                   : const Icon(Icons.refresh_rounded, color: kWhite, size: 20),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── SHIFT CARD ───────────────────────────────────────────────────────────
+  Widget _buildShiftCard() {
+    final shiftNama = _shiftData!['nama'] as String? ?? '-';
+    final jamMasuk = _shiftData!['jamMasuk'] as String? ?? '-';
+    final jamKeluar = _shiftData!['jamKeluar'] as String? ?? '-';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: kWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: kPurple.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+              color: kPurple.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 3)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+                color: kPurple.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.access_time, color: kPurple, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(shiftNama,
+                    style: GoogleFonts.lato(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: kPurple)),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    const Icon(Icons.login, size: 12, color: kGreen),
+                    const SizedBox(width: 4),
+                    Text('Masuk: $jamMasuk',
+                        style: GoogleFonts.lato(
+                            fontSize: 11, color: Colors.black54)),
+                    const SizedBox(width: 12),
+                    const Icon(Icons.logout, size: 12, color: kRed),
+                    const SizedBox(width: 4),
+                    Text('Keluar: $jamKeluar',
+                        style: GoogleFonts.lato(
+                            fontSize: 11, color: Colors.black54)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+                color: kPurple.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20)),
+            child: Text('SHIFT',
+                style: GoogleFonts.lato(
+                    fontSize: 9, fontWeight: FontWeight.w900, color: kPurple)),
           ),
         ],
       ),
@@ -416,19 +471,15 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          value,
-          style: GoogleFonts.lato(
-            fontSize: 16,
-            fontWeight: FontWeight.w900,
-            color: color,
-          ),
-        ),
+        Text(value,
+            style: GoogleFonts.lato(
+                fontSize: 16, fontWeight: FontWeight.w900, color: color)),
         Text(label, style: GoogleFonts.lato(fontSize: 9, color: kWhiteDim)),
       ],
     );
   }
 
+  // ─── LEGEND ───────────────────────────────────────────────────────────────
   Widget _buildLegend() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -437,43 +488,35 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: _statusList
-            .map(
-              (s) => Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: s.color,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    s.label,
-                    style: GoogleFonts.lato(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
-            )
+            .map((s) => Row(
+                  children: [
+                    Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                            color: s.color, shape: BoxShape.circle)),
+                    const SizedBox(width: 5),
+                    Text(s.label,
+                        style: GoogleFonts.lato(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black54)),
+                  ],
+                ))
             .toList(),
       ),
     );
   }
 
+  // ─── KALENDER ─────────────────────────────────────────────────────────────
   Widget _buildCalendar() {
     return Container(
       decoration: BoxDecoration(
@@ -481,25 +524,21 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4A90D9), kBlue],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                  colors: [Color(0xFF4A90D9), kBlue],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Row(
               children: [
@@ -509,14 +548,9 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      color: kWhite.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.chevron_left,
-                      color: kWhite,
-                      size: 22,
-                    ),
+                        color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
+                    child:
+                        const Icon(Icons.chevron_left, color: kWhite, size: 22),
                   ),
                 ),
                 Expanded(
@@ -524,11 +558,10 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
                     DateFormat('MMMM yyyy').format(_focusedMonth).toUpperCase(),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.lato(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      color: kWhite,
-                      letterSpacing: 1,
-                    ),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        color: kWhite,
+                        letterSpacing: 1),
                   ),
                 ),
                 GestureDetector(
@@ -537,55 +570,42 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      color: kWhite.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.chevron_right,
-                      color: kWhite,
-                      size: 22,
-                    ),
+                        color: kWhite.withOpacity(0.2), shape: BoxShape.circle),
+                    child: const Icon(Icons.chevron_right,
+                        color: kWhite, size: 22),
                   ),
                 ),
               ],
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             child: Row(
-              children: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((
-                d,
-              ) {
+              children:
+                  ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((d) {
                 final isWeekend = d == 'Sab' || d == 'Min';
                 return Expanded(
-                  child: Text(
-                    d,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.lato(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: isWeekend ? kRed.withOpacity(0.6) : Colors.black38,
-                    ),
-                  ),
+                  child: Text(d,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.lato(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: isWeekend
+                              ? kRed.withOpacity(0.6)
+                              : Colors.black38)),
                 );
               }).toList(),
             ),
           ),
           Divider(height: 1, color: Colors.black.withOpacity(0.05)),
-
           _isLoading
               ? const Padding(
                   padding: EdgeInsets.symmetric(vertical: 40),
-                  child: CircularProgressIndicator(
-                    color: kBlue,
-                    strokeWidth: 2,
-                  ),
-                )
+                  child:
+                      CircularProgressIndicator(color: kBlue, strokeWidth: 2))
               : Padding(
                   padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
-                  child: _buildDaysGrid(),
-                ),
+                  child: _buildDaysGrid()),
         ],
       ),
     );
@@ -593,46 +613,37 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
 
   Widget _buildDaysGrid() {
     final firstDay = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
-    final daysInMonth = DateTime(
-      _focusedMonth.year,
-      _focusedMonth.month + 1,
-      0,
-    ).day;
-    int startWeekday = firstDay.weekday;
+    final daysInMonth =
+        DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
+    final startWeekday = firstDay.weekday;
     final today = DateTime.now();
     final isCurrentMonth =
         _focusedMonth.year == today.year && _focusedMonth.month == today.month;
 
     final cells = <Widget>[];
-
-    for (int i = 1; i < startWeekday; i++) {
-      cells.add(const SizedBox());
-    }
+    for (int i = 1; i < startWeekday; i++) cells.add(const SizedBox());
 
     for (int day = 1; day <= daysInMonth; day++) {
       final date = DateTime(_focusedMonth.year, _focusedMonth.month, day);
       final key = DateFormat('yyyy-MM-dd').format(date);
       final status = _statusMap[key];
       final isToday = isCurrentMonth && day == today.day;
-      final isSelected =
-          _selectedDate != null &&
+      final isSelected = _selectedDate != null &&
           _selectedDate!.day == day &&
           _selectedDate!.month == _focusedMonth.month &&
           _selectedDate!.year == _focusedMonth.year;
       final isWeekend = date.weekday == 6 || date.weekday == 7;
       final isFuture = date.isAfter(today);
 
-      cells.add(
-        _dayCell(
-          day: day,
-          date: date,
-          status: status,
-          isToday: isToday,
-          isSelected: isSelected,
-          isWeekend: isWeekend,
-          isFuture: isFuture,
-        ),
-      );
+      cells.add(_dayCell(
+        day: day,
+        date: date,
+        status: status,
+        isToday: isToday,
+        isSelected: isSelected,
+        isWeekend: isWeekend,
+        isFuture: isFuture,
+      ));
     }
 
     return GridView.count(
@@ -658,19 +669,13 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
     Color bgColor = Colors.transparent;
     Color textColor = isWeekend ? kRed.withOpacity(0.7) : Colors.black87;
 
-    if (status != null) {
-      bgColor = _statusColor(status).withOpacity(0.15);
-    }
+    if (status != null) bgColor = _statusColor(status).withOpacity(0.15);
     if (isToday) {
       bgColor = kBlue.withOpacity(0.1);
       textColor = kBlue;
     }
-    if (isSelected) {
-      bgColor = kBlue.withOpacity(0.15);
-    }
-    if (isFuture) {
-      textColor = Colors.black26;
-    }
+    if (isSelected) bgColor = kBlue.withOpacity(0.15);
+    if (isFuture) textColor = Colors.black26;
 
     return GestureDetector(
       onTap: isFuture
@@ -687,30 +692,26 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
           border: isToday
               ? Border.all(color: kBlue, width: 1.5)
               : isSelected
-              ? Border.all(color: kBlue.withOpacity(0.5), width: 1.5)
-              : null,
+                  ? Border.all(color: kBlue.withOpacity(0.5), width: 1.5)
+                  : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              '$day',
-              style: GoogleFonts.lato(
-                fontSize: 13,
-                fontWeight: isToday ? FontWeight.w900 : FontWeight.w600,
-                color: textColor,
-              ),
-            ),
+            Text('$day',
+                style: GoogleFonts.lato(
+                    fontSize: 13,
+                    fontWeight: isToday ? FontWeight.w900 : FontWeight.w600,
+                    color: textColor)),
             const SizedBox(height: 2),
             Container(
               width: 6,
               height: 6,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: status != null
-                    ? _statusColor(status)
-                    : Colors.transparent,
-              ),
+                  shape: BoxShape.circle,
+                  color: status != null
+                      ? _statusColor(status)
+                      : Colors.transparent),
             ),
           ],
         ),
@@ -721,6 +722,7 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
   void _showStatusBottomSheet(DateTime date) {
     final key = DateFormat('yyyy-MM-dd').format(date);
     final currentStatus = _statusMap[key];
+    final detail = _detailMap[key];
 
     showModalBottomSheet(
       context: context,
@@ -739,9 +741,8 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.black12,
-                borderRadius: BorderRadius.circular(2),
-              ),
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(2)),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
@@ -750,39 +751,60 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: kBlue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.calendar_today_rounded,
-                      color: kBlue,
-                      size: 22,
-                    ),
+                        color: kBlue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12)),
+                    child: const Icon(Icons.calendar_today_rounded,
+                        color: kBlue, size: 22),
                   ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        DateFormat('EEEE, d MMMM yyyy').format(date),
-                        style: GoogleFonts.lato(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          color: kTextDark,
-                        ),
-                      ),
-                      Text(
-                        'Pilih status kehadiran',
-                        style: GoogleFonts.lato(
-                          fontSize: 11,
-                          color: Colors.black45,
-                        ),
-                      ),
+                      Text(DateFormat('EEEE, d MMMM yyyy').format(date),
+                          style: GoogleFonts.lato(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: kTextDark)),
+                      Text('Pilih status kehadiran',
+                          style: GoogleFonts.lato(
+                              fontSize: 11, color: Colors.black45)),
                     ],
                   ),
                 ],
               ),
             ),
+
+            // Info jam check-in/out (kalau ada)
+            if (detail != null &&
+                (detail['checkIn'] != null || detail['checkOut'] != null)) ...[
+              Container(
+                margin: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: kGreen.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: kGreen.withOpacity(0.2)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    if (detail['checkIn'] != null)
+                      _infoJam(
+                          Icons.login, 'Check-in', detail['checkIn'], kGreen),
+                    if (detail['checkIn'] != null && detail['checkOut'] != null)
+                      Container(width: 1, height: 30, color: Colors.black12),
+                    if (detail['checkOut'] != null)
+                      _infoJam(
+                          Icons.logout, 'Check-out', detail['checkOut'], kRed),
+                    // Bandingkan dengan shift
+                    if (_shiftData != null && detail['checkIn'] != null)
+                      _infoShiftStatus(detail['checkIn']!),
+                  ],
+                ),
+              ),
+            ],
+
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Divider(color: Colors.black12),
@@ -801,22 +823,18 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
                       duration: const Duration(milliseconds: 150),
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
+                          horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
                         color: isActive ? s.color.withOpacity(0.1) : kWhite,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: isActive ? s.color : Colors.black12,
-                          width: isActive ? 2 : 1,
-                        ),
+                            color: isActive ? s.color : Colors.black12,
+                            width: isActive ? 2 : 1),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2)),
                         ],
                       ),
                       child: Row(
@@ -825,9 +843,8 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
                             width: 42,
                             height: 42,
                             decoration: BoxDecoration(
-                              color: s.color.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                                color: s.color.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12)),
                             child: Icon(s.icon, color: s.color, size: 22),
                           ),
                           const SizedBox(width: 14),
@@ -835,21 +852,14 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  s.label,
-                                  style: GoogleFonts.lato(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
-                                    color: isActive ? s.color : kTextDark,
-                                  ),
-                                ),
-                                Text(
-                                  _statusDesc(s.value),
-                                  style: GoogleFonts.lato(
-                                    fontSize: 11,
-                                    color: Colors.black38,
-                                  ),
-                                ),
+                                Text(s.label,
+                                    style: GoogleFonts.lato(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        color: isActive ? s.color : kTextDark)),
+                                Text(_statusDesc(s.value),
+                                    style: GoogleFonts.lato(
+                                        fontSize: 11, color: Colors.black38)),
                               ],
                             ),
                           ),
@@ -858,20 +868,13 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
                               width: 24,
                               height: 24,
                               decoration: BoxDecoration(
-                                color: s.color,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                color: kWhite,
-                                size: 14,
-                              ),
+                                  color: s.color, shape: BoxShape.circle),
+                              child: const Icon(Icons.check,
+                                  color: kWhite, size: 14),
                             )
                           else
-                            const Icon(
-                              Icons.chevron_right_rounded,
-                              color: Colors.black26,
-                            ),
+                            const Icon(Icons.chevron_right_rounded,
+                                color: Colors.black26),
                         ],
                       ),
                     ),
@@ -885,6 +888,49 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
     );
   }
 
+  Widget _infoJam(IconData icon, String label, String jam, Color color) {
+    return Column(
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(height: 3),
+        Text(jam,
+            style: GoogleFonts.lato(
+                fontSize: 13, fontWeight: FontWeight.w900, color: color)),
+        Text(label,
+            style: GoogleFonts.lato(fontSize: 9, color: Colors.black45)),
+      ],
+    );
+  }
+
+  Widget _infoShiftStatus(String checkInJam) {
+    final shiftMasuk = _shiftData!['jamMasuk'] as String? ?? '00:00';
+    final parts1 = checkInJam.split(':');
+    final parts2 = shiftMasuk.split(':');
+    if (parts1.length < 2 || parts2.length < 2) {
+      return const SizedBox.shrink();
+    }
+    final checkInMinutes = int.parse(parts1[0]) * 60 + int.parse(parts1[1]);
+    final shiftMinutes = int.parse(parts2[0]) * 60 + int.parse(parts2[1]);
+    final diff = checkInMinutes - shiftMinutes;
+    final isTelat = diff > 0;
+    final label = isTelat ? '${diff}m telat' : 'Tepat waktu';
+    final color = isTelat ? kRed : kGreen;
+
+    return Column(
+      children: [
+        Icon(isTelat ? Icons.warning_amber : Icons.verified,
+            size: 14, color: color),
+        const SizedBox(height: 3),
+        Text(label,
+            style: GoogleFonts.lato(
+                fontSize: 11, fontWeight: FontWeight.w900, color: color)),
+        Text('vs Shift',
+            style: GoogleFonts.lato(fontSize: 9, color: Colors.black45)),
+      ],
+    );
+  }
+
+  // ─── RINGKASAN ────────────────────────────────────────────────────────────
   Widget _buildMonthSummary() {
     final counts = <String, int>{};
     for (final s in _statusList) counts[s.value] = 0;
@@ -899,10 +945,9 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3)),
         ],
       ),
       child: Column(
@@ -912,27 +957,20 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
             children: [
               const Icon(Icons.summarize_rounded, color: kBlue, size: 20),
               const SizedBox(width: 8),
-              Text(
-                'RINGKASAN BULAN INI',
-                style: GoogleFonts.lato(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: kTextDark,
-                  letterSpacing: 0.5,
-                ),
-              ),
+              Text('RINGKASAN BULAN INI',
+                  style: GoogleFonts.lato(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: kTextDark,
+                      letterSpacing: 0.5)),
             ],
           ),
           const SizedBox(height: 14),
           ...(_statusList.map((s) {
             final count = counts[s.value] ?? 0;
-            final daysInMonth = DateTime(
-              _focusedMonth.year,
-              _focusedMonth.month + 1,
-              0,
-            ).day;
+            final daysInMonth =
+                DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
             final ratio = daysInMonth > 0 ? count / daysInMonth : 0.0;
-
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Row(
@@ -941,9 +979,8 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: s.color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                        color: s.color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10)),
                     child: Icon(s.icon, color: s.color, size: 18),
                   ),
                   const SizedBox(width: 12),
@@ -954,22 +991,16 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              s.label,
-                              style: GoogleFonts.lato(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            Text(
-                              '$count hari',
-                              style: GoogleFonts.lato(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: s.color,
-                              ),
-                            ),
+                            Text(s.label,
+                                style: GoogleFonts.lato(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.black54)),
+                            Text('$count hari',
+                                style: GoogleFonts.lato(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: s.color)),
                           ],
                         ),
                         const SizedBox(height: 4),
@@ -994,22 +1025,16 @@ class _OwnerKalenderScreenState extends State<OwnerKalenderScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Total Tercatat',
-                style: GoogleFonts.lato(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black45,
-                ),
-              ),
-              Text(
-                '${_statusMap.length} hari',
-                style: GoogleFonts.lato(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: kTextDark,
-                ),
-              ),
+              Text('Total Tercatat',
+                  style: GoogleFonts.lato(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black45)),
+              Text('${_statusMap.length} hari',
+                  style: GoogleFonts.lato(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: kTextDark)),
             ],
           ),
         ],
@@ -1083,6 +1108,5 @@ class _StatusItem {
   final String label;
   final Color color;
   final IconData icon;
-
   const _StatusItem(this.value, this.label, this.color, this.icon);
 }

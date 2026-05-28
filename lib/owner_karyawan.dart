@@ -21,8 +21,20 @@ const kOrange = Color(0xFFFF9800);
 const kPurple = Color(0xFF7C4DFF);
 const kBgLight = Color(0xFFF0F4FF);
 
-// 🔥 GANTI DENGAN API KEY FIREBASE ANDA
 const String _firebaseApiKey = 'AIzaSyC30Vpz3_sU15HsDlqMuEI4ZJKlqHhkSkE';
+
+// ─── Model Shift ─────────────────────────────────────────────────────────────
+class ShiftItem {
+  final String nama;
+  final String jamMasuk;
+  final String jamKeluar;
+  final Color color;
+  ShiftItem(
+      {required this.nama,
+      required this.jamMasuk,
+      required this.jamKeluar,
+      required this.color});
+}
 
 class OwnerKaryawanScreen extends StatefulWidget {
   const OwnerKaryawanScreen({super.key});
@@ -42,6 +54,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
 
   Map<String, Map<String, dynamic>> _mapAbsensi = {};
   bool _loadingAbsensi = true;
+
+  // Cache shift per karyawan
+  Map<String, Map<String, dynamic>?> _mapShift = {};
 
   @override
   void initState() {
@@ -70,6 +85,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         _today = newToday;
         _refreshKey++;
         _mapAbsensi.clear();
+        _mapShift.clear();
         _loadingAbsensi = true;
       });
     }
@@ -87,16 +103,21 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     }
     final todayTimestamp = Timestamp.fromDate(_today);
     final Map<String, Map<String, dynamic>> temp = {};
+    final Map<String, Map<String, dynamic>?> tempShift = {};
+
     for (var doc in karyawanDocs) {
       final uid = doc.id;
-      final snapshot = await FirebaseFirestore.instance
+
+      // Load absensi hari ini
+      final absenSnap = await FirebaseFirestore.instance
           .collection('absensi')
           .where('uid', isEqualTo: uid)
           .where('tanggal', isEqualTo: todayTimestamp)
           .limit(1)
           .get();
-      if (snapshot.docs.isNotEmpty) {
-        final data = snapshot.docs.first.data();
+
+      if (absenSnap.docs.isNotEmpty) {
+        final data = absenSnap.docs.first.data();
         final checkIn = data['checkIn'] as Timestamp?;
         final status = data['status'] as String?;
         temp[uid] = {
@@ -109,12 +130,25 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       } else {
         temp[uid] = {'status': 'belum', 'checkIn': null, 'hasCheckIn': false};
       }
+
+      // Load shift karyawan
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final userData = userDoc.data();
+      if (userData != null && userData['shift'] is Map) {
+        tempShift[uid] = Map<String, dynamic>.from(userData['shift'] as Map);
+      } else {
+        tempShift[uid] = null;
+      }
     }
-    if (mounted)
+
+    if (mounted) {
       setState(() {
         _mapAbsensi = temp;
+        _mapShift = tempShift;
         _loadingAbsensi = false;
       });
+    }
   }
 
   Future<Map<String, int>> _getRingkasan(
@@ -139,7 +173,11 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       body: RefreshIndicator(
         onRefresh: () async {
           _updateToday();
-          setState(() {});
+          setState(() {
+            _mapAbsensi.clear();
+            _mapShift.clear();
+            _loadingAbsensi = true;
+          });
         },
         child: Column(
           children: [
@@ -161,8 +199,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  if (snapshot.hasError)
+                  if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
+                  }
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return const Center(
                       child: Padding(
@@ -181,8 +220,9 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                     );
                   }
                   final docs = snapshot.data!.docs;
-                  if (_mapAbsensi.isEmpty && _loadingAbsensi)
+                  if (_mapAbsensi.isEmpty && _loadingAbsensi) {
                     _loadAllAbsensi(docs);
+                  }
                   final filtered = docs.where((doc) {
                     final data = doc.data() as Map<String, dynamic>;
                     final nama = data['nama']?.toLowerCase() ?? '';
@@ -208,15 +248,17 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                       ),
                     );
                   }
-                  if (_loadingAbsensi)
+                  if (_loadingAbsensi) {
                     return const Center(child: CircularProgressIndicator());
+                  }
                   return ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                     itemCount: filtered.length,
                     itemBuilder: (context, index) {
                       final doc = filtered[index];
                       final absenData = _mapAbsensi[doc.id];
-                      return _karyawanCard(doc, absenData);
+                      final shiftData = _mapShift[doc.id];
+                      return _karyawanCard(doc, absenData, shiftData);
                     },
                   );
                 },
@@ -228,6 +270,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     );
   }
 
+  // ─── HEADER ──────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
@@ -318,14 +361,17 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     );
   }
 
+  // ─── SUMMARY ROW ─────────────────────────────────────────────────────────
   Widget _buildSummaryRow() {
     return StreamBuilder<QuerySnapshot>(
       stream: _karyawanStream,
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const SizedBox(height: 80);
         final docs = snapshot.data!.docs;
-        if (_mapAbsensi.isEmpty && _loadingAbsensi)
-          return const SizedBox(height: 80);
+        if (_mapAbsensi.isEmpty && _loadingAbsensi) {
+          return const SizedBox(
+              height: 80, child: Center(child: CircularProgressIndicator()));
+        }
         return FutureBuilder<Map<String, int>>(
           future: _getRingkasan(docs),
           builder: (context, sumSnap) {
@@ -463,8 +509,12 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     );
   }
 
+  // ─── KARTU KARYAWAN ───────────────────────────────────────────────────────
   Widget _karyawanCard(
-      QueryDocumentSnapshot doc, Map<String, dynamic>? absenData) {
+    QueryDocumentSnapshot doc,
+    Map<String, dynamic>? absenData,
+    Map<String, dynamic>? shiftData,
+  ) {
     final data = doc.data() as Map<String, dynamic>;
     final uid = doc.id;
     final nama = data['nama'] ?? 'Tanpa Nama';
@@ -473,6 +523,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
         ? nama.split(' ').take(2).map((e) => e[0].toUpperCase()).join()
         : '??';
 
+    // Status absensi
     String statusText = '';
     Color statusColor = Colors.black38;
     IconData statusIcon = Icons.help_outline;
@@ -501,6 +552,12 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
       }
     }
 
+    // Info shift
+    final shiftNama = shiftData?['nama'] as String?;
+    final shiftMasuk = shiftData?['jamMasuk'] as String?;
+    final shiftKeluar = shiftData?['jamKeluar'] as String?;
+    final adaShift = shiftNama != null && shiftMasuk != null;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
@@ -514,81 +571,118 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
               offset: const Offset(0, 3)),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: kBlue.withOpacity(0.12),
-              border: Border.all(color: statusColor.withOpacity(0.5), width: 2),
-            ),
-            child: Center(
-                child: Text(avatar,
-                    style: GoogleFonts.lato(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        color: kBlue))),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(nama,
-                    style: GoogleFonts.lato(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: kTextDark)),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Icon(Icons.work_outline, size: 11, color: Colors.black38),
-                    const SizedBox(width: 4),
-                    Text(jabatan,
-                        style: GoogleFonts.lato(
-                            fontSize: 11, color: Colors.black45)),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(statusIcon, size: 12, color: statusColor),
-                    const SizedBox(width: 4),
-                    Text(statusText,
-                        style: GoogleFonts.lato(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: statusColor)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Row(
             children: [
-              Row(
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: kBlue.withOpacity(0.12),
+                  border:
+                      Border.all(color: statusColor.withOpacity(0.5), width: 2),
+                ),
+                child: Center(
+                    child: Text(avatar,
+                        style: GoogleFonts.lato(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            color: kBlue))),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(nama,
+                        style: GoogleFonts.lato(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: kTextDark)),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        const Icon(Icons.work_outline,
+                            size: 11, color: Colors.black38),
+                        const SizedBox(width: 4),
+                        Text(jabatan,
+                            style: GoogleFonts.lato(
+                                fontSize: 11, color: Colors.black45)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(statusIcon, size: 12, color: statusColor),
+                        const SizedBox(width: 4),
+                        Text(statusText,
+                            style: GoogleFonts.lato(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: statusColor)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _actionBtn(
-                      Icons.calendar_month,
-                      kBlue,
-                      () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  OwnerKalenderScreen(uid: uid, nama: nama)))),
-                  const SizedBox(width: 6),
-                  _actionBtn(Icons.edit_outlined, kBlue,
-                      () => _showEditDialog(uid, data)),
-                  const SizedBox(width: 6),
-                  _actionBtn(Icons.delete_outline, kRed,
-                      () => _showDeleteDialog(uid, nama)),
+                  Row(
+                    children: [
+                      _actionBtn(
+                          Icons.calendar_month,
+                          kBlue,
+                          () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => OwnerKalenderScreen(
+                                      uid: uid, nama: nama)))),
+                      const SizedBox(width: 6),
+                      _actionBtn(Icons.access_time, kPurple,
+                          () => _showShiftDialog(uid, nama, shiftData)),
+                      const SizedBox(width: 6),
+                      _actionBtn(Icons.edit_outlined, kBlue,
+                          () => _showEditDialog(uid, data)),
+                      const SizedBox(width: 6),
+                      _actionBtn(Icons.delete_outline, kRed,
+                          () => _showDeleteDialog(uid, nama)),
+                    ],
+                  ),
                 ],
               ),
             ],
           ),
+
+          // ── Chip shift (kalau ada) ────────────────────────────────────────
+          if (adaShift) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: kPurple.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: kPurple.withOpacity(0.2)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.access_time, size: 13, color: kPurple),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$shiftNama  •  $shiftMasuk – $shiftKeluar',
+                    style: GoogleFonts.lato(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: kPurple),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -619,7 +713,311 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
   }
 
   // =========================================================================
-  // TAMBAH KARYAWAN (REST API, tidak mengubah session)
+  // DIALOG SHIFT
+  // =========================================================================
+  void _showShiftDialog(
+      String uid, String nama, Map<String, dynamic>? currentShift) {
+    final namaShiftCtrl =
+        TextEditingController(text: currentShift?['nama'] ?? '');
+    TimeOfDay masuk = _parseTime(currentShift?['jamMasuk'] ?? '08:00');
+    TimeOfDay keluar = _parseTime(currentShift?['jamKeluar'] ?? '17:00');
+    bool isLoading = false;
+
+    // Preset shift cepat
+    final presets = [
+      {'nama': 'Shift Pagi', 'masuk': '07:00', 'keluar': '15:00'},
+      {'nama': 'Shift Siang', 'masuk': '11:00', 'keluar': '19:00'},
+      {'nama': 'Shift Malam', 'masuk': '15:00', 'keluar': '23:00'},
+      {'nama': 'Shift Full', 'masuk': '08:00', 'keluar': '20:00'},
+    ];
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => AlertDialog(
+          backgroundColor: kWhite,
+          surfaceTintColor: kWhite,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                    color: kPurple.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.access_time, color: kPurple),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Atur Shift',
+                        style: GoogleFonts.lato(
+                            fontWeight: FontWeight.w900,
+                            color: kTextDark,
+                            fontSize: 16)),
+                    Text(nama,
+                        style: GoogleFonts.lato(
+                            fontSize: 12, color: Colors.black45)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: MediaQuery.of(ctx).size.width,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Nama shift
+                  _dialogField(namaShiftCtrl, 'Nama Shift (misal: Shift Pagi)',
+                      Icons.label_outline),
+                  const SizedBox(height: 14),
+
+                  // Preset cepat
+                  Text('PRESET CEPAT',
+                      style: GoogleFonts.lato(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black45)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: presets.map((p) {
+                      return GestureDetector(
+                        onTap: () {
+                          setDlg(() {
+                            namaShiftCtrl.text = p['nama']!;
+                            masuk = _parseTime(p['masuk']!);
+                            keluar = _parseTime(p['keluar']!);
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: kPurple.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: kPurple.withOpacity(0.3)),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(p['nama']!,
+                                  style: GoogleFonts.lato(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: kPurple)),
+                              Text('${p['masuk']} – ${p['keluar']}',
+                                  style: GoogleFonts.lato(
+                                      fontSize: 10, color: Colors.black45)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Pilih jam manual
+                  Text('JAM KERJA',
+                      style: GoogleFonts.lato(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black45)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      // Jam masuk
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () async {
+                            final picked = await showTimePicker(
+                              context: ctx,
+                              initialTime: masuk,
+                              builder: (_, child) => MediaQuery(
+                                data: MediaQuery.of(ctx)
+                                    .copyWith(alwaysUse24HourFormat: true),
+                                child: child!,
+                              ),
+                            );
+                            if (picked != null) {
+                              setDlg(() => masuk = picked);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 12, horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: kBgLight,
+                              borderRadius: BorderRadius.circular(12),
+                              border:
+                                  Border.all(color: kPurple.withOpacity(0.3)),
+                            ),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.login,
+                                    size: 18, color: kGreen),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _formatTime(masuk),
+                                  style: GoogleFonts.lato(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      color: kGreen),
+                                ),
+                                Text('Jam Masuk',
+                                    style: GoogleFonts.lato(
+                                        fontSize: 10, color: Colors.black38)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Icon(Icons.arrow_forward,
+                          color: Colors.black38, size: 20),
+                      const SizedBox(width: 10),
+                      // Jam keluar
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () async {
+                            final picked = await showTimePicker(
+                              context: ctx,
+                              initialTime: keluar,
+                              builder: (_, child) => MediaQuery(
+                                data: MediaQuery.of(ctx)
+                                    .copyWith(alwaysUse24HourFormat: true),
+                                child: child!,
+                              ),
+                            );
+                            if (picked != null) {
+                              setDlg(() => keluar = picked);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 12, horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: kBgLight,
+                              borderRadius: BorderRadius.circular(12),
+                              border:
+                                  Border.all(color: kPurple.withOpacity(0.3)),
+                            ),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.logout, size: 18, color: kRed),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _formatTime(keluar),
+                                  style: GoogleFonts.lato(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      color: kRed),
+                                ),
+                                Text('Jam Keluar',
+                                    style: GoogleFonts.lato(
+                                        fontSize: 10, color: Colors.black38)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  if (isLoading)
+                    const Padding(
+                        padding: EdgeInsets.only(top: 12),
+                        child: Center(child: CircularProgressIndicator())),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            // Tombol hapus shift (kalau ada)
+            if (currentShift != null)
+              TextButton.icon(
+                onPressed: () async {
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(uid)
+                      .update({'shift': FieldValue.delete()});
+                  setState(() => _mapShift[uid] = null);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Shift dihapus'), backgroundColor: kRed));
+                },
+                icon: const Icon(Icons.delete, color: kRed, size: 16),
+                label: Text('Hapus', style: GoogleFonts.lato(color: kRed)),
+              ),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Batal',
+                    style: GoogleFonts.lato(color: Colors.black45))),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: kPurple,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      final namaShift = namaShiftCtrl.text.trim();
+                      if (namaShift.isEmpty) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+                            content: Text('Nama shift wajib diisi'),
+                            backgroundColor: kRed));
+                        return;
+                      }
+                      setDlg(() => isLoading = true);
+                      final shiftMap = {
+                        'nama': namaShift,
+                        'jamMasuk': _formatTime(masuk),
+                        'jamKeluar': _formatTime(keluar),
+                      };
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(uid)
+                          .update({'shift': shiftMap});
+                      setState(() => _mapShift[uid] = shiftMap);
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content:
+                              Text('Shift $namaShift disimpan untuk $nama'),
+                          backgroundColor: kGreen));
+                    },
+              icon: const Icon(Icons.save, color: kWhite, size: 16),
+              label: Text('Simpan',
+                  style: GoogleFonts.lato(
+                      fontWeight: FontWeight.w800, color: kWhite)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatTime(TimeOfDay t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+  TimeOfDay _parseTime(String s) {
+    final parts = s.split(':');
+    if (parts.length == 2) {
+      return TimeOfDay(
+          hour: int.tryParse(parts[0]) ?? 8,
+          minute: int.tryParse(parts[1]) ?? 0);
+    }
+    return const TimeOfDay(hour: 8, minute: 0);
+  }
+
+  // =========================================================================
+  // TAMBAH KARYAWAN
   // =========================================================================
   void _showTambahDialog() {
     final emailCtrl = TextEditingController();
@@ -752,9 +1150,7 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                         return;
                       }
                       setDlg(() => isLoading = true);
-
                       try {
-                        // 🔥 Buat akun menggunakan Firebase REST API (tidak mengubah session)
                         final url = Uri.parse(
                             'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$_firebaseApiKey');
                         final response = await http.post(
@@ -766,17 +1162,13 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                           }),
                           headers: {'Content-Type': 'application/json'},
                         );
-
                         if (response.statusCode != 200) {
                           final error =
                               jsonDecode(response.body)['error']['message'];
                           throw Exception('Gagal membuat akun: $error');
                         }
-
-                        final data = jsonDecode(response.body);
-                        final uid = data['localId'];
-
-                        // Simpan data karyawan ke Firestore
+                        final resData = jsonDecode(response.body);
+                        final uid = resData['localId'];
                         await FirebaseFirestore.instance
                             .collection('users')
                             .doc(uid)
@@ -788,13 +1180,12 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
                           'jabatan': null,
                           'createdAt': FieldValue.serverTimestamp(),
                         });
-
                         if (ctx.mounted) Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                                 content: Text('Karyawan berhasil ditambahkan'),
                                 backgroundColor: kGreen));
-                        setState(() {}); // refresh daftar karyawan
+                        setState(() {});
                       } catch (e) {
                         String msg = e.toString().contains('EMAIL_EXISTS')
                             ? 'Email sudah digunakan'
@@ -956,13 +1347,14 @@ class _OwnerKaryawanScreenState extends State<OwnerKaryawanScreen>
     );
   }
 
-  // =========================================================================
-  // FIELD FORM
-  // =========================================================================
-  Widget _dialogField(TextEditingController ctrl, String hint, IconData icon,
-      {bool obscure = false,
-      TextInputType keyboardType = TextInputType.text,
-      Widget? suffix}) {
+  Widget _dialogField(
+    TextEditingController ctrl,
+    String hint,
+    IconData icon, {
+    bool obscure = false,
+    TextInputType keyboardType = TextInputType.text,
+    Widget? suffix,
+  }) {
     return Container(
       decoration: BoxDecoration(
           color: kBgLight, borderRadius: BorderRadius.circular(12)),
