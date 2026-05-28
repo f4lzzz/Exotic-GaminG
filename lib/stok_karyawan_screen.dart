@@ -4,28 +4,34 @@ import 'package:intl/intl.dart';
 
 // ==================== WARNA ====================
 
-const kBgColor      = Color(0xFFEFF6FF);
-const kCardColor    = Color(0xFFFFFFFF);
-const kBlueDark     = Color(0xFF1E3A8A);
-const kBlueMid      = Color(0xFF1E40AF);
-const kBlueMain     = Color(0xFF1D4ED8);
-const kBlueSoft     = Color(0xFFDBEAFE);
-const kBluePale     = Color(0xFFEFF6FF);
+const kBgColor = Color(0xFFEFF6FF);
+const kCardColor = Color(0xFFFFFFFF);
+const kBlueDark = Color(0xFF1E3A8A);
+const kBlueMid = Color(0xFF1E40AF);
+const kBlueMain = Color(0xFF1D4ED8);
+const kBlueSoft = Color(0xFFDBEAFE);
+const kBluePale = Color(0xFFEFF6FF);
 
-const kTextMain     = Color(0xFF1E293B);
-const kTextSub      = Color(0xFF64748B);
-const kTextLight    = Color(0xFF94A3B8);
+const kTextMain = Color(0xFF1E293B);
+const kTextSub = Color(0xFF64748B);
+const kTextLight = Color(0xFF94A3B8);
 
-const kGreen        = Color(0xFF059669);
-const kGreenLight   = Color(0xFFD1FAE5);
-const kRed          = Color(0xFFDC2626);
-const kRedLight     = Color(0xFFFEE2E2);
-const kOrange       = Color(0xFFD97706);
-const kOrangeLight  = Color(0xFFFEF3C7);
+const kGreen = Color(0xFF059669);
+const kGreenLight = Color(0xFFD1FAE5);
+const kRed = Color(0xFFDC2626);
+const kRedLight = Color(0xFFFEE2E2);
+const kOrange = Color(0xFFD97706);
+const kOrangeLight = Color(0xFFFEF3C7);
 
 final List<BoxShadow> kSoftShadow = [
-  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4)),
-  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 24, offset: const Offset(0, 12)),
+  BoxShadow(
+      color: Colors.black.withOpacity(0.04),
+      blurRadius: 12,
+      offset: const Offset(0, 4)),
+  BoxShadow(
+      color: Colors.black.withOpacity(0.02),
+      blurRadius: 24,
+      offset: const Offset(0, 12)),
 ];
 
 // ==================== AVATAR COLORS ====================
@@ -58,7 +64,8 @@ String initialsOf(String name) {
 // ==================== MODELS ====================
 
 enum StokStatus { aman, hampirHabis, habis }
-enum LogType    { tambah, kurang, hapus, baru, edit }
+
+enum LogType { tambah, kurang, hapus, baru, edit }
 
 class StokItem {
   final int id;
@@ -76,8 +83,8 @@ class StokItem {
   });
 
   StokStatus get status {
-    if (qty <= 0)  return StokStatus.habis;
-    if (qty <= 5)  return StokStatus.hampirHabis;
+    if (qty <= 0) return StokStatus.habis;
+    if (qty <= 5) return StokStatus.hampirHabis;
     return StokStatus.aman;
   }
 
@@ -103,14 +110,32 @@ class LogEntry {
 // ==================== DEFAULT DATA ====================
 
 List<StokItem> buildDefaultItems() => [
-  StokItem(id: 1, name: 'Beras',              qty: 50, unit: 'kg',    category: 'Bahan Pokok'),
-  StokItem(id: 2, name: 'Minyak Goreng',       qty: 20, unit: 'liter', category: 'Bahan Pokok'),
-  StokItem(id: 3, name: 'Gula Pasir',          qty: 15, unit: 'kg',    category: 'Bahan Pokok'),
-  StokItem(id: 4, name: 'Telur',               qty: 3,  unit: 'kg',    category: 'Protein'),
-  StokItem(id: 5, name: 'Daging Ayam',         qty: 8,  unit: 'kg',    category: 'Protein'),
-  StokItem(id: 6, name: 'Sabun Cuci Piring',   qty: 2,  unit: 'botol', category: 'Kebersihan'),
-  StokItem(id: 7, name: 'Sampo',               qty: 1,  unit: 'botol', category: 'Perawatan'),
-];
+      StokItem(
+          id: 1, name: 'Beras', qty: 50, unit: 'kg', category: 'Bahan Pokok'),
+      StokItem(
+          id: 2,
+          name: 'Minyak Goreng',
+          qty: 20,
+          unit: 'liter',
+          category: 'Bahan Pokok'),
+      StokItem(
+          id: 3,
+          name: 'Gula Pasir',
+          qty: 15,
+          unit: 'kg',
+          category: 'Bahan Pokok'),
+      StokItem(id: 4, name: 'Telur', qty: 3, unit: 'kg', category: 'Protein'),
+      StokItem(
+          id: 5, name: 'Daging Ayam', qty: 8, unit: 'kg', category: 'Protein'),
+      StokItem(
+          id: 6,
+          name: 'Sabun Cuci Piring',
+          qty: 2,
+          unit: 'botol',
+          category: 'Kebersihan'),
+      StokItem(
+          id: 7, name: 'Sampo', qty: 1, unit: 'botol', category: 'Perawatan'),
+    ];
 
 // ==================== AVATAR WIDGET ====================
 
@@ -183,8 +208,10 @@ class StatCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 42, height: 42,
-            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(12)),
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+                color: iconBg, borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(width: 12),
@@ -193,10 +220,14 @@ class StatCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(value,
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600,
-                      color: numColor, height: 1)),
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: numColor,
+                      height: 1)),
               const SizedBox(height: 2),
-              Text(label, style: const TextStyle(fontSize: 11, color: kTextSub)),
+              Text(label,
+                  style: const TextStyle(fontSize: 11, color: kTextSub)),
             ],
           ),
         ],
@@ -236,18 +267,24 @@ class _StokCardState extends State<_StokCard> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    final st   = item.status;
+    final st = item.status;
 
     Color statusColor;
     Color statusBg;
     String statusText;
 
     if (st == StokStatus.aman) {
-      statusColor = kGreen; statusBg = kGreenLight; statusText = 'Aman';
+      statusColor = kGreen;
+      statusBg = kGreenLight;
+      statusText = 'Aman';
     } else if (st == StokStatus.hampirHabis) {
-      statusColor = kOrange; statusBg = kOrangeLight; statusText = 'Menipis';
+      statusColor = kOrange;
+      statusBg = kOrangeLight;
+      statusText = 'Menipis';
     } else {
-      statusColor = kRed; statusBg = kRedLight; statusText = 'Habis';
+      statusColor = kRed;
+      statusBg = kRedLight;
+      statusText = 'Habis';
     }
 
     Color borderColor = st == StokStatus.aman
@@ -262,7 +299,8 @@ class _StokCardState extends State<_StokCard> {
       decoration: BoxDecoration(
         color: kCardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor, width: st == StokStatus.aman ? 0.5 : 1.0),
+        border: Border.all(
+            color: borderColor, width: st == StokStatus.aman ? 0.5 : 1.0),
         boxShadow: kSoftShadow,
       ),
       child: Column(
@@ -278,23 +316,29 @@ class _StokCardState extends State<_StokCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(item.name,
-                        style: const TextStyle(color: kTextMain, fontSize: 13,
+                        style: const TextStyle(
+                            color: kTextMain,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
                               color: statusBg,
                               borderRadius: BorderRadius.circular(20)),
                           child: Text(statusText,
-                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
                                   color: statusColor)),
                         ),
                         const SizedBox(width: 6),
                         Text(item.category,
-                            style: const TextStyle(fontSize: 11, color: kTextSub)),
+                            style:
+                                const TextStyle(fontSize: 11, color: kTextSub)),
                       ],
                     ),
                   ],
@@ -304,8 +348,11 @@ class _StokCardState extends State<_StokCard> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text('${item.qty}',
-                      style: TextStyle(color: statusColor, fontSize: 24,
-                          fontWeight: FontWeight.w600, height: 1)),
+                      style: TextStyle(
+                          color: statusColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          height: 1)),
                   Text(item.unit,
                       style: const TextStyle(color: kTextLight, fontSize: 11)),
                 ],
@@ -320,8 +367,12 @@ class _StokCardState extends State<_StokCard> {
           // ── CONTROL ROW ───────────────────────────────────────────────────
           Row(
             children: [
-              _ctrlBtn(icon: Icons.remove_rounded, color: kRed, bg: kRedLight,
-                  onTap: () => widget.onUbah(item, -1, int.tryParse(_inputCtrl.text) ?? 1)),
+              _ctrlBtn(
+                  icon: Icons.remove_rounded,
+                  color: kRed,
+                  bg: kRedLight,
+                  onTap: () => widget.onUbah(
+                      item, -1, int.tryParse(_inputCtrl.text) ?? 1)),
               const SizedBox(width: 8),
               Expanded(
                 child: Container(
@@ -337,7 +388,9 @@ class _StokCardState extends State<_StokCard> {
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: kTextMain, fontSize: 14,
+                    style: const TextStyle(
+                        color: kTextMain,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600),
                     decoration: const InputDecoration(
                       border: InputBorder.none,
@@ -349,15 +402,25 @@ class _StokCardState extends State<_StokCard> {
                 ),
               ),
               const SizedBox(width: 8),
-              _ctrlBtn(icon: Icons.add_rounded, color: kGreen, bg: kGreenLight,
-                  onTap: () => widget.onUbah(item, 1, int.tryParse(_inputCtrl.text) ?? 1)),
+              _ctrlBtn(
+                  icon: Icons.add_rounded,
+                  color: kGreen,
+                  bg: kGreenLight,
+                  onTap: () => widget.onUbah(
+                      item, 1, int.tryParse(_inputCtrl.text) ?? 1)),
               const SizedBox(width: 8),
               // ── EDIT BUTTON ──
-              _ctrlBtn(icon: Icons.edit_outlined, color: kBlueMain, bg: kBlueSoft,
+              _ctrlBtn(
+                  icon: Icons.edit_outlined,
+                  color: kBlueMain,
+                  bg: kBlueSoft,
                   onTap: widget.onEdit),
               const SizedBox(width: 8),
               // ── DELETE BUTTON ──
-              _ctrlBtn(icon: Icons.delete_outline_rounded, color: kRed, bg: kRedLight,
+              _ctrlBtn(
+                  icon: Icons.delete_outline_rounded,
+                  color: kRed,
+                  bg: kRedLight,
                   onTap: widget.onDelete),
             ],
           ),
@@ -375,8 +438,10 @@ class _StokCardState extends State<_StokCard> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 38, height: 38,
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+        width: 38,
+        height: 38,
+        decoration:
+            BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
         child: Icon(icon, color: color, size: 18),
       ),
     );
@@ -396,37 +461,57 @@ class _LogRow extends StatelessWidget {
 
     switch (log.type) {
       case LogType.tambah:
-        logColor = kGreen; logBg = const Color(0xFFF0FDF4);
-        logIconBg = kGreenLight; logIcon = Icons.add_rounded; break;
+        logColor = kGreen;
+        logBg = const Color(0xFFF0FDF4);
+        logIconBg = kGreenLight;
+        logIcon = Icons.add_rounded;
+        break;
       case LogType.kurang:
-        logColor = kOrange; logBg = const Color(0xFFFFFBEB);
-        logIconBg = kOrangeLight; logIcon = Icons.remove_rounded; break;
+        logColor = kOrange;
+        logBg = const Color(0xFFFFFBEB);
+        logIconBg = kOrangeLight;
+        logIcon = Icons.remove_rounded;
+        break;
       case LogType.hapus:
-        logColor = kRed; logBg = kRedLight;
-        logIconBg = kRedLight; logIcon = Icons.delete_outline; break;
+        logColor = kRed;
+        logBg = kRedLight;
+        logIconBg = kRedLight;
+        logIcon = Icons.delete_outline;
+        break;
       case LogType.baru:
-        logColor = kBlueMain; logBg = kBluePale;
-        logIconBg = kBlueSoft; logIcon = Icons.add_box_outlined; break;
+        logColor = kBlueMain;
+        logBg = kBluePale;
+        logIconBg = kBlueSoft;
+        logIcon = Icons.add_box_outlined;
+        break;
       case LogType.edit:
-        logColor = kOrange; logBg = kOrangeLight;
-        logIconBg = kOrangeLight; logIcon = Icons.edit_outlined; break;
+        logColor = kOrange;
+        logBg = kOrangeLight;
+        logIconBg = kOrangeLight;
+        logIcon = Icons.edit_outlined;
+        break;
     }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(color: logBg, borderRadius: BorderRadius.circular(10)),
+      decoration:
+          BoxDecoration(color: logBg, borderRadius: BorderRadius.circular(10)),
       child: Row(
         children: [
           Container(
-            width: 26, height: 26,
-            decoration: BoxDecoration(color: logIconBg, borderRadius: BorderRadius.circular(8)),
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+                color: logIconBg, borderRadius: BorderRadius.circular(8)),
             child: Icon(logIcon, color: logColor, size: 13),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(log.message,
-                style: const TextStyle(color: kTextMain, fontSize: 11,
+                style: const TextStyle(
+                    color: kTextMain,
+                    fontSize: 11,
                     fontWeight: FontWeight.w500)),
           ),
           Text(log.timeHour,
@@ -443,20 +528,24 @@ class _SectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
   final Widget? trailing;
-  const _SectionHeader({required this.icon, required this.title, this.trailing});
+  const _SectionHeader(
+      {required this.icon, required this.title, this.trailing});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Container(
-          width: 28, height: 28,
-          decoration: BoxDecoration(color: kBlueSoft, borderRadius: BorderRadius.circular(8)),
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+              color: kBlueSoft, borderRadius: BorderRadius.circular(8)),
           child: Icon(icon, color: kBlueMain, size: 15),
         ),
         const SizedBox(width: 8),
         Text(title,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kBlueDark)),
+            style: const TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w600, color: kBlueDark)),
         if (trailing != null) ...[const Spacer(), trailing!],
       ],
     );
@@ -480,21 +569,32 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   late String _selectedUnit;
   late final TextEditingController _catCtrl;
 
-  final _units = ['kg','liter','botol','pcs','sachet','box','pak','lusin'];
+  final _units = [
+    'kg',
+    'liter',
+    'botol',
+    'pcs',
+    'sachet',
+    'box',
+    'pak',
+    'lusin'
+  ];
 
   @override
   void initState() {
     super.initState();
     final item = widget.existingItem;
     _nameCtrl = TextEditingController(text: item?.name ?? '');
-    _qtyCtrl  = TextEditingController(text: item != null ? '${item.qty}' : '');
+    _qtyCtrl = TextEditingController(text: item != null ? '${item.qty}' : '');
     _selectedUnit = item?.unit ?? 'kg';
-    _catCtrl  = TextEditingController(text: item?.category ?? '');
+    _catCtrl = TextEditingController(text: item?.category ?? '');
   }
 
   @override
   void dispose() {
-    _nameCtrl.dispose(); _qtyCtrl.dispose(); _catCtrl.dispose();
+    _nameCtrl.dispose();
+    _qtyCtrl.dispose();
+    _catCtrl.dispose();
     super.dispose();
   }
 
@@ -515,23 +615,31 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
             Row(
               children: [
                 Container(
-                  width: 32, height: 32,
-                  decoration: BoxDecoration(color: kBlueSoft, borderRadius: BorderRadius.circular(10)),
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                      color: kBlueSoft,
+                      borderRadius: BorderRadius.circular(10)),
                   child: Icon(isEdit ? Icons.edit_outlined : Icons.add_rounded,
                       color: kBlueMain, size: 16),
                 ),
                 const SizedBox(width: 10),
                 Text(isEdit ? 'Edit Item' : 'Tambah Item Baru',
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
+                    style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
                         color: kTextMain)),
                 const Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Container(
-                    width: 28, height: 28,
-                    decoration: BoxDecoration(color: const Color(0xFFF1F5F9),
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.close_rounded, size: 16, color: kTextSub),
+                    child: const Icon(Icons.close_rounded,
+                        size: 16, color: kTextSub),
                   ),
                 ),
               ],
@@ -541,7 +649,9 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
             // ── NAMA ──
             _label('Nama Barang'),
             const SizedBox(height: 6),
-            _input(ctrl: _nameCtrl, hint: 'cth. Beras Premium',
+            _input(
+                ctrl: _nameCtrl,
+                hint: 'cth. Beras Premium',
                 icon: Icons.label_outline_rounded),
 
             const SizedBox(height: 14),
@@ -555,8 +665,11 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                     children: [
                       _label('Jumlah'),
                       const SizedBox(height: 6),
-                      _input(ctrl: _qtyCtrl, hint: '0',
-                          icon: Icons.pin_outlined, isNumber: true),
+                      _input(
+                          ctrl: _qtyCtrl,
+                          hint: '0',
+                          icon: Icons.pin_outlined,
+                          isNumber: true),
                     ],
                   ),
                 ),
@@ -577,7 +690,9 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
             // ── KATEGORI ──
             _label('Kategori'),
             const SizedBox(height: 6),
-            _input(ctrl: _catCtrl, hint: 'cth. Bahan Pokok',
+            _input(
+                ctrl: _catCtrl,
+                hint: 'cth. Bahan Pokok',
                 icon: Icons.category_outlined),
 
             const SizedBox(height: 20),
@@ -590,11 +705,13 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Batal',
-                        style: TextStyle(color: kTextSub, fontWeight: FontWeight.w500)),
+                        style: TextStyle(
+                            color: kTextSub, fontWeight: FontWeight.w500)),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -605,7 +722,8 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                       backgroundColor: kBlueMain,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(isEdit ? 'Simpan' : 'Tambahkan',
@@ -622,15 +740,17 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
 
   void _onSave() {
     final name = _nameCtrl.text.trim();
-    final qty  = int.tryParse(_qtyCtrl.text) ?? 0;
-    final cat  = _catCtrl.text.trim().isEmpty ? 'Umum' : _catCtrl.text.trim();
+    final qty = int.tryParse(_qtyCtrl.text) ?? 0;
+    final cat = _catCtrl.text.trim().isEmpty ? 'Umum' : _catCtrl.text.trim();
 
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(_snack('Nama barang wajib diisi', kRed));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(_snack('Nama barang wajib diisi', kRed));
       return;
     }
     if (qty <= 0 && !isEdit) {
-      ScaffoldMessenger.of(context).showSnackBar(_snack('Jumlah harus lebih dari 0', kRed));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(_snack('Jumlah harus lebih dari 0', kRed));
       return;
     }
 
@@ -643,8 +763,8 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   }
 
   Widget _label(String text) => Text(text,
-      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-          color: kTextSub));
+      style: const TextStyle(
+          fontSize: 11, fontWeight: FontWeight.w500, color: kTextSub));
 
   Widget _input({
     required TextEditingController ctrl,
@@ -662,14 +782,17 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       child: TextField(
         controller: ctrl,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-        inputFormatters: isNumber ? [FilteringTextInputFormatter.digitsOnly] : [],
-        style: const TextStyle(color: kTextMain, fontSize: 13, fontWeight: FontWeight.w500),
+        inputFormatters:
+            isNumber ? [FilteringTextInputFormatter.digitsOnly] : [],
+        style: const TextStyle(
+            color: kTextMain, fontSize: 13, fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(color: kTextLight, fontSize: 12),
           prefixIcon: Icon(icon, color: kTextSub, size: 17),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         ),
       ),
     );
@@ -688,9 +811,12 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         value: _selectedUnit,
         dropdownColor: kCardColor,
         icon: const Icon(Icons.expand_more, color: kTextSub, size: 18),
-        style: const TextStyle(color: kTextMain, fontSize: 13, fontWeight: FontWeight.w500),
+        style: const TextStyle(
+            color: kTextMain, fontSize: 13, fontWeight: FontWeight.w500),
         underline: const SizedBox(),
-        items: _units.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
+        items: _units
+            .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+            .toList(),
         onChanged: (v) => setState(() => _selectedUnit = v!),
       ),
     );
@@ -714,23 +840,34 @@ class _DeleteConfirmDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 56, height: 56,
-              decoration: BoxDecoration(color: kRedLight, borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.delete_outline_rounded, color: kRed, size: 28),
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                  color: kRedLight, borderRadius: BorderRadius.circular(16)),
+              child: const Icon(Icons.delete_outline_rounded,
+                  color: kRed, size: 28),
             ),
             const SizedBox(height: 14),
             const Text('Hapus Item?',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: kTextMain)),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: kTextMain)),
             const SizedBox(height: 8),
             RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
-                style: const TextStyle(fontSize: 13, color: kTextSub, height: 1.5),
+                style:
+                    const TextStyle(fontSize: 13, color: kTextSub, height: 1.5),
                 children: [
                   const TextSpan(text: 'Item '),
-                  TextSpan(text: item.name,
-                      style: const TextStyle(fontWeight: FontWeight.w600, color: kTextMain)),
-                  const TextSpan(text: ' akan dihapus permanen.\nTindakan ini tidak bisa dibatalkan.'),
+                  TextSpan(
+                      text: item.name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, color: kTextMain)),
+                  const TextSpan(
+                      text:
+                          ' akan dihapus permanen.\nTindakan ini tidak bisa dibatalkan.'),
                 ],
               ),
             ),
@@ -742,11 +879,13 @@ class _DeleteConfirmDialog extends StatelessWidget {
                     onPressed: () => Navigator.pop(context, false),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Batal',
-                        style: TextStyle(color: kTextSub, fontWeight: FontWeight.w500)),
+                        style: TextStyle(
+                            color: kTextSub, fontWeight: FontWeight.w500)),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -757,7 +896,8 @@ class _DeleteConfirmDialog extends StatelessWidget {
                       backgroundColor: kRed,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Hapus',
@@ -810,31 +950,37 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
 
   List<StokItem> get _filteredItems {
     if (_searchQuery.isEmpty) return _items;
-    return _items.where((item) =>
-        item.name.toLowerCase().contains(_searchQuery) ||
-        item.category.toLowerCase().contains(_searchQuery) ||
-        item.unit.toLowerCase().contains(_searchQuery)).toList();
+    return _items
+        .where((item) =>
+            item.name.toLowerCase().contains(_searchQuery) ||
+            item.category.toLowerCase().contains(_searchQuery) ||
+            item.unit.toLowerCase().contains(_searchQuery))
+        .toList();
   }
 
   // ── STATS ──────────────────────────────────────────────────────────────────
 
-  int get _totalItem   => _items.length;
-  int get _stokAman    => _items.where((i) => i.status == StokStatus.aman).length;
-  int get _hampirHabis => _items.where((i) => i.status == StokStatus.hampirHabis).length;
-  int get _stokHabis   => _items.where((i) => i.status == StokStatus.habis).length;
+  int get _totalItem => _items.length;
+  int get _stokAman => _items.where((i) => i.status == StokStatus.aman).length;
+  int get _hampirHabis =>
+      _items.where((i) => i.status == StokStatus.hampirHabis).length;
+  int get _stokHabis =>
+      _items.where((i) => i.status == StokStatus.habis).length;
 
   // ── QTY CHANGE ─────────────────────────────────────────────────────────────
 
   void _ubahQty(StokItem item, int delta, int jumlah) {
     setState(() {
       final old = item.qty;
-      item.qty  = (item.qty + delta * jumlah).clamp(0, 99999);
+      item.qty = (item.qty + delta * jumlah).clamp(0, 99999);
       final diff = (item.qty - old).abs();
       if (delta > 0) {
-        _addLog('${item.name}: +$diff ${item.unit} (sisa ${item.qty})', LogType.tambah);
+        _addLog('${item.name}: +$diff ${item.unit} (sisa ${item.qty})',
+            LogType.tambah);
         _showToast('Stok ${item.name} bertambah +$diff', kGreen);
       } else {
-        _addLog('${item.name}: -$diff ${item.unit} (sisa ${item.qty})', LogType.kurang);
+        _addLog('${item.name}: -$diff ${item.unit} (sisa ${item.qty})',
+            LogType.kurang);
         _showToast('Stok ${item.name} berkurang -$diff', kOrange);
       }
     });
@@ -857,7 +1003,9 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
         unit: result['unit'],
         category: result['category'],
       ));
-      _addLog('Item baru: ${result['name']} (${result['qty']} ${result['unit']})', LogType.baru);
+      _addLog(
+          'Item baru: ${result['name']} (${result['qty']} ${result['unit']})',
+          LogType.baru);
     });
     _showToast('${result['name']} berhasil ditambahkan', kGreen);
   }
@@ -872,9 +1020,9 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
     if (result == null) return;
 
     setState(() {
-      item.name     = result['name'];
-      item.qty      = result['qty'];
-      item.unit     = result['unit'];
+      item.name = result['name'];
+      item.qty = result['qty'];
+      item.unit = result['unit'];
       item.category = result['category'];
       _addLog('${item.name} diperbarui', LogType.edit);
     });
@@ -908,7 +1056,8 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          style: const TextStyle(
+              color: Colors.white, fontWeight: FontWeight.w600)),
       backgroundColor: color,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -936,25 +1085,31 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: Row(
                     children: [
                       const SizedBox(width: 34),
                       const Expanded(
                         child: Text('Manajemen Stok',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white, fontSize: 15,
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w600)),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text('${_items.length} item',
-                            style: const TextStyle(color: Color(0xFFBAE6FD),
-                                fontSize: 11, fontWeight: FontWeight.w500)),
+                            style: const TextStyle(
+                                color: Color(0xFFBAE6FD),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500)),
                       ),
                     ],
                   ),
@@ -967,10 +1122,13 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
                         Text('Ringkasan Inventaris',
-                            style: TextStyle(color: Color(0xFF93C5FD), fontSize: 11)),
+                            style: TextStyle(
+                                color: Color(0xFF93C5FD), fontSize: 11)),
                         SizedBox(height: 2),
                         Text('Stok Manager',
-                            style: TextStyle(color: Colors.white, fontSize: 17,
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
                                 fontWeight: FontWeight.w600)),
                       ],
                     ),
@@ -998,7 +1156,6 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // ── STAT CARDS ──────────────────────────────────────────────────
             GridView.count(
               crossAxisCount: 2,
@@ -1008,17 +1165,33 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
               crossAxisSpacing: 8,
               childAspectRatio: 2.4,
               children: [
-                StatCard(label: 'Total Item',  value: '$_totalItem',
-                    numColor: kBlueMain, iconColor: kBlueMain, iconBg: kBlueSoft,
+                StatCard(
+                    label: 'Total Item',
+                    value: '$_totalItem',
+                    numColor: kBlueMain,
+                    iconColor: kBlueMain,
+                    iconBg: kBlueSoft,
                     icon: Icons.inventory_2_rounded),
-                StatCard(label: 'Stok Aman',   value: '$_stokAman',
-                    numColor: kGreen, iconColor: kGreen, iconBg: kGreenLight,
+                StatCard(
+                    label: 'Stok Aman',
+                    value: '$_stokAman',
+                    numColor: kGreen,
+                    iconColor: kGreen,
+                    iconBg: kGreenLight,
                     icon: Icons.check_circle_rounded),
-                StatCard(label: 'Menipis',     value: '$_hampirHabis',
-                    numColor: kOrange, iconColor: kOrange, iconBg: kOrangeLight,
+                StatCard(
+                    label: 'Menipis',
+                    value: '$_hampirHabis',
+                    numColor: kOrange,
+                    iconColor: kOrange,
+                    iconBg: kOrangeLight,
                     icon: Icons.warning_rounded),
-                StatCard(label: 'Stok Habis',  value: '$_stokHabis',
-                    numColor: kRed, iconColor: kRed, iconBg: kRedLight,
+                StatCard(
+                    label: 'Stok Habis',
+                    value: '$_stokHabis',
+                    numColor: kRed,
+                    iconColor: kRed,
+                    iconBg: kRedLight,
                     icon: Icons.cancel_rounded),
               ],
             ),
@@ -1043,11 +1216,13 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
                 decoration: InputDecoration(
                   hintText: 'Cari nama, kategori, satuan...',
                   hintStyle: const TextStyle(color: kTextLight, fontSize: 13),
-                  prefixIcon: const Icon(Icons.search_rounded, color: kTextSub, size: 18),
+                  prefixIcon: const Icon(Icons.search_rounded,
+                      color: kTextSub, size: 18),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? GestureDetector(
                           onTap: () => _searchCtrl.clear(),
-                          child: const Icon(Icons.close_rounded, color: kTextSub, size: 18),
+                          child: const Icon(Icons.close_rounded,
+                              color: kTextSub, size: 18),
                         )
                       : null,
                   border: InputBorder.none,
@@ -1065,15 +1240,19 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
                   ? 'Daftar Inventaris'
                   : 'Hasil Pencarian',
               trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                 decoration: BoxDecoration(
                   color: kBlueSoft,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFBFDBFE), width: 0.5),
+                  border:
+                      Border.all(color: const Color(0xFFBFDBFE), width: 0.5),
                 ),
                 child: Text(
                   '${displayed.length} item${_searchQuery.isNotEmpty ? ' ditemukan' : ''}',
-                  style: const TextStyle(color: kBlueMain, fontSize: 11,
+                  style: const TextStyle(
+                      color: kBlueMain,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600),
                 ),
               ),
@@ -1094,7 +1273,8 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
                           _searchQuery.isNotEmpty
                               ? Icons.search_off_rounded
                               : Icons.inventory_2_outlined,
-                          size: 52, color: kTextLight,
+                          size: 52,
+                          color: kTextLight,
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -1108,25 +1288,29 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
                           _searchQuery.isNotEmpty
                               ? 'Coba kata kunci lain'
                               : 'Tap tombol + untuk menambah item',
-                          style: const TextStyle(color: kTextLight, fontSize: 11),
+                          style:
+                              const TextStyle(color: kTextLight, fontSize: 11),
                         ),
                       ]),
                     ),
                   )
                 : Column(
-                    children: displayed.map((item) => _StokCard(
-                      item: item,
-                      onUbah: _ubahQty,
-                      onEdit: () => _editItem(item),
-                      onDelete: () => _deleteItem(item),
-                    )).toList(),
+                    children: displayed
+                        .map((item) => _StokCard(
+                              item: item,
+                              onUbah: _ubahQty,
+                              onEdit: () => _editItem(item),
+                              onDelete: () => _deleteItem(item),
+                            ))
+                        .toList(),
                   ),
 
             // ── BOTTOM PADDING UNTUK FAB ──────────────────────────────────
             const SizedBox(height: 20),
 
             // ── AKTIVITAS TERKINI ────────────────────────────────────────────
-            _SectionHeader(icon: Icons.history_rounded, title: 'Aktivitas Terkini'),
+            _SectionHeader(
+                icon: Icons.history_rounded, title: 'Aktivitas Terkini'),
             const SizedBox(height: 10),
 
             Container(
@@ -1146,7 +1330,8 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
                       ),
                     )
                   : Column(
-                      children: _logs.take(5).map((l) => _LogRow(log: l)).toList(),
+                      children:
+                          _logs.take(5).map((l) => _LogRow(log: l)).toList(),
                     ),
             ),
 
@@ -1161,11 +1346,12 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
 // ==================== SNACK HELPER ====================
 
 SnackBar _snack(String msg, Color color) => SnackBar(
-  content: Text(msg,
-      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-  backgroundColor: color,
-  behavior: SnackBarBehavior.floating,
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-  elevation: 0,
-  duration: const Duration(seconds: 2),
-);
+      content: Text(msg,
+          style: const TextStyle(
+              color: Colors.white, fontWeight: FontWeight.w600)),
+      backgroundColor: color,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      duration: const Duration(seconds: 2),
+    );

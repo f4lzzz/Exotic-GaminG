@@ -33,7 +33,7 @@ class KasirDataPage extends StatefulWidget {
 class _KasirDataPageState extends State<KasirDataPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
-  final _menuCtrl = TextEditingController();
+  final _idCtrl = TextEditingController(); // sebelumnya _menuCtrl
   final _hargaCtrl = TextEditingController();
   bool _loading = false;
 
@@ -77,19 +77,19 @@ class _KasirDataPageState extends State<KasirDataPage>
   void dispose() {
     _timer?.cancel();
     _tabCtrl.dispose();
-    _menuCtrl.dispose();
+    _idCtrl.dispose();
     _hargaCtrl.dispose();
     super.dispose();
   }
 
   void _tambah() {
     try {
-      final menu = _menuCtrl.text.trim();
+      final id = _idCtrl.text.trim().toUpperCase(); // ID produk
       final hargaText =
           _hargaCtrl.text.trim().replaceAll('.', '').replaceAll(',', '');
 
-      if (menu.isEmpty || hargaText.isEmpty) {
-        _snack('Nama menu & harga wajib diisi', error: true);
+      if (id.isEmpty || hargaText.isEmpty) {
+        _snack('ID & harga wajib diisi', error: true);
         return;
       }
 
@@ -100,13 +100,13 @@ class _KasirDataPageState extends State<KasirDataPage>
       }
 
       context.read<AppState>().tambahTransaksi(
-            namaMenu: menu,
+            namaMenu: id, // ID disimpan sebagai namaMenu
             harga: harga,
             kasir: widget.kasirName,
             shift: widget.shift,
           );
 
-      _menuCtrl.clear();
+      _idCtrl.clear();
       _hargaCtrl.clear();
       _snack('Transaksi ditambah!');
     } catch (e) {
@@ -159,7 +159,8 @@ class _KasirDataPageState extends State<KasirDataPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _dialogRow(Icons.fastfood_outlined, 'Menu', t.namaMenu),
+                  _dialogRow(Icons.barcode_reader, 'ID',
+                      t.namaMenu), // label diganti ID
                   const SizedBox(height: 6),
                   _dialogRow(
                       Icons.attach_money, 'Harga', currency.format(t.harga)),
@@ -215,7 +216,7 @@ class _KasirDataPageState extends State<KasirDataPage>
 
     if (konfirmasi == true && mounted) {
       context.read<AppState>().hapusTransaksi(t.id);
-      _snack('Transaksi "${t.namaMenu}" dihapus');
+      _snack('Transaksi ID "${t.namaMenu}" dihapus');
     }
   }
 
@@ -489,10 +490,10 @@ class _KasirDataPageState extends State<KasirDataPage>
                 child: Column(
                   children: [
                     _InputRow(
-                      controller: _menuCtrl,
-                      label: 'Nama Menu',
-                      hint: 'Contoh: Indomie Goreng',
-                      icon: Icons.fastfood_outlined,
+                      controller: _idCtrl,
+                      label: 'ID',
+                      hint: 'Contoh: PS5001',
+                      icon: Icons.barcode_reader,
                     ),
                     const SizedBox(height: 12),
                     _InputRow(
@@ -581,7 +582,7 @@ class _KasirDataPageState extends State<KasirDataPage>
                                       fontWeight: FontWeight.w900,
                                       color: kBlue)),
                             ),
-                            title: Text(t.namaMenu,
+                            title: Text(t.namaMenu, // menampilkan ID
                                 style: GoogleFonts.lato(
                                     fontWeight: FontWeight.w800,
                                     color: kTextDark)),

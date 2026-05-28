@@ -1,9 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:google_fonts/google_fonts.dart';
 import '../state/app_state.dart';
 import '../models/models.dart';
+
+// ==================== WARNA (sama dengan owner dashboard) ====================
+const kBlue = Color(0xFF1A5EBF);
+const kWhite = Color(0xFFFFFFFF);
+const kTextDark = Color(0xFF1A237E);
+const kGreen = Color(0xFF4CAF50);
+const kRed = Color(0xFFE53935);
+const kBgLight = Color(0xFFF0F4FF);
 
 class MonitorRoomPage extends StatefulWidget {
   const MonitorRoomPage({super.key});
@@ -17,16 +25,13 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
 
   String? _selectedRoomId;
   TimeOfDay _selectedStart = const TimeOfDay(hour: 9, minute: 0);
-
   int _durationHours = 1;
-
   String _result = '';
   String _resultType = '';
 
   @override
   void initState() {
     super.initState();
-
     _autoFreeTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) {
@@ -48,7 +53,6 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
       context: context,
       initialTime: _selectedStart,
     );
-
     if (picked != null) {
       setState(() {
         _selectedStart = picked;
@@ -70,13 +74,9 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
     }
 
     final roomId = _selectedRoomId ?? rooms.first.id;
-
-    final room = rooms.firstWhere(
-      (r) => r.id == roomId,
-    );
+    final room = rooms.firstWhere((r) => r.id == roomId);
 
     final now = DateTime.now();
-
     DateTime startTime = DateTime(
       now.year,
       now.month,
@@ -84,12 +84,9 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
       _selectedStart.hour,
       _selectedStart.minute,
     );
-
-    // kalau jam sudah lewat hari ini → otomatis besok
     if (startTime.isBefore(now)) {
       startTime = startTime.add(const Duration(days: 1));
     }
-
     final endTime = startTime.add(Duration(hours: _durationHours));
 
     final available = appState.isRoomAvailable(
@@ -120,8 +117,7 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
   }
 
   String _formatTime(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:'
-        '${time.minute.toString().padLeft(2, '0')}';
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -133,113 +129,18 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
       _selectedRoomId = rooms.first.id;
     }
 
-    // ✅ Tidak pakai Scaffold/AppBar — langsung LayoutBuilder
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Column(
-          children: [
-            Expanded(
-              flex: 4,
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeaderCard(),
-                    const SizedBox(height: 16),
-                    _buildBookingFormCard(rooms),
-                    const SizedBox(height: 12),
-                    if (_result.isNotEmpty) _buildResultMessage(),
-                    const SizedBox(height: 16),
-                    _buildBookingHeader(bookings.length),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 5,
-              child: _buildBookingList(bookings),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildHeaderCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF6C63FF),
-            Color(0xFF3F3D9E),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6C63FF).withOpacity(0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.meeting_room,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Booking Ruangan',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Isi form di bawah untuk booking',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white70,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // ✅ Tombol refresh dipindah ke sini (ganti AppBar actions)
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () {
-              context.read<AppState>().checkAndFreeExpiredRooms();
-              setState(() {
-                _result = '';
-              });
-            },
-            tooltip: 'Refresh',
-          ),
+          _buildBookingFormCard(rooms),
+          const SizedBox(height: 16),
+          if (_result.isNotEmpty) _buildResultMessage(),
+          const SizedBox(height: 24),
+          _buildBookingHeader(bookings.length),
+          const SizedBox(height: 12),
+          _buildBookingList(bookings),
         ],
       ),
     );
@@ -249,48 +150,40 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F35),
-        borderRadius: BorderRadius.circular(16),
+        color: kWhite,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
         children: [
           DropdownButtonFormField<String>(
             value: _selectedRoomId,
-            dropdownColor: const Color(0xFF252A45),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-            ),
+            dropdownColor: kWhite,
+            style: GoogleFonts.lato(color: kTextDark, fontSize: 14),
             decoration: InputDecoration(
               labelText: 'Pilih Ruangan',
-              labelStyle: const TextStyle(
-                color: Color(0xFF6C63FF),
-                fontSize: 13,
-              ),
-              prefixIcon: const Icon(
-                Icons.meeting_room,
-                color: Color(0xFF6C63FF),
-                size: 20,
-              ),
+              labelStyle: GoogleFonts.lato(
+                  fontWeight: FontWeight.w600, color: kBlue, fontSize: 13),
+              prefixIcon:
+                  const Icon(Icons.meeting_room, color: kBlue, size: 20),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFF3A3F5E),
-                ),
-              ),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: kBlue)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: kBlue)),
             ),
             items: rooms.map((room) {
               return DropdownMenuItem(
-                value: room.id,
-                child: Text(room.namaRoom),
-              );
+                  value: room.id, child: Text(room.namaRoom));
             }).toList(),
             onChanged: (value) {
               setState(() {
@@ -305,32 +198,18 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
             borderRadius: BorderRadius.circular(12),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                border: Border.all(
-                  color: const Color(0xFF3A3F5E),
-                ),
+                border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.access_time,
-                    color: Color(0xFF6C63FF),
-                    size: 20,
-                  ),
+                  const Icon(Icons.access_time, color: kBlue, size: 20),
                   const SizedBox(width: 12),
                   Text(
-                    'Jam Mulai: '
-                    '${_selectedStart.hour.toString().padLeft(2, '0')}:'
-                    '${_selectedStart.minute.toString().padLeft(2, '0')}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
+                    'Jam Mulai: ${_selectedStart.hour.toString().padLeft(2, '0')}:${_selectedStart.minute.toString().padLeft(2, '0')}',
+                    style: GoogleFonts.lato(color: kTextDark, fontSize: 14),
                   ),
                 ],
               ),
@@ -339,32 +218,26 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             value: _durationHours,
-            dropdownColor: const Color(0xFF252A45),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-            ),
+            dropdownColor: kWhite,
+            style: GoogleFonts.lato(color: kTextDark, fontSize: 14),
             decoration: InputDecoration(
               labelText: 'Durasi Booking',
-              labelStyle: const TextStyle(
-                color: Color(0xFF6C63FF),
-                fontSize: 13,
-              ),
-              prefixIcon: const Icon(
-                Icons.timer,
-                color: Color(0xFF6C63FF),
-                size: 20,
-              ),
+              labelStyle: GoogleFonts.lato(
+                  fontWeight: FontWeight.w600, color: kBlue, fontSize: 13),
+              prefixIcon: const Icon(Icons.timer, color: kBlue, size: 20),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: kBlue)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: kBlue)),
             ),
             items: List.generate(8, (index) {
               final jam = index + 1;
-              return DropdownMenuItem(
-                value: jam,
-                child: Text('$jam Jam'),
-              );
+              return DropdownMenuItem(value: jam, child: Text('$jam Jam'));
             }),
             onChanged: (value) {
               setState(() {
@@ -379,20 +252,15 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
             child: ElevatedButton(
               onPressed: _createBooking,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6C63FF),
-                foregroundColor: Colors.white,
+                backgroundColor: kBlue,
+                foregroundColor: kWhite,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                    borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text(
-                'BOOKING SEKARANG',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: Text('BOOKING SEKARANG',
+                  style: GoogleFonts.lato(
+                      fontWeight: FontWeight.w800, fontSize: 14)),
             ),
           ),
         ],
@@ -401,32 +269,22 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
   }
 
   Widget _buildResultMessage() {
+    final color = _resultType == 'success' ? kGreen : kRed;
+    final icon = _resultType == 'success' ? Icons.check_circle : Icons.error;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _resultType == 'success'
-            ? const Color(0xFF00B886).withOpacity(0.1)
-            : const Color(0xFFFF3B3B).withOpacity(0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          Icon(
-            _resultType == 'success' ? Icons.check_circle : Icons.error,
-            color: _resultType == 'success'
-                ? const Color(0xFF00B886)
-                : const Color(0xFFFF3B3B),
-          ),
+          Icon(icon, color: color),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              _result,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
-            ),
-          ),
+              child: Text(_result,
+                  style: GoogleFonts.lato(color: kTextDark, fontSize: 12))),
         ],
       ),
     );
@@ -435,31 +293,18 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
   Widget _buildBookingHeader(int count) {
     return Row(
       children: [
-        const Text(
-          'Daftar Booking',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+        Text('Daftar Booking',
+            style: GoogleFonts.lato(
+                fontSize: 15, fontWeight: FontWeight.w800, color: kTextDark)),
         const Spacer(),
         Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 4,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFF252A45),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Text(
-            '$count',
-            style: const TextStyle(
-              color: Color(0xFF6C63FF),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+              color: kBlue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20)),
+          child: Text('$count',
+              style:
+                  GoogleFonts.lato(fontWeight: FontWeight.w800, color: kBlue)),
         ),
       ],
     );
@@ -469,82 +314,64 @@ class _MonitorRoomPageState extends State<MonitorRoomPage> {
     if (bookings.isEmpty) {
       return Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.event_busy,
-              size: 48,
-              color: Colors.white.withOpacity(0.1),
-            ),
+            Icon(Icons.event_busy, size: 48, color: Colors.grey.shade300),
             const SizedBox(height: 12),
-            Text(
-              'Belum ada booking',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.3),
-              ),
-            ),
+            Text('Belum ada booking',
+                style: GoogleFonts.lato(color: Colors.grey.shade500)),
           ],
         ),
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ListView.builder(
-        itemCount: bookings.length,
-        itemBuilder: (context, index) {
-          final booking = bookings[index];
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1F35),
-              borderRadius: BorderRadius.circular(12),
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: bookings.length,
+      itemBuilder: (context, index) {
+        final booking = bookings[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            color: kWhite,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2))
+            ],
+          ),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: kBlue.withOpacity(0.1),
+              child: Icon(Icons.meeting_room, color: kBlue),
             ),
-            child: ListTile(
-              leading: const Icon(
-                Icons.meeting_room,
-                color: Color(0xFF6C63FF),
-              ),
-              title: Text(
-                booking.namaRoom,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+            title: Text(booking.namaRoom,
+                style: GoogleFonts.lato(
+                    fontWeight: FontWeight.w800, color: kTextDark)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text(
+                  '${_formatTime(booking.jamMulai)} - ${_formatTime(booking.jamSelesai)}',
+                  style: GoogleFonts.lato(fontSize: 12, color: Colors.black54),
                 ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 4),
-                  Text(
-                    '${_formatTime(booking.jamMulai)} - ${_formatTime(booking.jamSelesai)}',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                    ),
-                  ),
-                  Text(
-                    'Tersedia: ${_formatTime(booking.availableAgain)}',
-                    style: const TextStyle(
-                      color: Color(0xFF00B886),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-              trailing: IconButton(
-                icon: const Icon(
-                  Icons.close,
-                  color: Colors.redAccent,
+                Text(
+                  'Tersedia: ${_formatTime(booking.availableAgain)}',
+                  style: GoogleFonts.lato(fontSize: 11, color: kGreen),
                 ),
-                onPressed: () {
-                  context.read<AppState>().cancelBooking(booking.id);
-                },
-              ),
+              ],
             ),
-          );
-        },
-      ),
+            trailing: IconButton(
+              icon: Icon(Icons.close, color: kRed),
+              onPressed: () =>
+                  context.read<AppState>().cancelBooking(booking.id),
+            ),
+          ),
+        );
+      },
     );
   }
 }

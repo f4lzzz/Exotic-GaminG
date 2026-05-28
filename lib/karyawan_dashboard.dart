@@ -12,6 +12,7 @@ import 'kasir_data_page.dart';
 import 'rekap_screen.dart';
 import 'profil_karyawan.dart';
 import 'registrasi_wajah_screen.dart';
+import 'stok_karyawan_screen.dart';
 
 // ── WARNA (disamakan dengan owner dashboard) ─────────────────────────────────
 const kBlue = Color(0xFF1A5EBF);
@@ -243,7 +244,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
           ),
           const KasirDataPage(kasirName: '', shift: ''),
           const NotifikasiKaryawanScreen(),
-          const MenuKaryawanScreen(),
+          const StokKaryawanScreen(),
           const RekapScreen(role: 'karyawan'),
         ],
       ),
@@ -827,7 +828,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
                   'KASIR'),
               _navItem(
                   2, Icons.chat_bubble_outline, Icons.chat_bubble, 'ANNOUNCE'),
-              _navItem(3, Icons.menu_outlined, Icons.menu, 'MENU'),
+              _navItem(3, Icons.menu_outlined, Icons.menu, 'STOK'),
               _navItem(4, Icons.bar_chart_outlined, Icons.bar_chart, 'REKAP'),
             ],
           ),
