@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'profil_owner.dart';
 import 'notif_icon.dart'; // widget notifikasi reusable
+import 'models/models.dart'; // Import untuk NotificationType
+import 'services/firestore_service.dart'; // Import untuk notification service
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -31,6 +33,7 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
 
   bool _isSending = false;
   bool _sentSuccess = false;
+  NotificationType _selectedNotifType = NotificationType.pengumuman;
 
   User? _currentUser;
   Map<String, dynamic>? _userData;
@@ -48,6 +51,8 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
   List<Map<String, dynamic>> _riwayat = [];
   bool _loadingRiwayat = true;
   bool _isDeletingAll = false;
+
+  final FirestoreService _firestoreService = FirestoreService();
 
   double get _collapseProgress => (_scrollOffset / _collapseAt).clamp(0.0, 1.0);
   double get _headerHeight =>
@@ -126,16 +131,37 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     try {
       final user = FirebaseAuth.instance.currentUser;
       final pengirim = _ownerUsername;
-      await FirebaseFirestore.instance.collection('pengumuman').add({
+      final tipeString = _notificationTypeToString(_selectedNotifType);
+      
+      print('📤 Mengirim Pengumuman:');
+      print('   - Judul: ${_judulCtrl.text.trim()}');
+      print('   - Tipe: $_selectedNotifType -> "$tipeString"');
+      print('   - Pengirim: $pengirim');
+      
+      // 1. Simpan pengumuman ke collection 'pengumuman'
+      final docRef = await FirebaseFirestore.instance.collection('pengumuman').add({
         'judul': _judulCtrl.text.trim(),
         'isi': _isiCtrl.text.trim(),
         'target': 'Semua',
         'prioritas': 'Normal',
         'pengirim': pengirim,
         'pengirim_email': user?.email ?? 'owner',
+        'tipe': tipeString,
         'timestamp': FieldValue.serverTimestamp(),
         'dibaca': 0,
       });
+      
+      print('   ✅ Pengumuman tersimpan dengan ID: ${docRef.id}');
+
+      // 2. Buat notifikasi untuk semua karyawan
+      final success = await _firestoreService.createNotificationForAllEmployees(
+        judul: _judulCtrl.text.trim(),
+        deskripsi: _isiCtrl.text.trim(),
+        tipe: _selectedNotifType,
+        pengirim: pengirim,
+        pengirimEmail: user?.email ?? 'owner',
+        idPengumuman: docRef.id,
+      );
 
       setState(() {
         _isSending = false;
@@ -149,14 +175,23 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
           _sentSuccess = false;
           _judulCtrl.clear();
           _isiCtrl.clear();
+          _selectedNotifType = NotificationType.pengumuman;
         });
         _loadRiwayat();
-        _showSnack('Pengumuman berhasil dikirim! 🎉', kGreen);
+        final msg = success 
+          ? 'Pengumuman berhasil dikirim dan notifikasi dikirim ke semua karyawan! 🎉'
+          : 'Pengumuman tersimpan tapi gagal kirim notifikasi ke beberapa karyawan';
+        _showSnack(msg, success ? kGreen : Colors.orange);
       }
     } catch (e) {
       setState(() => _isSending = false);
+      print('❌ Error: $e');
       _showSnack('Gagal mengirim: $e', kRed);
     }
+  }
+
+  String _notificationTypeToString(NotificationType type) {
+    return type.toString().split('.').last;
   }
 
   Future<void> _hapusPengumuman(String id, String judul) async {
@@ -707,6 +742,10 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
                   ? 'Isi pengumuman wajib diisi'
                   : null,
             ),
+            const SizedBox(height: 16),
+            _label('Jenis Notifikasi'),
+            const SizedBox(height: 8),
+            _buildNotificationTypeDropdown(),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -722,6 +761,46 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationTypeDropdown() {
+    const notifTypes = [
+      ('Pengumuman Umum', NotificationType.pengumuman),
+      ('Jadwal', NotificationType.jadwal),
+      ('Absensi', NotificationType.absensi),
+      ('Lainnya', NotificationType.lainnya),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.black12, width: 1.2),
+        borderRadius: BorderRadius.circular(12),
+        color: kWhite,
+      ),
+      child: DropdownButton<NotificationType>(
+        value: _selectedNotifType,
+        isExpanded: true,
+        underline: const SizedBox(),
+        icon: const Icon(Icons.expand_more, color: kBlue),
+        style: GoogleFonts.lato(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: kTextDark,
+        ),
+        onChanged: (NotificationType? newValue) {
+          if (newValue != null) {
+            setState(() => _selectedNotifType = newValue);
+          }
+        },
+        items: notifTypes.map((item) {
+          return DropdownMenuItem<NotificationType>(
+            value: item.$2,
+            child: Text(item.$1),
+          );
+        }).toList(),
       ),
     );
   }
