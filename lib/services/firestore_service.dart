@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/models.dart';
 
 class FirestoreService {
   final _db = FirebaseFirestore.instance;
@@ -154,4 +155,148 @@ class FirestoreService {
       return null;
     }
   }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // ─── NOTIFICATION METHODS ──────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────────────────
+
+  // ─── Buat notifikasi untuk semua karyawan ──────────────────────────────────
+  Future<bool> createNotificationForAllEmployees({
+    required String judul,
+    required String deskripsi,
+    required NotificationType tipe,
+    required String pengirim,
+    required String pengirimEmail,
+    required String idPengumuman,
+  }) async {
+    try {
+      // Ambil semua karyawan
+      final karyawanSnapshot = await _db.collection('karyawan').get();
+
+      // Buat batch untuk efisiensi
+      final batch = _db.batch();
+
+      for (var doc in karyawanSnapshot.docs) {
+        final karyawanId = doc.id;
+
+        // Referensi collection notifikasi di bawah user karyawan
+        final notifRef =
+            _db.collection('karyawan').doc(karyawanId).collection('notifikasi').doc();
+
+        batch.set(notifRef, {
+          'judul': judul,
+          'deskripsi': deskripsi,
+          'tipe': _notificationTypeToString(tipe),
+          'pengirim': pengirim,
+          'pengirimEmail': pengirimEmail,
+          'timestamp': FieldValue.serverTimestamp(),
+          'sudahDibaca': false,
+          'idPengumuman': idPengumuman,
+        });
+      }
+
+      await batch.commit();
+      print('✅ Notifikasi berhasil dibuat untuk semua karyawan');
+      return true;
+    } catch (e) {
+      print('❌ Gagal buat notifikasi: $e');
+      return false;
+    }
+  }
+
+  // ─── Ambil notifikasi user dengan stream (real-time) ──────────────────────
+  Stream<List<NotificationModel>> getNotificationsStream(String uid) {
+    try {
+      return _db
+          .collection('karyawan')
+          .doc(uid)
+          .collection('notifikasi')
+          .orderBy('timestamp', descending: true)
+          .snapshots()
+          .map((snapshot) {
+            return snapshot.docs
+                .map((doc) => NotificationModel.fromMap(doc.data(), doc.id))
+                .toList();
+          });
+    } catch (e) {
+      print('❌ Error listening notifikasi: $e');
+      return Stream.value([]);
+    }
+  }
+
+  // ─── Ambil notifikasi user (satu kali) ─────────────────────────────────────
+  Future<List<NotificationModel>> getNotifications(String uid) async {
+    try {
+      final snapshot = await _db
+          .collection('karyawan')
+          .doc(uid)
+          .collection('notifikasi')
+          .orderBy('timestamp', descending: true)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => NotificationModel.fromMap(doc.data(), doc.id))
+          .toList();
+    } catch (e) {
+      print('❌ Gagal ambil notifikasi: $e');
+      return [];
+    }
+  }
+
+  // ─── Mark notifikasi sebagai sudah dibaca ──────────────────────────────────
+  Future<bool> markNotificationAsRead(String uid, String notifId) async {
+    try {
+      await _db
+          .collection('karyawan')
+          .doc(uid)
+          .collection('notifikasi')
+          .doc(notifId)
+          .update({'sudahDibaca': true});
+      return true;
+    } catch (e) {
+      print('❌ Gagal update notifikasi: $e');
+      return false;
+    }
+  }
+
+  // ─── Hapus notifikasi ──────────────────────────────────────────────────────
+  Future<bool> deleteNotification(String uid, String notifId) async {
+    try {
+      await _db
+          .collection('karyawan')
+          .doc(uid)
+          .collection('notifikasi')
+          .doc(notifId)
+          .delete();
+      return true;
+    } catch (e) {
+      print('❌ Gagal hapus notifikasi: $e');
+      return false;
+    }
+  }
+
+  // ─── Hapus semua notifikasi user ───────────────────────────────────────────
+  Future<bool> deleteAllNotifications(String uid) async {
+    try {
+      final snapshot =
+          await _db.collection('karyawan').doc(uid).collection('notifikasi').get();
+      final batch = _db.batch();
+
+      for (var doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      await batch.commit();
+      return true;
+    } catch (e) {
+      print('❌ Gagal hapus semua notifikasi: $e');
+      return false;
+    }
+  }
+
+  // ─── Helper untuk konversi enum ────────────────────────────────────────────
+  String _notificationTypeToString(NotificationType type) {
+    return type.toString().split('.').last;
+  }
 }
+
