@@ -28,11 +28,9 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
   final _tabs = ['Semua', 'Absensi', 'Pengumuman'];
   final _sound = ExoticSoundService();
 
-  // Untuk deteksi notif baru (absensi)
   final Set<String> _knownIds = {};
   bool _firstLoad = true;
 
-  // Untuk animasi header (scroll)
   final _scrollCtrl = ScrollController();
   double _scrollOffset = 0;
   static const double _headerExpanded = 120.0;
@@ -72,6 +70,14 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
     _fadeCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
+  }
+
+  // Helper: format nama pengirim hanya username (sebelum @ atau kata pertama)
+  String _formatPengirim(String pengirim) {
+    if (pengirim.contains('@')) return pengirim.split('@').first;
+    final parts = pengirim.trim().split(' ');
+    if (parts.length > 1) return parts[0];
+    return pengirim;
   }
 
   // ==================== FUNGSI PENGUMUMAN ====================
@@ -152,8 +158,7 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
     final ts = data['timestamp'] as Timestamp?;
     String waktu =
         ts != null ? DateFormat('d MMM yyyy, HH:mm').format(ts.toDate()) : '';
-    String pengirim = data['pengirim'] ?? 'owner';
-    if (pengirim.contains('@')) pengirim = pengirim.split('@').first;
+    final pengirim = _formatPengirim(data['pengirim'] ?? 'owner');
 
     showDialog(
       context: context,
@@ -349,7 +354,7 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
       context: context,
       builder: (ctx) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: _noWhite, // ← latar putih, bukan hitam
+        backgroundColor: _noWhite,
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -389,13 +394,11 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
         _noBlue);
     if (confirm != true) return;
     setState(() => _isMarkingAllReadCombined = true);
-    // Tandai semua notif_owner
     final snapAbs = await FirebaseFirestore.instance
         .collection('notif_owner')
         .where('dibaca', isEqualTo: false)
         .get();
     for (var doc in snapAbs.docs) await doc.reference.update({'dibaca': true});
-    // Tandai semua pengumuman
     final snapPeng = await FirebaseFirestore.instance
         .collection('pengumuman')
         .where('dibaca', isEqualTo: 0)
@@ -412,10 +415,8 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
         _noRed);
     if (confirm != true) return;
     setState(() => _isDeletingAllCombined = true);
-    // Hapus semua notif_owner
     final snapAbs =
         await FirebaseFirestore.instance.collection('notif_owner').get();
-    // Hapus semua pengumuman
     final snapPeng =
         await FirebaseFirestore.instance.collection('pengumuman').get();
     final batch = FirebaseFirestore.instance.batch();
@@ -470,9 +471,9 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
             child: IndexedStack(
               index: _tabIndex,
               children: [
-                _buildCombinedStream(), // Tab Semua
-                _buildAbsensiStream(), // Tab Absensi
-                _buildPengumumanStream(), // Tab Pengumuman
+                _buildCombinedStream(),
+                _buildAbsensiStream(),
+                _buildPengumumanStream(),
               ],
             ),
           ),
@@ -507,7 +508,6 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
       ),
     );
 
-    // Hilangkan teks "GAMING & CAFE" agar tidak overflow
     Widget actionButtons;
     if (_tabIndex == 2) {
       actionButtons = Row(
@@ -729,7 +729,6 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
               .orderBy('timestamp', descending: true)
               .snapshots(),
           builder: (context, pengSnap) {
-            // Deteksi notif baru (absensi) untuk suara
             if (notifSnap.hasData && !_firstLoad) {
               final currentIds = notifSnap.data!.docs.map((d) => d.id).toSet();
               final newIds = currentIds.difference(_knownIds);
@@ -1192,6 +1191,8 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
         iconData = Icons.notifications_outlined;
     }
 
+    final pengirim = _formatPengirim(data['pengirim'] ?? 'owner');
+
     return GestureDetector(
       onTap: () => _showDetailDialogPengumuman(data, id),
       child: Container(
@@ -1259,7 +1260,7 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
                         const Icon(Icons.person_outline,
                             size: 11, color: Colors.black38),
                         const SizedBox(width: 4),
-                        Text(data['pengirim'] ?? 'owner',
+                        Text(pengirim,
                             style: GoogleFonts.lato(
                                 fontSize: 10, color: Colors.black38)),
                         const SizedBox(width: 12),
