@@ -3,19 +3,16 @@ import 'dart:math';
 import 'package:geolocator/geolocator.dart';
 
 class LocationService {
-  // ✅ Koordinat asli Exotic Gaming & Cafe Nganjuk
-  static const double storeLat = -7.6036163;
-  static const double storeLng = 111.900546;
-  static const double radiusMeter = 20; // 20 meter
+  static const double storeLat = -7.603615;
+  static const double storeLng = 111.900544;
+  static const double radiusMeter = 50; // radius 50 meter dari toko
   static const String storeName = 'Exotic Gaming & Cafe Nganjuk';
-  static const String storeAddress = 'Nganjuk, Jawa Timur';
+  static const String storeAddress = 'Jl. Ahmad Yani No.16, Kauman, Nganjuk';
 
   static Future<Position?> getPosition() async {
-    // Cek GPS aktif
     bool enabled = await Geolocator.isLocationServiceEnabled();
     if (!enabled) return null;
 
-    // Cek & minta permission
     LocationPermission perm = await Geolocator.checkPermission();
     if (perm == LocationPermission.denied) {
       perm = await Geolocator.requestPermission();
@@ -24,13 +21,11 @@ class LocationService {
     if (perm == LocationPermission.deniedForever) return null;
 
     try {
-      // Coba akurasi tinggi dulu, timeout 10 detik
       return await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 10),
       );
     } on TimeoutException {
-      // GPS lambat? fallback ke akurasi rendah
       try {
         return await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.lowest,
@@ -44,11 +39,9 @@ class LocationService {
     }
   }
 
-  // Cek apakah user dalam radius toko
   static bool isInside(double lat, double lng) =>
       distanceTo(lat, lng) <= radiusMeter;
 
-  // Hitung jarak dari user ke toko (meter)
   static double distanceTo(double lat, double lng) {
     const R = 6371000.0;
     final dLat = _r(storeLat - lat);

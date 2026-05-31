@@ -1,16 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../state/app_state.dart';
-import '../services/pdf_service.dart';
 import 'pages/monitor_room_page.dart';
 
 const kBlue = Color(0xFF1A5EBF);
-const kBlueBg = Color(0xFF4A90D9);
 const kWhite = Color(0xFFFFFFFF);
 const kWhiteDim = Color(0xFFDDE8FF);
 const kTextDark = Color(0xFF1A237E);
@@ -40,38 +36,22 @@ class _KasirDataPageState extends State<KasirDataPage>
   DateTime? _shiftStartTime;
   String? _activeShiftId;
 
-  String _currentTime = '';
-  String _currentDate = '';
-
   final currency =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-  late final DateFormat timeFormat;
-  late final DateFormat dateFormat;
-  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    timeFormat = DateFormat('HH:mm:ss', 'id_ID');
-    dateFormat = DateFormat('EEEE, d MMMM yyyy', 'id_ID');
     _tabCtrl = TabController(length: 2, vsync: this);
-    _updateDateTime();
-    _startClock();
     _checkActiveShift();
   }
 
-  void _updateDateTime() {
-    final now = DateTime.now();
-    if (mounted)
-      setState(() {
-        _currentTime = timeFormat.format(now);
-        _currentDate = dateFormat.format(now);
-      });
-  }
-
-  void _startClock() {
-    _timer =
-        Timer.periodic(const Duration(seconds: 1), (_) => _updateDateTime());
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    _idCtrl.dispose();
+    _hargaCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _checkActiveShift() async {
@@ -112,8 +92,6 @@ class _KasirDataPageState extends State<KasirDataPage>
         'shiftStart': FieldValue.serverTimestamp(),
         'shiftEnd': null,
         'status': 'active',
-        'totalOmzet': 0,
-        'totalTransaksi': 0,
       });
       setState(() {
         _shiftStarted = true;
@@ -121,8 +99,7 @@ class _KasirDataPageState extends State<KasirDataPage>
         _shiftStartTime = DateTime.now();
         _loading = false;
       });
-      _snack(
-          'Shift dimulai pukul ${DateFormat('HH:mm').format(_shiftStartTime!)}');
+      _snack('Shift dimulai');
     } catch (e) {
       setState(() => _loading = false);
       _snack('Gagal memulai shift: $e', error: true);
@@ -145,7 +122,6 @@ class _KasirDataPageState extends State<KasirDataPage>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Akhiri Shift?',
             style: GoogleFonts.lato(fontWeight: FontWeight.w900)),
         content:
@@ -155,7 +131,7 @@ class _KasirDataPageState extends State<KasirDataPage>
               onPressed: () => Navigator.pop(ctx, false), child: Text('Batal')),
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Akhiri Shift & Cetak')),
+              child: Text('Ya, Akhiri Shift')),
         ],
       ),
     );
@@ -163,32 +139,28 @@ class _KasirDataPageState extends State<KasirDataPage>
 
     setState(() => _loading = true);
     try {
-      double totalOmzet = 0;
-      for (var doc in transactions.docs) {
-        final harga = doc['harga'];
-        if (harga is num) totalOmzet += harga.toDouble();
-      }
+      // 1. Update shift menjadi closed
       await FirebaseFirestore.instance
           .collection('shifts')
           .doc(_activeShiftId)
           .update({
         'shiftEnd': FieldValue.serverTimestamp(),
         'status': 'closed',
-        'totalOmzet': totalOmzet,
-        'totalTransaksi': transactions.docs.length,
       });
-      // Cetak PDF (opsional, sementara dinonaktifkan karena tipe data)
-      // TODO: implement PDF printing with proper model
-      // await PdfService.cetakRekap(transaksi: list, kasir: widget.kasirName, shift: widget.shift);
-      print(
-          'Shift ended with ${transactions.docs.length} transactions, total: $totalOmzet');
+      // 2. Tandai semua transaksi shift ini sebagai closed
+      final batch = FirebaseFirestore.instance.batch();
+      for (var doc in transactions.docs) {
+        batch.update(doc.reference, {'isClosed': true});
+      }
+      await batch.commit();
+
       setState(() {
         _shiftStarted = false;
         _activeShiftId = null;
         _shiftStartTime = null;
         _loading = false;
       });
-      _snack('Shift selesai! Rekap tersimpan di Firestore.');
+      _snack('Shift selesai! Transaksi telah masuk rekap pendapatan.');
     } catch (e) {
       setState(() => _loading = false);
       _snack('Gagal mengakhiri shift: $e', error: true);
@@ -197,7 +169,7 @@ class _KasirDataPageState extends State<KasirDataPage>
 
   Future<void> _tambah() async {
     if (!_shiftStarted) {
-      _snack('Mulai shift terlebih dahulu!', error: true);
+      _snack('Mulai shift dulu!', error: true);
       return;
     }
     try {
@@ -214,10 +186,7 @@ class _KasirDataPageState extends State<KasirDataPage>
         return;
       }
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        _snack('User tidak login', error: true);
-        return;
-      }
+      if (user == null) return;
       await FirebaseFirestore.instance.collection('transaksi').add({
         'kasirUid': user.uid,
         'kasirName': widget.kasirName,
@@ -226,12 +195,13 @@ class _KasirDataPageState extends State<KasirDataPage>
         'timestamp': FieldValue.serverTimestamp(),
         'shift': widget.shift,
         'shiftId': _activeShiftId,
+        'isClosed': false, // default false
       });
       _idCtrl.clear();
       _hargaCtrl.clear();
       _snack('Transaksi ditambah!');
     } catch (e) {
-      _snack('Gagal menambah transaksi: $e', error: true);
+      _snack('Gagal: $e', error: true);
     }
   }
 
@@ -239,10 +209,9 @@ class _KasirDataPageState extends State<KasirDataPage>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Hapus Transaksi?',
             style: GoogleFonts.lato(fontWeight: FontWeight.w900)),
-        content: Text('Yakin hapus transaksi "$namaMenu"?'),
+        content: Text('Yakin hapus "$namaMenu"?'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false), child: Text('Batal')),
@@ -258,7 +227,7 @@ class _KasirDataPageState extends State<KasirDataPage>
             .collection('transaksi')
             .doc(docId)
             .delete();
-        _snack('Transaksi "$namaMenu" dihapus');
+        _snack('Transaksi dihapus');
       } catch (e) {
         _snack('Gagal hapus: $e', error: true);
       }
@@ -272,6 +241,28 @@ class _KasirDataPageState extends State<KasirDataPage>
       backgroundColor: error ? kRed : kGreen,
       behavior: SnackBarBehavior.floating,
     ));
+  }
+
+  Widget _buildClock() {
+    return StatefulBuilder(
+      builder: (context, setStateClock) {
+        Timer.periodic(const Duration(seconds: 1), (_) {
+          if (mounted) setStateClock(() {});
+        });
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(DateFormat('HH:mm:ss').format(DateTime.now()),
+                style: GoogleFonts.lato(
+                    color: kWhite, fontWeight: FontWeight.w900, fontSize: 18)),
+            const SizedBox(height: 4),
+            Text(
+                DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(DateTime.now()),
+                style: GoogleFonts.lato(fontSize: 10, color: kWhiteDim)),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -372,19 +363,7 @@ class _KasirDataPageState extends State<KasirDataPage>
               style: GoogleFonts.playfairDisplay(
                   fontSize: 11, color: kWhiteDim, letterSpacing: 3)),
           const Spacer(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(_currentTime,
-                  style: GoogleFonts.lato(
-                      color: kWhite,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18)),
-              const SizedBox(height: 4),
-              Text(_currentDate,
-                  style: GoogleFonts.lato(fontSize: 10, color: kWhiteDim)),
-            ],
-          ),
+          _buildClock(),
         ],
       ),
     );
@@ -421,14 +400,13 @@ class _KasirDataPageState extends State<KasirDataPage>
   Widget _buildKasirData() {
     if (!_shiftStarted || _activeShiftId == null) {
       return const Center(
-          child: Text('Mulai shift terlebih dahulu untuk melihat transaksi',
+          child: Text('Mulai shift untuk melihat transaksi',
               style: TextStyle(color: Colors.black45)));
     }
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('transaksi')
           .where('shiftId', isEqualTo: _activeShiftId)
-          .orderBy('timestamp', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -439,7 +417,14 @@ class _KasirDataPageState extends State<KasirDataPage>
               child: Text('Error: ${snapshot.error}',
                   style: GoogleFonts.lato(color: kRed)));
         }
-        final docs = snapshot.data?.docs ?? [];
+        var docs = snapshot.data?.docs ?? [];
+        docs.sort((a, b) {
+          final aTime =
+              (a['timestamp'] as Timestamp?)?.toDate() ?? DateTime(1970);
+          final bTime =
+              (b['timestamp'] as Timestamp?)?.toDate() ?? DateTime(1970);
+          return bTime.compareTo(aTime);
+        });
         double totalOmzet = 0;
         for (var doc in docs) {
           final harga = doc['harga'];
@@ -537,7 +522,7 @@ class _KasirDataPageState extends State<KasirDataPage>
                         final harga = data['harga'] ?? 0;
                         final timestamp = data['timestamp'] as Timestamp?;
                         final waktu = timestamp != null
-                            ? timeFormat.format(timestamp.toDate())
+                            ? DateFormat('HH:mm:ss').format(timestamp.toDate())
                             : '';
                         return Container(
                           margin: const EdgeInsets.only(bottom: 10),

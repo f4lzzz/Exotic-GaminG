@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
-// ==================== WARNA ====================
 const kBlue = Color(0xFF1A5EBF);
 const kBlueDark = Color(0xFF0F3B8C);
 const kWhite = Color(0xFFFFFFFF);
@@ -15,232 +14,8 @@ const kOrange = Color(0xFFFF9800);
 const kPurple = Color(0xFF7C4DFF);
 const kBgLight = Color(0xFFF0F4FF);
 
-// -------------------- MODEL (sama seperti awal) --------------------
-enum StatusKehadiran { hadir, izin, sakit, alpha, cuti, belum }
+enum PeriodeFilter { none, hariIni, mingguIni }
 
-enum ShiftKerja { pagi, siang, malam }
-
-class Karyawan {
-  final int id;
-  final String nama;
-  final String jabatan;
-  final Color avatarColor;
-  final int gajiPokok;
-  const Karyawan(
-      {required this.id,
-      required this.nama,
-      required this.jabatan,
-      required this.avatarColor,
-      required this.gajiPokok});
-  String get initial => nama.isNotEmpty ? nama[0].toUpperCase() : '?';
-}
-
-class AbsensiHarian {
-  final int karyawanId;
-  final DateTime tanggal;
-  final StatusKehadiran status;
-  final ShiftKerja shift;
-  final TimeOfDay? jamMasuk;
-  final TimeOfDay? jamKeluar;
-  final int totalTransaksi;
-  final int omzetHari;
-  AbsensiHarian({
-    required this.karyawanId,
-    required this.tanggal,
-    required this.status,
-    required this.shift,
-    this.jamMasuk,
-    this.jamKeluar,
-    this.totalTransaksi = 0,
-    this.omzetHari = 0,
-  });
-  bool get terlambat {
-    if (jamMasuk == null) return false;
-    final batas = shift == ShiftKerja.pagi
-        ? const TimeOfDay(hour: 8, minute: 15)
-        : shift == ShiftKerja.siang
-            ? const TimeOfDay(hour: 13, minute: 15)
-            : const TimeOfDay(hour: 18, minute: 15);
-    return jamMasuk!.hour > batas.hour ||
-        (jamMasuk!.hour == batas.hour && jamMasuk!.minute > batas.minute);
-  }
-}
-
-final List<Karyawan> defaultKaryawan = [
-  Karyawan(
-      id: 1,
-      nama: 'Freya Fauna',
-      jabatan: 'Kasir',
-      avatarColor: Color(0xFF2255B0),
-      gajiPokok: 2500000),
-  Karyawan(
-      id: 2,
-      nama: 'Zaki Ramadan',
-      jabatan: 'Barista',
-      avatarColor: Color(0xFF6530C8),
-      gajiPokok: 2800000),
-  Karyawan(
-      id: 3,
-      nama: 'Anna Kusuma',
-      jabatan: 'Pelayan',
-      avatarColor: Color(0xFF149650),
-      gajiPokok: 2300000),
-  Karyawan(
-      id: 4,
-      nama: 'Ridwan Saputra',
-      jabatan: 'Operator',
-      avatarColor: Color(0xFFE66414),
-      gajiPokok: 2600000),
-  Karyawan(
-      id: 5,
-      nama: 'Mingyu Park',
-      jabatan: 'Kasir',
-      avatarColor: Color(0xFFB91C1C),
-      gajiPokok: 2500000),
-  Karyawan(
-      id: 6,
-      nama: 'Annsa Kuat',
-      jabatan: 'Barista',
-      avatarColor: Color(0xFF0E7490),
-      gajiPokok: 2800000),
-];
-
-List<AbsensiHarian> generateAbsensi(int tahun, int bulan) {
-  final jumlahHari = DateUtils.getDaysInMonth(tahun, bulan);
-  final shifts = [ShiftKerja.pagi, ShiftKerja.siang, ShiftKerja.malam];
-  final result = <AbsensiHarian>[];
-  final polaPerId = {
-    1: [
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.izin,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir
-    ],
-    2: [
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.sakit,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.alpha
-    ],
-    3: [
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.izin,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.cuti,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir
-    ],
-    4: [
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.alpha,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.sakit,
-      StatusKehadiran.hadir
-    ],
-    5: [
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.izin,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir
-    ],
-    6: [
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.sakit,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir,
-      StatusKehadiran.alpha,
-      StatusKehadiran.hadir,
-      StatusKehadiran.hadir
-    ],
-  };
-  for (int hari = 1; hari <= jumlahHari; hari++) {
-    final tgl = DateTime(tahun, bulan, hari);
-    if (tgl.weekday == DateTime.sunday) continue;
-    for (final k in defaultKaryawan) {
-      final pola = polaPerId[k.id]!;
-      final st = pola[(hari - 1) % pola.length];
-      final shift = shifts[(k.id + hari) % 3];
-      TimeOfDay? jamMasuk;
-      TimeOfDay? jamKeluar;
-      int transaksi = 0;
-      int omzet = 0;
-      if (st == StatusKehadiran.hadir) {
-        final terlambat = (k.id + hari) % 7 == 0;
-        switch (shift) {
-          case ShiftKerja.pagi:
-            jamMasuk = TimeOfDay(hour: 7, minute: terlambat ? 45 : 55);
-            jamKeluar = const TimeOfDay(hour: 14, minute: 0);
-            break;
-          case ShiftKerja.siang:
-            jamMasuk = TimeOfDay(hour: 12, minute: terlambat ? 30 : 58);
-            jamKeluar = const TimeOfDay(hour: 19, minute: 0);
-            break;
-          case ShiftKerja.malam:
-            jamMasuk = TimeOfDay(hour: 17, minute: terlambat ? 25 : 55);
-            jamKeluar = const TimeOfDay(hour: 23, minute: 0);
-            break;
-        }
-        transaksi = 5 + (k.id * 3 + hari * 2) % 18;
-        omzet = 60000 + (k.id * 40000 + hari * 25000) % 280000;
-      }
-      result.add(AbsensiHarian(
-        karyawanId: k.id,
-        tanggal: tgl,
-        status: st,
-        shift: shift,
-        jamMasuk: jamMasuk,
-        jamKeluar: jamKeluar,
-        totalTransaksi: transaksi,
-        omzetHari: omzet,
-      ));
-    }
-  }
-  return result;
-}
-
-// -------------------- REKAP SCREEN (gabungan dummy absensi + real transaksi) --------------------
 class RekapScreen extends StatefulWidget {
   final String role;
   const RekapScreen({super.key, required this.role});
@@ -251,11 +26,9 @@ class RekapScreen extends StatefulWidget {
 class _RekapScreenState extends State<RekapScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
-  late int _bulan;
-  late int _tahun;
-  int? _detailKarId;
-  late List<AbsensiHarian> _absensi;
-
+  int _bulan = DateTime.now().month;
+  int _tahun = DateTime.now().year;
+  String? _detailKarUid;
   final _namaBulan = [
     '',
     'Januari',
@@ -271,8 +44,6 @@ class _RekapScreenState extends State<RekapScreen>
     'November',
     'Desember'
   ];
-  final _hariSingkat = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
-
   final ScrollController _scrollCtrl = ScrollController();
   double _scrollOffset = 0;
   static const double _headerExpanded = 120.0;
@@ -283,16 +54,70 @@ class _RekapScreenState extends State<RekapScreen>
       _headerExpanded -
       (_headerExpanded - _headerCollapsed) * _collapseProgress;
 
+  final List<Map<String, dynamic>> _karyawanDummy = const [
+    {
+      'nama': 'Freya Fauna',
+      'jabatan': 'Kasir',
+      'hadir': 22,
+      'izin': 1,
+      'sakit': 0,
+      'alpha': 0
+    },
+    {
+      'nama': 'Zaki Ramadan',
+      'jabatan': 'Barista',
+      'hadir': 20,
+      'izin': 0,
+      'sakit': 1,
+      'alpha': 1
+    },
+    {
+      'nama': 'Anna Kusuma',
+      'jabatan': 'Pelayan',
+      'hadir': 21,
+      'izin': 1,
+      'sakit': 0,
+      'alpha': 0
+    },
+    {
+      'nama': 'Ridwan Saputra',
+      'jabatan': 'Operator',
+      'hadir': 19,
+      'izin': 0,
+      'sakit': 0,
+      'alpha': 2
+    },
+    {
+      'nama': 'Mingyu Park',
+      'jabatan': 'Kasir',
+      'hadir': 22,
+      'izin': 0,
+      'sakit': 0,
+      'alpha': 0
+    },
+    {
+      'nama': 'Annsa Kuat',
+      'jabatan': 'Barista',
+      'hadir': 20,
+      'izin': 0,
+      'sakit': 1,
+      'alpha': 1
+    },
+  ];
+
+  PeriodeFilter _periodeFilter = PeriodeFilter.none;
+  int _totalOmzet = 0;
+  int _totalTransaksi = 0;
+  bool _loadingPendapatan = true;
+  String? _pendapatanError;
+
   @override
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 2, vsync: this);
-    final now = DateTime.now();
-    _bulan = now.month;
-    _tahun = now.year;
-    _absensi = generateAbsensi(_tahun, _bulan);
     _scrollCtrl
         .addListener(() => setState(() => _scrollOffset = _scrollCtrl.offset));
+    _loadPendapatan();
   }
 
   @override
@@ -308,8 +133,9 @@ class _RekapScreenState extends State<RekapScreen>
           _tahun--;
         } else
           _bulan--;
-        _absensi = generateAbsensi(_tahun, _bulan);
-        _detailKarId = null;
+        _detailKarUid = null;
+        _periodeFilter = PeriodeFilter.none;
+        _loadPendapatan();
       });
   void _nextBulan() => setState(() {
         final now = DateTime.now();
@@ -319,37 +145,10 @@ class _RekapScreenState extends State<RekapScreen>
           _tahun++;
         } else
           _bulan++;
-        _absensi = generateAbsensi(_tahun, _bulan);
-        _detailKarId = null;
+        _detailKarUid = null;
+        _periodeFilter = PeriodeFilter.none;
+        _loadPendapatan();
       });
-
-  List<AbsensiHarian> _absensiKar(int id) =>
-      _absensi.where((a) => a.karyawanId == id).toList()
-        ..sort((a, b) => a.tanggal.compareTo(b.tanggal));
-  int _hadir(int id) =>
-      _absensiKar(id).where((a) => a.status == StatusKehadiran.hadir).length;
-  int _alpha(int id) =>
-      _absensiKar(id).where((a) => a.status == StatusKehadiran.alpha).length;
-  int _izin(int id) =>
-      _absensiKar(id).where((a) => a.status == StatusKehadiran.izin).length;
-  int _sakit(int id) =>
-      _absensiKar(id).where((a) => a.status == StatusKehadiran.sakit).length;
-  int _cuti(int id) =>
-      _absensiKar(id).where((a) => a.status == StatusKehadiran.cuti).length;
-  int _totalHari(int id) => _absensiKar(id).length;
-  double _persen(int id) =>
-      _totalHari(id) == 0 ? 0 : _hadir(id) / _totalHari(id);
-  bool _terlambat(AbsensiHarian a) => a.terlambat;
-  int _terlambatCount(int id) => _absensiKar(id).where(_terlambat).length;
-  int _omzetKar(int id) => _absensiKar(id).fold(0, (s, a) => s + a.omzetHari);
-  int _transaksiKar(int id) =>
-      _absensiKar(id).fold(0, (s, a) => s + a.totalTransaksi);
-  int _gajiKar(int id) {
-    final t = _totalHari(id);
-    if (t == 0) return 0;
-    final k = defaultKaryawan.firstWhere((k) => k.id == id);
-    return (k.gajiPokok * _hadir(id) / t).round();
-  }
 
   String _fmtRp(int v) {
     if (v >= 1000000) return 'Rp ${(v / 1000000).toStringAsFixed(1)}jt';
@@ -357,89 +156,64 @@ class _RekapScreenState extends State<RekapScreen>
     return 'Rp $v';
   }
 
-  String _fmtJam(TimeOfDay? t) => t == null
-      ? '--:--'
-      : '${t.hour.toString().padLeft(2, '0')}.${t.minute.toString().padLeft(2, '0')}';
-  Color _statusColor(StatusKehadiran s) {
-    switch (s) {
-      case StatusKehadiran.hadir:
-        return kGreen;
-      case StatusKehadiran.izin:
-        return kOrange;
-      case StatusKehadiran.sakit:
-        return kPurple;
-      case StatusKehadiran.alpha:
-        return kRed;
-      case StatusKehadiran.cuti:
-        return kBlueDark;
-      default:
-        return Colors.black38;
-    }
-  }
-
-  String _statusLabel(StatusKehadiran s) {
-    switch (s) {
-      case StatusKehadiran.hadir:
-        return 'Hadir';
-      case StatusKehadiran.izin:
-        return 'Izin';
-      case StatusKehadiran.sakit:
-        return 'Sakit';
-      case StatusKehadiran.alpha:
-        return 'Alpha';
-      case StatusKehadiran.cuti:
-        return 'Cuti';
-      default:
-        return 'Belum';
-    }
-  }
-
-  String _statusHuruf(StatusKehadiran s) {
-    switch (s) {
-      case StatusKehadiran.hadir:
-        return 'H';
-      case StatusKehadiran.izin:
-        return 'I';
-      case StatusKehadiran.sakit:
-        return 'S';
-      case StatusKehadiran.alpha:
-        return 'A';
-      case StatusKehadiran.cuti:
-        return 'C';
-      default:
-        return '?';
-    }
-  }
-
-  String _shiftLabel(ShiftKerja s) {
-    switch (s) {
-      case ShiftKerja.pagi:
-        return 'Pagi';
-      case ShiftKerja.siang:
-        return 'Siang';
-      case ShiftKerja.malam:
-        return 'Malam';
-    }
-  }
-
-  // =============== AMBIL SEMUA TRANSAKSI (tanpa filter bulan) ===============
-  Future<int> _getTotalOmzetFromFirestore() async {
+  Future<void> _loadPendapatan() async {
+    setState(() {
+      _loadingPendapatan = true;
+      _pendapatanError = null;
+    });
     try {
-      final snap =
-          await FirebaseFirestore.instance.collection('transaksi').get();
-      int total = 0;
-      for (var doc in snap.docs) {
-        final harga = doc['harga'];
-        if (harga is int)
-          total += harga;
-        else if (harga is double)
-          total += harga.toInt();
-        else if (harga is num) total += harga.toInt();
+      final snap = await FirebaseFirestore.instance
+          .collection('transaksi')
+          .where('isClosed', isEqualTo: true)
+          .get();
+
+      DateTime startDate, endDate;
+      if (_periodeFilter == PeriodeFilter.hariIni) {
+        final now = DateTime.now();
+        startDate = DateTime(now.year, now.month, now.day);
+        endDate = startDate;
+      } else if (_periodeFilter == PeriodeFilter.mingguIni) {
+        final now = DateTime.now();
+        startDate = now.subtract(Duration(days: now.weekday - 1));
+        endDate = startDate.add(const Duration(days: 6));
+      } else {
+        startDate = DateTime(_tahun, _bulan, 1);
+        endDate = DateTime(_tahun, _bulan + 1, 0);
       }
-      return total;
+      final endDatePlus = endDate.add(const Duration(days: 1));
+
+      int total = 0;
+      int trxCount = 0;
+      for (var doc in snap.docs) {
+        final timestamp = doc['timestamp'] as Timestamp?;
+        if (timestamp == null) continue;
+        final tgl = timestamp.toDate();
+        if (tgl.isAfter(startDate.subtract(const Duration(days: 1))) &&
+            tgl.isBefore(endDatePlus)) {
+          final harga = doc['harga'];
+          total += harga is int
+              ? harga
+              : (harga is double ? harga.toInt() : (harga as num).toInt());
+          trxCount++;
+        }
+      }
+      setState(() {
+        _totalOmzet = total;
+        _totalTransaksi = trxCount;
+        _loadingPendapatan = false;
+      });
     } catch (e) {
-      return 0;
+      setState(() {
+        _pendapatanError = e.toString();
+        _loadingPendapatan = false;
+      });
     }
+  }
+
+  String _getPeriodeLabel() {
+    if (_periodeFilter == PeriodeFilter.hariIni) return 'HARI INI';
+    if (_periodeFilter == PeriodeFilter.mingguIni) return 'MINGGU INI';
+    return '${_namaBulan[_bulan]} $_tahun';
   }
 
   @override
@@ -455,12 +229,8 @@ class _RekapScreenState extends State<RekapScreen>
             child: TabBarView(
               controller: _tabCtrl,
               children: [
-                _detailKarId == null
-                    ? _buildKehadiran()
-                    : _buildDetailKehadiran(_detailKarId!),
-                _detailKarId == null
-                    ? _buildPendapatan()
-                    : _buildDetailPendapatan(_detailKarId!),
+                _buildKehadiranDummy(),
+                _buildPendapatan(),
               ],
             ),
           ),
@@ -525,7 +295,7 @@ class _RekapScreenState extends State<RekapScreen>
                     decoration: BoxDecoration(
                         color: kWhite.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20)),
-                    child: Text(_detailKarId == null ? 'REKAP' : 'DETAIL',
+                    child: Text(_detailKarUid == null ? 'REKAP' : 'DETAIL',
                         style: GoogleFonts.lato(
                             fontSize: 9,
                             fontWeight: FontWeight.w900,
@@ -543,7 +313,7 @@ class _RekapScreenState extends State<RekapScreen>
                   decoration: BoxDecoration(
                       color: kWhite.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20)),
-                  child: Text(_detailKarId == null ? 'REKAP' : 'DETAIL',
+                  child: Text(_detailKarUid == null ? 'REKAP' : 'DETAIL',
                       style: GoogleFonts.lato(
                           fontSize: 9,
                           fontWeight: FontWeight.w900,
@@ -554,27 +324,28 @@ class _RekapScreenState extends State<RekapScreen>
 
   Widget _buildMonthSelector() {
     final now = DateTime.now();
-    final isCurrent = _bulan == now.month && _tahun == now.year;
+    final isCurrent = _tahun == now.year && _bulan == now.month;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
         children: [
           GestureDetector(
-              onTap: _prevBulan,
-              child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                      color: kWhite,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2))
-                      ]),
-                  child: const Icon(Icons.chevron_left_rounded,
-                      color: kBlue, size: 20))),
+            onTap: _prevBulan,
+            child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                    color: kWhite,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2))
+                    ]),
+                child: const Icon(Icons.chevron_left_rounded,
+                    color: kBlue, size: 20)),
+          ),
           const SizedBox(width: 12),
           Expanded(
               child: Center(
@@ -585,22 +356,22 @@ class _RekapScreenState extends State<RekapScreen>
                           fontWeight: FontWeight.w800)))),
           const SizedBox(width: 12),
           GestureDetector(
-              onTap: isCurrent ? null : _nextBulan,
-              child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                      color: kWhite,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2))
-                      ]),
-                  child: Icon(Icons.chevron_right_rounded,
-                      color: isCurrent ? Colors.grey.shade300 : kBlue,
-                      size: 20))),
+            onTap: isCurrent ? null : _nextBulan,
+            child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                    color: kWhite,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2))
+                    ]),
+                child: Icon(Icons.chevron_right_rounded,
+                    color: isCurrent ? Colors.grey.shade300 : kBlue, size: 20)),
+          ),
         ],
       ),
     );
@@ -634,12 +405,7 @@ class _RekapScreenState extends State<RekapScreen>
     );
   }
 
-  // ==================== TAB KEHADIRAN (dummy) ====================
-  Widget _buildKehadiran() {
-    final totalHadirAll = defaultKaryawan.fold(0, (s, k) => s + _hadir(k.id));
-    final totalHariAll =
-        defaultKaryawan.fold(0, (s, k) => s + _totalHari(k.id));
-
+  Widget _buildKehadiranDummy() {
     return SingleChildScrollView(
       controller: _scrollCtrl,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -665,10 +431,7 @@ class _RekapScreenState extends State<RekapScreen>
                         fontWeight: FontWeight.w800)),
                 const SizedBox(height: 12),
                 Row(children: [
-                  Text(
-                      totalHariAll == 0
-                          ? '0%'
-                          : '${(totalHadirAll / totalHariAll * 100).toStringAsFixed(1)}%',
+                  Text('92.5%',
                       style: GoogleFonts.lato(
                           color: kGreen,
                           fontSize: 32,
@@ -677,16 +440,14 @@ class _RekapScreenState extends State<RekapScreen>
                   const SizedBox(width: 14),
                   Expanded(
                       child: Column(children: [
-                    Text('$totalHadirAll dari $totalHariAll total hari kerja',
+                    Text('124 dari 134 hari kerja',
                         style: GoogleFonts.lato(
                             color: Colors.black45, fontSize: 12)),
                     const SizedBox(height: 6),
                     ClipRRect(
                         borderRadius: BorderRadius.circular(6),
                         child: LinearProgressIndicator(
-                            value: totalHariAll == 0
-                                ? 0
-                                : totalHadirAll / totalHariAll,
+                            value: 0.925,
                             minHeight: 8,
                             backgroundColor: const Color(0xFFE2E8F0),
                             valueColor:
@@ -694,30 +455,13 @@ class _RekapScreenState extends State<RekapScreen>
                   ])),
                 ]),
                 const SizedBox(height: 10),
-                Wrap(
-                    spacing: 12,
-                    runSpacing: 4,
-                    children: [
-                      StatusKehadiran.hadir,
-                      StatusKehadiran.izin,
-                      StatusKehadiran.sakit,
-                      StatusKehadiran.alpha,
-                      StatusKehadiran.cuti,
-                    ]
-                        .map((s) =>
-                            Row(mainAxisSize: MainAxisSize.min, children: [
-                              Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                      color: _statusColor(s),
-                                      shape: BoxShape.circle)),
-                              const SizedBox(width: 4),
-                              Text(_statusLabel(s),
-                                  style: GoogleFonts.lato(
-                                      color: Colors.black45, fontSize: 11)),
-                            ]))
-                        .toList()),
+                Wrap(spacing: 12, runSpacing: 4, children: [
+                  _buildLegenda('Hadir', kGreen),
+                  _buildLegenda('Izin', kOrange),
+                  _buildLegenda('Sakit', kPurple),
+                  _buildLegenda('Alpha', kRed),
+                  _buildLegenda('Cuti', kBlueDark),
+                ]),
               ],
             ),
           ),
@@ -769,17 +513,9 @@ class _RekapScreenState extends State<RekapScreen>
                           fontWeight: FontWeight.w800))),
             ]),
           ),
-          const SizedBox(height: 6),
-          ...defaultKaryawan.map((k) {
-            final hadir = _hadir(k.id);
-            final alpha = _alpha(k.id);
-            final izin = _izin(k.id);
-            final sakit = _sakit(k.id);
-            final persen = _persen(k.id);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: GestureDetector(
-                onTap: () => setState(() => _detailKarId = k.id),
+          const SizedBox(height: 8),
+          ..._karyawanDummy.map((k) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -792,299 +528,250 @@ class _RekapScreenState extends State<RekapScreen>
                             blurRadius: 6,
                             offset: const Offset(0, 2))
                       ]),
-                  child: Column(children: [
-                    Row(children: [
-                      Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                              color: k.avatarColor.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: k.avatarColor.withOpacity(0.3))),
-                          child: Center(
-                              child: Text(k.initial,
-                                  style: TextStyle(
-                                      color: k.avatarColor,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w800)))),
-                      const SizedBox(width: 8),
-                      Expanded(
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                            Text(k.nama,
+                  child: Row(children: [
+                    Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                            color: kBlue.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: kBlue.withOpacity(0.3))),
+                        child: Center(
+                            child: Text(k['nama'][0].toUpperCase(),
                                 style: GoogleFonts.lato(
-                                    color: kTextDark,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700)),
-                            Text(k.jabatan,
-                                style: GoogleFonts.lato(
-                                    color: Colors.black45, fontSize: 11)),
-                          ])),
-                      SizedBox(
-                          width: 52,
-                          child: Text('$hadir hari',
-                              textAlign: TextAlign.center,
+                                    color: kBlue,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800)))),
+                    const SizedBox(width: 8),
+                    Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                          Text(k['nama'],
                               style: GoogleFonts.lato(
-                                  color: persen >= 0.8 ? kGreen : kOrange,
+                                  color: kTextDark,
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w800))),
-                      SizedBox(
-                          width: 36,
-                          child: Text('$alpha',
-                              textAlign: TextAlign.center,
+                                  fontWeight: FontWeight.w700)),
+                          Text(k['jabatan'],
                               style: GoogleFonts.lato(
-                                  color: alpha > 0 ? kRed : Colors.black45,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700))),
-                      SizedBox(
-                          width: 36,
-                          child: Text('$izin',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.lato(
-                                  color: izin > 0 ? kOrange : Colors.black45,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700))),
-                      SizedBox(
-                          width: 36,
-                          child: Text('$sakit',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.lato(
-                                  color: sakit > 0 ? kPurple : Colors.black45,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700))),
-                    ]),
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      Expanded(
-                          child: ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                  value: persen,
-                                  minHeight: 5,
-                                  backgroundColor: const Color(0xFFE2E8F0),
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      persen >= 0.8 ? kGreen : kOrange)))),
-                      const SizedBox(width: 8),
-                      Text('${(persen * 100).toStringAsFixed(0)}%',
-                          style: GoogleFonts.lato(
-                              color: persen >= 0.8 ? kGreen : kOrange,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700)),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right_rounded,
-                          color: Colors.grey, size: 16),
-                    ]),
+                                  color: Colors.black45, fontSize: 11)),
+                        ])),
+                    SizedBox(
+                        width: 52,
+                        child: Text('${k['hadir']} hari',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.lato(
+                                color: kGreen,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800))),
+                    SizedBox(
+                        width: 36,
+                        child: Text('${k['alpha']}',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.lato(
+                                color: k['alpha'] > 0 ? kRed : Colors.black45,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700))),
+                    SizedBox(
+                        width: 36,
+                        child: Text('${k['izin']}',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.lato(
+                                color: k['izin'] > 0 ? kOrange : Colors.black45,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700))),
+                    SizedBox(
+                        width: 36,
+                        child: Text('${k['sakit']}',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.lato(
+                                color:
+                                    k['sakit'] > 0 ? kPurple : Colors.black45,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700))),
                   ]),
                 ),
-              ),
-            );
-          }),
+              )),
         ],
       ),
     );
   }
 
-  Widget _buildDetailKehadiran(int karId) {
-    final k = defaultKaryawan.firstWhere((k) => k.id == karId);
-    final rekap = _absensiKar(karId);
-    final hadir = _hadir(karId);
-    final totalHari = _totalHari(karId);
-    final persen = _persen(karId);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-              color: kWhite,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2))
-              ]),
-          child: Row(children: [
-            Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                    color: k.avatarColor.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: k.avatarColor, width: 2)),
-                child: Center(
-                    child: Text(k.initial,
-                        style: TextStyle(
-                            color: k.avatarColor,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800)))),
-            const SizedBox(width: 14),
-            Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Text(k.nama,
-                      style: GoogleFonts.lato(
-                          color: kTextDark,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800)),
-                  Text(k.jabatan,
-                      style: GoogleFonts.lato(
-                          color: Colors.black45, fontSize: 13)),
-                  const SizedBox(height: 4),
-                  Text('${_namaBulan[_bulan]} $_tahun',
-                      style: TextStyle(
-                          color: k.avatarColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700)),
-                ])),
-            Column(children: [
-              Text('${(persen * 100).toStringAsFixed(1)}%',
-                  style: GoogleFonts.lato(
-                      color: persen >= 0.8 ? kGreen : kOrange,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      height: 1)),
-              Text('kehadiran',
-                  style: GoogleFonts.lato(
-                      color: persen >= 0.8 ? kGreen : kOrange, fontSize: 11)),
-            ]),
-          ]),
-        ),
-        const SizedBox(height: 12),
-        ...rekap.map((a) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                  color: kWhite,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2))
-                  ]),
-              child: Row(children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                      color: _statusColor(a.status).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10)),
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('${a.tanggal.day}',
-                            style: TextStyle(
-                                color: _statusColor(a.status),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
-                                height: 1)),
-                        Text(_hariSingkat[a.tanggal.weekday % 7],
-                            style: TextStyle(
-                                color: _statusColor(a.status).withOpacity(0.7),
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700)),
-                      ]),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildLegenda(String label, Color color) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      const SizedBox(width: 4),
+      Text(label, style: GoogleFonts.lato(color: Colors.black45, fontSize: 11)),
+    ]);
+  }
+
+  Widget _buildPendapatan() {
+    return Column(
+      children: [
+        _buildFilterChips(),
+        Expanded(
+          child: SingleChildScrollView(
+            controller: _scrollCtrl,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            child: _loadingPendapatan
+                ? const Center(child: CircularProgressIndicator())
+                : _pendapatanError != null
+                    ? Center(
+                        child: Column(children: [
+                        Icon(Icons.error, color: kRed),
+                        Text(_pendapatanError!),
+                        ElevatedButton(
+                            onPressed: _loadPendapatan,
+                            child: const Text('Refresh'))
+                      ]))
+                    : Column(
                         children: [
-                      Row(children: [
-                        Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                                color: _statusColor(a.status).withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(6)),
-                            child: Text(_statusLabel(a.status),
-                                style: GoogleFonts.lato(
-                                    color: _statusColor(a.status),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700))),
-                        const SizedBox(width: 6),
-                        Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                                color: const Color(0xFFE2E8F0),
-                                borderRadius: BorderRadius.circular(6)),
-                            child: Text('Shift ${_shiftLabel(a.shift)}',
-                                style: GoogleFonts.lato(
-                                    color: Colors.black45,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600))),
-                        if (a.terlambat) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 2),
-                              decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF3E0),
-                                  borderRadius: BorderRadius.circular(6)),
-                              child: Text('Terlambat',
-                                  style: GoogleFonts.lato(
-                                      color: kOrange,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700))),
+                          _buildOmzetCard(),
+                          const SizedBox(height: 16),
+                          _buildInfoCard(),
                         ],
-                      ]),
-                      const SizedBox(height: 3),
-                      Text(
-                          'Masuk: ${_fmtJam(a.jamMasuk)}  ·  Keluar: ${_fmtJam(a.jamKeluar)}',
-                          style: GoogleFonts.lato(
-                              color: Colors.black45, fontSize: 11)),
-                    ])),
-                if (a.status == StatusKehadiran.hadir)
-                  Text('${a.totalTransaksi} trx',
-                      style: GoogleFonts.lato(
-                          color: kBlue,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700)),
-              ]),
-            )),
-      ]),
+                      ),
+          ),
+        ),
+      ],
     );
   }
 
-  // ==================== TAB PENDAPATAN (semua transaksi dari Firestore) ====================
-  Widget _buildPendapatan() {
-    return FutureBuilder<int>(
-      future: _getTotalOmzetFromFirestore(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final total = snapshot.data ?? 0;
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildFilterChips() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: kWhite,
+        borderRadius: BorderRadius.circular(40),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2))
+        ],
+      ),
+      child: Row(
+        children: [
+          _filterChip(PeriodeFilter.none, 'Bulan Ini'),
+          _filterChip(PeriodeFilter.hariIni, 'Hari Ini'),
+          _filterChip(PeriodeFilter.mingguIni, 'Minggu Ini'),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterChip(PeriodeFilter filter, String label) {
+    final isSelected = _periodeFilter == filter;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          if (_periodeFilter == filter) return;
+          setState(() {
+            _periodeFilter = filter;
+          });
+          _loadPendapatan();
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? kBlue : Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: GoogleFonts.lato(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: isSelected ? kWhite : Colors.black45,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOmzetCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [kBlue, kBlueDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color: kBlue.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _getPeriodeLabel(),
+            style: GoogleFonts.lato(
+                fontSize: 13, color: kWhiteDim, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _fmtRp(_totalOmzet),
+            style: GoogleFonts.lato(
+                fontSize: 32, fontWeight: FontWeight.w900, color: kWhite),
+          ),
+          const SizedBox(height: 6),
+          Row(
             children: [
-              Text('Total Pendapatan (Semua Transaksi)',
-                  style: GoogleFonts.lato(fontSize: 16, color: Colors.black45)),
-              const SizedBox(height: 8),
-              Text(_fmtRp(total),
-                  style: GoogleFonts.lato(
-                      fontSize: 32, fontWeight: FontWeight.w900, color: kBlue)),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => setState(() {}),
-                child: const Text('Refresh'),
+              Icon(Icons.receipt_rounded, size: 16, color: kWhiteDim),
+              const SizedBox(width: 4),
+              Text(
+                '$_totalTransaksi transaksi',
+                style: GoogleFonts.lato(fontSize: 12, color: kWhiteDim),
               ),
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  Widget _buildDetailPendapatan(int karId) {
-    return const Center(
-        child: Text('Detail pendapatan belum diimplementasikan',
-            style: TextStyle(fontSize: 14)));
+  Widget _buildInfoCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kWhite,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Info',
+            style: GoogleFonts.lato(
+                fontSize: 14, fontWeight: FontWeight.w800, color: kTextDark),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Data pendapatan hanya dari transaksi yang shift-nya sudah diakhiri (closed). Gunakan filter di atas untuk melihat periode tertentu.',
+            style: GoogleFonts.lato(fontSize: 12, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
   }
 }

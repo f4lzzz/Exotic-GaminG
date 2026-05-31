@@ -3,11 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image/image.dart' as img;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'services/location_service.dart';
 import 'face_oval_painter.dart';
 import 'services/face_net_service.dart';
@@ -77,7 +80,7 @@ class _AbsensiScreenState extends State<AbsensiScreen>
   bool _faceDetected = false;
   bool _locDetected = false;
   bool _locValid = false;
-  bool _absenDimanaSaja = false;
+  bool _absenDimanaSaja = false; // dikontrol dari Firestore oleh owner
   Position? _pos;
   double _dist = 0;
 
@@ -93,6 +96,8 @@ class _AbsensiScreenState extends State<AbsensiScreen>
 
     _faceNet.loadModel();
     _loadKaryawanData();
+    _loadNamaUser();
+    _loadBebasLokasi();
 
     _scanAnim =
         AnimationController(vsync: this, duration: const Duration(seconds: 2))
@@ -116,11 +121,45 @@ class _AbsensiScreenState extends State<AbsensiScreen>
     _initCameraSafe();
   }
 
+  // Ambil nama dari Firestore users/{uid} field 'nama'
+  Future<void> _loadNamaUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (doc.exists && mounted) {
+        final nama = doc.data()?['nama'] ?? '';
+        if ((nama as String).isNotEmpty) {
+          setState(() => _namaCtrl.text = nama);
+          debugPrint('✅ Nama user: $nama');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error ambil nama user: $e');
+    }
+  }
+
+  // Ambil setting bebasLokasi dari Firestore (diset oleh owner)
+  Future<void> _loadBebasLokasi() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('settings')
+          .doc('absensi')
+          .get();
+      final val = doc.data()?['bebasLokasi'] ?? false;
+      if (mounted) setState(() => _absenDimanaSaja = val);
+    } catch (e) {
+      debugPrint('❌ Error ambil setting: $e');
+    }
+  }
+
   Future<void> _loadKaryawanData() async {
     _karyawanList = await _firestoreService.getAllKaryawan();
     debugPrint('📋 Loaded ${_karyawanList.length} karyawan dari Firestore');
 
-    // Debug cek apakah embedding tersimpan
     for (final k in _karyawanList) {
       final hasEmbedding = k['faceEmbedding'] != null;
       final embLen = hasEmbedding ? (k['faceEmbedding'] as List).length : 0;
@@ -218,7 +257,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
           return;
         }
 
-        // Stop stream sebelum takePicture
         try {
           await _camCtrl?.stopImageStream();
         } catch (_) {}
@@ -282,11 +320,28 @@ class _AbsensiScreenState extends State<AbsensiScreen>
             '🏆 Best score: ${bestScore.toStringAsFixed(4)} → ${matched?['namaKaryawan'] ?? matched?['nama'] ?? 'tidak ada'}');
 
         if (bestScore < 0.6 && matched != null && mounted) {
+          final matchedUid = matched!['uid'] as String?;
           setState(() {
             _faceDetected = true;
-            _matchedKaryawanId = matched!['uid'];
-            _namaCtrl.text = matched['namaKaryawan'] ?? matched['nama'] ?? '';
+            _matchedKaryawanId = matchedUid;
           });
+          // Ambil nama dari users/{uid} karena karyawan tidak punya field nama
+          if (matchedUid != null) {
+            try {
+              final userDoc = await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(matchedUid)
+                  .get();
+              if (userDoc.exists && mounted) {
+                final nama = userDoc.data()?['nama'] ?? '';
+                if ((nama as String).isNotEmpty) {
+                  setState(() => _namaCtrl.text = nama);
+                }
+              }
+            } catch (e) {
+              debugPrint('❌ Error ambil nama: $e');
+            }
+          }
           debugPrint('✅ Wajah cocok: ${_namaCtrl.text} (score: $bestScore)');
         } else if (mounted) {
           debugPrint(
@@ -340,15 +395,14 @@ class _AbsensiScreenState extends State<AbsensiScreen>
 
   // ─── Lokasi ───────────────────────────────────────────────────────────────
   Future<void> _deteksiLokasi() async {
+    // Selalu deteksi lokasi untuk tampilkan peta, meskipun mode bebas lokasi
     if (_absenDimanaSaja) {
-      if (!mounted) return;
       setState(() {
         _locDetected = true;
         _locValid = true;
         _dist = 0;
-        _pos = null;
       });
-      return;
+      // Tetap ambil posisi untuk tampil di peta
     }
 
     final status = await Permission.location.request();
@@ -428,6 +482,7 @@ class _AbsensiScreenState extends State<AbsensiScreen>
       barrierDismissible: false,
       builder: (_) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
         elevation: 16,
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -464,34 +519,43 @@ class _AbsensiScreenState extends State<AbsensiScreen>
               ClipRRect(
                 borderRadius: BorderRadius.circular(14),
                 child: SizedBox(
-                  height: 140,
-                  child: GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: _pos != null
-                          ? LatLng(_pos!.latitude, _pos!.longitude)
-                          : LatLng(LocationService.storeLat,
-                              LocationService.storeLng),
-                      zoom: 15,
-                    ),
-                    markers: {
-                      if (_pos != null)
-                        Marker(
-                          markerId: const MarkerId('user'),
-                          position: LatLng(_pos!.latitude, _pos!.longitude),
-                          infoWindow: const InfoWindow(title: 'Lokasi Anda'),
-                        ),
-                      Marker(
-                        markerId: const MarkerId('toko'),
-                        position: LatLng(
-                            LocationService.storeLat, LocationService.storeLng),
-                        infoWindow:
-                            InfoWindow(title: LocationService.storeName),
-                        icon: BitmapDescriptor.defaultMarkerWithHue(
-                            BitmapDescriptor.hueBlue),
+                  height: 160,
+                  child: FlutterMap(
+                    options: MapOptions(
+                      initialCenter: LatLng(
+                        _pos?.latitude ?? LocationService.storeLat,
+                        _pos?.longitude ?? LocationService.storeLng,
                       ),
-                    },
-                    zoomControlsEnabled: false,
-                    myLocationButtonEnabled: false,
+                      initialZoom: 15,
+                      interactionOptions: const InteractionOptions(
+                        flags: InteractiveFlag.none,
+                      ),
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.exotic.gaming',
+                      ),
+                      MarkerLayer(markers: [
+                        if (_pos != null)
+                          Marker(
+                            point: LatLng(_pos!.latitude, _pos!.longitude),
+                            width: 40,
+                            height: 40,
+                            child: const Icon(Icons.location_pin,
+                                color: Colors.red, size: 36),
+                          ),
+                        Marker(
+                          point: LatLng(LocationService.storeLat,
+                              LocationService.storeLng),
+                          width: 40,
+                          height: 40,
+                          child: const Icon(Icons.store_rounded,
+                              color: Color(0xFF5B8DEE), size: 32),
+                        ),
+                      ]),
+                    ],
                   ),
                 ),
               ),
@@ -777,7 +841,26 @@ class _AbsensiScreenState extends State<AbsensiScreen>
     );
   }
 
+  Widget _buildCamBg() {
+    if (_camCtrl != null && _camCtrl!.value.isInitialized) {
+      return CameraPreview(_camCtrl!);
+    }
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0d2137), Color(0xFF1a3a6e)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Center(
+          child: Icon(Icons.face_rounded, size: 80, color: Colors.white24)),
+    );
+  }
+
   Widget _buildScanWajah(Color typeColor) {
+    const double camAspect = 3 / 4;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -809,9 +892,8 @@ class _AbsensiScreenState extends State<AbsensiScreen>
           onTap: _toggleCamera,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: SizedBox(
-              height: 220,
-              width: double.infinity,
+            child: AspectRatio(
+              aspectRatio: camAspect,
               child: Stack(fit: StackFit.expand, children: [
                 _buildCamBg(),
                 if (_camActive)
@@ -944,22 +1026,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
     );
   }
 
-  Widget _buildCamBg() {
-    if (_camCtrl != null && _camCtrl!.value.isInitialized)
-      return CameraPreview(_camCtrl!);
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF0d2137), Color(0xFF1a3a6e)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: const Center(
-          child: Icon(Icons.face_rounded, size: 80, color: Colors.white24)),
-    );
-  }
-
   Widget _statusRow(
           {required IconData icon,
           required String label,
@@ -1001,7 +1067,7 @@ class _AbsensiScreenState extends State<AbsensiScreen>
           style: const TextStyle(
               fontWeight: FontWeight.w800, color: _kTextDark, fontSize: 13),
           decoration: InputDecoration(
-            hintText: 'Nama karyawan',
+            hintText: 'Nama otomatis dari scan wajah',
             hintStyle: TextStyle(
                 color: Colors.grey.shade400,
                 fontWeight: FontWeight.w600,
@@ -1143,30 +1209,41 @@ class _AbsensiScreenState extends State<AbsensiScreen>
             ),
           ]),
         ),
-        if (!_absenDimanaSaja && _locDetected && _pos != null) ...[
+        if (_locDetected && _pos != null) ...[
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: SizedBox(
-              height: 140,
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                    target: LatLng(_pos!.latitude, _pos!.longitude), zoom: 15),
-                markers: {
-                  Marker(
-                      markerId: const MarkerId('user'),
-                      position: LatLng(_pos!.latitude, _pos!.longitude),
-                      infoWindow: const InfoWindow(title: 'Lokasi Anda')),
-                  Marker(
-                      markerId: const MarkerId('toko'),
-                      position: LatLng(
+              height: 220,
+              child: FlutterMap(
+                options: MapOptions(
+                  initialCenter: LatLng(_pos!.latitude, _pos!.longitude),
+                  initialZoom: 16,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.exotic.gaming',
+                  ),
+                  MarkerLayer(markers: [
+                    Marker(
+                      point: LatLng(_pos!.latitude, _pos!.longitude),
+                      width: 40,
+                      height: 40,
+                      child: const Icon(Icons.location_pin,
+                          color: Colors.red, size: 36),
+                    ),
+                    Marker(
+                      point: LatLng(
                           LocationService.storeLat, LocationService.storeLng),
-                      infoWindow: InfoWindow(title: LocationService.storeName),
-                      icon: BitmapDescriptor.defaultMarkerWithHue(
-                          BitmapDescriptor.hueBlue)),
-                },
-                zoomControlsEnabled: false,
-                myLocationButtonEnabled: false,
+                      width: 40,
+                      height: 40,
+                      child: const Icon(Icons.store_rounded,
+                          color: Color(0xFF5B8DEE), size: 32),
+                    ),
+                  ]),
+                ],
               ),
             ),
           ),
@@ -1175,17 +1252,19 @@ class _AbsensiScreenState extends State<AbsensiScreen>
             Icon(_locValid ? Icons.check_circle_rounded : Icons.cancel_rounded,
                 color: _locValid ? _kGreen : _kRed, size: 16),
             const SizedBox(width: 6),
-            Text(
-                _locValid
-                    ? 'LOKASI TERVERIFIKASI'
-                    : 'ANDA TIDAK ADA DI LOKASI TOKO',
-                style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                    color: _locValid ? _kGreen : _kRed)),
+            Expanded(
+              child: Text(
+                  _locValid
+                      ? 'LOKASI TERVERIFIKASI'
+                      : 'TIDAK DI LOKASI TOKO (${_dist.toStringAsFixed(0)} m)',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                      color: _locValid ? _kGreen : _kRed)),
+            ),
           ]),
         ],
-        if (!_absenDimanaSaja && !_camActive) ...[
+        if (!_camActive) ...[
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
