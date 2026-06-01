@@ -13,10 +13,10 @@ import 'rekap_screen.dart';
 import 'profil_karyawan.dart';
 import 'registrasi_wajah_screen.dart';
 import 'stok_karyawan_screen.dart';
-// 👇 TAMBAHKAN IMPORT UNTUK KIRIM PENGUMUMAN
-import 'kirim_pengumuman.dart'; // sesuaikan path jika berbeda
+import 'kirim_pengumuman.dart';
+import 'kirim_pengumuman_karyawan.dart';
 
-// ── WARNA (disamakan dengan owner dashboard) ─────────────────────────────────
+// ── WARNA ────────────────────────────────────────────────────────────────
 const kBlue = Color(0xFF1A5EBF);
 const kBlueDark = Color(0xFF0F3B8C);
 const kBlueBg = Color(0xFF4A90D9);
@@ -30,7 +30,7 @@ const kRed = Color(0xFFE53935);
 const kOrange = Color(0xFFF5A623);
 const kBgLight = Color(0xFFF0F4FF);
 
-// ─── MODEL SHIFT ────────────────────────────────────────────────────────────
+// ─── MODEL SHIFT ────────────────────────────────────────────────────────
 class ShiftModel {
   final String nama;
   final String jamMulai;
@@ -50,7 +50,7 @@ class ShiftModel {
 
 enum StatusShift { selesai, berlangsung, akan }
 
-// ─── SCREEN ─────────────────────────────────────────────────────────────────
+// ─── SCREEN ────────────────────────────────────────────────────────────
 class KaryawanDashboardScreen extends StatefulWidget {
   const KaryawanDashboardScreen({super.key});
 
@@ -62,7 +62,7 @@ class KaryawanDashboardScreen extends StatefulWidget {
 class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     with TickerProviderStateMixin {
   int _selectedNav = 0;
-  int _notifCount = 2; // tidak digunakan untuk halaman announce, aman
+  int _unreadCount = 0; // ← ganti dari _notifCount
 
   User? _currentUser;
   Map<String, dynamic>? _userData;
@@ -133,6 +133,22 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     _scrollCtrl
         .addListener(() => setState(() => _scrollOffset = _scrollCtrl.offset));
     _loadUserData();
+    _listenToUnreadPengumuman(); // ← tambahkan ini
+  }
+
+  // Fungsi baru: mendengarkan jumlah pengumuman yang belum dibaca
+  void _listenToUnreadPengumuman() {
+    FirebaseFirestore.instance
+        .collection('pengumuman')
+        .where('dibaca', isEqualTo: 0)
+        .snapshots()
+        .listen((snapshot) {
+      if (mounted) {
+        setState(() {
+          _unreadCount = snapshot.docs.length;
+        });
+      }
+    });
   }
 
   Future<void> _loadUserData() async {
@@ -245,8 +261,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
             ],
           ),
           const KasirDataPage(kasirName: '', shift: ''),
-          // 👇 UBAH: dari NotifikasiKaryawanScreen menjadi KirimPengumumanScreen
-          const KirimPengumumanScreen(),
+          const KirimPengumumanKaryawanScreen(),
           const StokKaryawanScreen(),
           const RekapScreen(role: 'karyawan'),
         ],
@@ -307,7 +322,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
         const SizedBox(width: 6),
         _headerIconBtn(
           Icons.notifications_outlined,
-          badge: _notifCount,
+          badge: _unreadCount, // ← pakai _unreadCount
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const NotifikasiKaryawanScreen()),
@@ -829,7 +844,6 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
               _navItem(0, Icons.home_outlined, Icons.home, 'HOME'),
               _navItem(1, Icons.point_of_sale_outlined, Icons.point_of_sale,
                   'KASIR'),
-              // ANNOUNCE tetap label, tetapi sekarang menuju KirimPengumumanScreen
               _navItem(
                   2, Icons.chat_bubble_outline, Icons.chat_bubble, 'ANNOUNCE'),
               _navItem(3, Icons.menu_outlined, Icons.menu, 'STOK'),

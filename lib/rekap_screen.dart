@@ -54,56 +54,9 @@ class _RekapScreenState extends State<RekapScreen>
       _headerExpanded -
       (_headerExpanded - _headerCollapsed) * _collapseProgress;
 
-  final List<Map<String, dynamic>> _karyawanDummy = const [
-    {
-      'nama': 'Freya Fauna',
-      'jabatan': 'Kasir',
-      'hadir': 22,
-      'izin': 1,
-      'sakit': 0,
-      'alpha': 0
-    },
-    {
-      'nama': 'Zaki Ramadan',
-      'jabatan': 'Barista',
-      'hadir': 20,
-      'izin': 0,
-      'sakit': 1,
-      'alpha': 1
-    },
-    {
-      'nama': 'Anna Kusuma',
-      'jabatan': 'Pelayan',
-      'hadir': 21,
-      'izin': 1,
-      'sakit': 0,
-      'alpha': 0
-    },
-    {
-      'nama': 'Ridwan Saputra',
-      'jabatan': 'Operator',
-      'hadir': 19,
-      'izin': 0,
-      'sakit': 0,
-      'alpha': 2
-    },
-    {
-      'nama': 'Mingyu Park',
-      'jabatan': 'Kasir',
-      'hadir': 22,
-      'izin': 0,
-      'sakit': 0,
-      'alpha': 0
-    },
-    {
-      'nama': 'Annsa Kuat',
-      'jabatan': 'Barista',
-      'hadir': 20,
-      'izin': 0,
-      'sakit': 1,
-      'alpha': 1
-    },
-  ];
+  List<Map<String, dynamic>> _kehadiranKaryawan = [];
+  bool _loadingKehadiran = true;
+  String? _kehadiranError;
 
   PeriodeFilter _periodeFilter = PeriodeFilter.none;
   int _totalOmzet = 0;
@@ -118,6 +71,7 @@ class _RekapScreenState extends State<RekapScreen>
     _scrollCtrl
         .addListener(() => setState(() => _scrollOffset = _scrollCtrl.offset));
     _loadPendapatan();
+    _loadKehadiran();
   }
 
   @override
@@ -127,28 +81,37 @@ class _RekapScreenState extends State<RekapScreen>
     super.dispose();
   }
 
-  void _prevBulan() => setState(() {
-        if (_bulan == 1) {
-          _bulan = 12;
-          _tahun--;
-        } else
-          _bulan--;
-        _detailKarUid = null;
-        _periodeFilter = PeriodeFilter.none;
-        _loadPendapatan();
-      });
-  void _nextBulan() => setState(() {
-        final now = DateTime.now();
-        if (_tahun == now.year && _bulan == now.month) return;
-        if (_bulan == 12) {
-          _bulan = 1;
-          _tahun++;
-        } else
-          _bulan++;
-        _detailKarUid = null;
-        _periodeFilter = PeriodeFilter.none;
-        _loadPendapatan();
-      });
+  void _prevBulan() {
+    setState(() {
+      if (_bulan == 1) {
+        _bulan = 12;
+        _tahun--;
+      } else {
+        _bulan--;
+      }
+      _detailKarUid = null;
+      _periodeFilter = PeriodeFilter.none;
+    });
+    _loadPendapatan();
+    _loadKehadiran();
+  }
+
+  void _nextBulan() {
+    final now = DateTime.now();
+    if (_tahun == now.year && _bulan == now.month) return;
+    setState(() {
+      if (_bulan == 12) {
+        _bulan = 1;
+        _tahun++;
+      } else {
+        _bulan++;
+      }
+      _detailKarUid = null;
+      _periodeFilter = PeriodeFilter.none;
+    });
+    _loadPendapatan();
+    _loadKehadiran();
+  }
 
   String _fmtRp(int v) {
     if (v >= 1000000) return 'Rp ${(v / 1000000).toStringAsFixed(1)}jt';
@@ -216,6 +179,101 @@ class _RekapScreenState extends State<RekapScreen>
     return '${_namaBulan[_bulan]} $_tahun';
   }
 
+  // ==================== LOAD REKAP KEHADIRAN REAL (FINAL FIX) ====================
+  Future<void> _loadKehadiran() async {
+    setState(() {
+      _loadingKehadiran = true;
+      _kehadiranError = null;
+    });
+    try {
+      // Ambil semua user (karyawan)
+      final userSnap =
+          await FirebaseFirestore.instance.collection('users').get();
+      List<Map<String, dynamic>> karyawanList = [];
+      for (var doc in userSnap.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final role = data['role'] as String? ?? '';
+        if (role == 'karyawan' || (role != 'owner' && role != 'admin')) {
+          karyawanList.add({
+            'uid': doc.id,
+            'nama': data['nama'] as String? ??
+                data['username'] as String? ??
+                'Tanpa Nama',
+            'jabatan': data['jabatan'] as String? ?? 'Staff',
+          });
+        }
+      }
+
+      if (karyawanList.isEmpty) {
+        setState(() {
+          _kehadiranKaryawan = [];
+          _loadingKehadiran = false;
+        });
+        return;
+      }
+
+      final startDate = DateTime(_tahun, _bulan, 1);
+      final endDate = DateTime(_tahun, _bulan + 1, 0);
+      final totalHariKerja = endDate.day;
+
+      final absensiSnap = await FirebaseFirestore.instance
+          .collection('absensi')
+          .where('tanggal', isGreaterThanOrEqualTo: startDate)
+          .where('tanggal', isLessThanOrEqualTo: endDate)
+          .get();
+
+      final Map<String, List<QueryDocumentSnapshot>> absensiByUser = {};
+      for (var doc in absensiSnap.docs) {
+        final dataAbs = doc.data() as Map<String, dynamic>;
+        final userId = dataAbs['userId'] as String?;
+        if (userId != null && userId.isNotEmpty) {
+          absensiByUser.putIfAbsent(userId, () => []).add(doc);
+        }
+      }
+
+      final List<Map<String, dynamic>> results = [];
+      for (var karyawan in karyawanList) {
+        final uid = karyawan['uid'] as String;
+        final absensiList = absensiByUser[uid] ?? [];
+        int hadir = 0;
+        int izin = 0;
+        int sakit = 0;
+
+        for (var abs in absensiList) {
+          final dataAbs = abs.data() as Map<String, dynamic>;
+          final keterangan = dataAbs['keterangan'] as String?;
+          if (keterangan == 'izin') {
+            izin++;
+          } else if (keterangan == 'sakit') {
+            sakit++;
+          } else {
+            hadir++;
+          }
+        }
+        final alpha = totalHariKerja - (hadir + izin + sakit);
+        results.add({
+          'nama': karyawan['nama'],
+          'jabatan': karyawan['jabatan'],
+          'hadir': hadir,
+          'izin': izin,
+          'sakit': sakit,
+          'alpha': alpha > 0 ? alpha : 0,
+        });
+      }
+
+      setState(() {
+        _kehadiranKaryawan = results;
+        _loadingKehadiran = false;
+      });
+    } catch (e) {
+      setState(() {
+        _kehadiranError = e.toString();
+        _loadingKehadiran = false;
+      });
+    }
+  }
+
+  // ==================== UI ====================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -229,7 +287,7 @@ class _RekapScreenState extends State<RekapScreen>
             child: TabBarView(
               controller: _tabCtrl,
               children: [
-                _buildKehadiranDummy(),
+                _buildKehadiranReal(),
                 _buildPendapatan(),
               ],
             ),
@@ -405,7 +463,48 @@ class _RekapScreenState extends State<RekapScreen>
     );
   }
 
-  Widget _buildKehadiranDummy() {
+  Widget _buildKehadiranReal() {
+    if (_loadingKehadiran) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_kehadiranError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error, color: kRed),
+            const SizedBox(height: 8),
+            Text(_kehadiranError!),
+            ElevatedButton(
+                onPressed: _loadKehadiran, child: const Text('Refresh')),
+          ],
+        ),
+      );
+    }
+    if (_kehadiranKaryawan.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.people_outline, size: 64, color: Colors.black26),
+            const SizedBox(height: 16),
+            Text('Tidak ada data karyawan',
+                style: GoogleFonts.lato(fontSize: 14, color: Colors.black38)),
+          ],
+        ),
+      );
+    }
+
+    int totalHadir = 0;
+    int totalHariKerja = 0;
+    for (var k in _kehadiranKaryawan) {
+      totalHadir += k['hadir'] as int;
+      totalHariKerja +=
+          (k['hadir'] + k['izin'] + k['sakit'] + k['alpha']) as int;
+    }
+    final persentase =
+        totalHariKerja > 0 ? (totalHadir / totalHariKerja * 100) : 0;
+
     return SingleChildScrollView(
       controller: _scrollCtrl,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -414,14 +513,15 @@ class _RekapScreenState extends State<RekapScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-                color: kWhite,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2))
-                ]),
+              color: kWhite,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2))
+              ],
+            ),
             child: Column(
               children: [
                 Text('Tingkat Kehadiran Bulan Ini',
@@ -430,30 +530,37 @@ class _RekapScreenState extends State<RekapScreen>
                         fontSize: 13,
                         fontWeight: FontWeight.w800)),
                 const SizedBox(height: 12),
-                Row(children: [
-                  Text('92.5%',
-                      style: GoogleFonts.lato(
-                          color: kGreen,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w800,
-                          height: 1)),
-                  const SizedBox(width: 14),
-                  Expanded(
-                      child: Column(children: [
-                    Text('124 dari 134 hari kerja',
+                Row(
+                  children: [
+                    Text('${persentase.toStringAsFixed(1)}%',
                         style: GoogleFonts.lato(
-                            color: Colors.black45, fontSize: 12)),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(
-                            value: 0.925,
-                            minHeight: 8,
-                            backgroundColor: const Color(0xFFE2E8F0),
-                            valueColor:
-                                const AlwaysStoppedAnimation<Color>(kGreen))),
-                  ])),
-                ]),
+                            color: kGreen,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            height: 1)),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text('$totalHadir dari $totalHariKerja hari kerja',
+                              style: GoogleFonts.lato(
+                                  color: Colors.black45, fontSize: 12)),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: persentase / 100,
+                              minHeight: 8,
+                              backgroundColor: const Color(0xFFE2E8F0),
+                              valueColor:
+                                  const AlwaysStoppedAnimation<Color>(kGreen),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 10),
                 Wrap(spacing: 12, runSpacing: 4, children: [
                   _buildLegenda('Hadir', kGreen),
@@ -470,126 +577,145 @@ class _RekapScreenState extends State<RekapScreen>
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
                 color: kBlue, borderRadius: BorderRadius.circular(12)),
-            child: Row(children: const [
-              SizedBox(width: 44),
-              SizedBox(width: 8),
-              Expanded(
-                  child: Text('Nama',
-                      style: TextStyle(
-                          color: kWhiteDim,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800))),
-              SizedBox(
-                  width: 52,
-                  child: Text('Hadir',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: kGreen,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800))),
-              SizedBox(
-                  width: 36,
-                  child: Text('Alpha',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: kRed,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800))),
-              SizedBox(
-                  width: 36,
-                  child: Text('Izin',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: kOrange,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800))),
-              SizedBox(
-                  width: 36,
-                  child: Text('Sakit',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: kPurple,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800))),
-            ]),
+            child: Row(
+              children: const [
+                SizedBox(width: 44),
+                SizedBox(width: 8),
+                Expanded(
+                    child: Text('Nama',
+                        style: TextStyle(
+                            color: kWhiteDim,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800))),
+                SizedBox(
+                    width: 52,
+                    child: Text('Hadir',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Colors.green,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800))),
+                SizedBox(
+                    width: 36,
+                    child: Text('Alpha',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Colors.red,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800))),
+                SizedBox(
+                    width: 36,
+                    child: Text('Izin',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800))),
+                SizedBox(
+                    width: 36,
+                    child: Text('Sakit',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Colors.purple,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800))),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
-          ..._karyawanDummy.map((k) => Padding(
+          ..._kehadiranKaryawan.map((k) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                      color: kWhite,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2))
-                      ]),
-                  child: Row(children: [
-                    Container(
+                    color: kWhite,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2))
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                            color: kBlue.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: kBlue.withOpacity(0.3))),
+                          color: kBlue.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: kBlue.withOpacity(0.3)),
+                        ),
                         child: Center(
-                            child: Text(k['nama'][0].toUpperCase(),
-                                style: GoogleFonts.lato(
-                                    color: kBlue,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800)))),
-                    const SizedBox(width: 8),
-                    Expanded(
+                          child: Text((k['nama'] as String)[0].toUpperCase(),
+                              style: GoogleFonts.lato(
+                                  color: kBlue,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
                         child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                          Text(k['nama'],
-                              style: GoogleFonts.lato(
-                                  color: kTextDark,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700)),
-                          Text(k['jabatan'],
-                              style: GoogleFonts.lato(
-                                  color: Colors.black45, fontSize: 11)),
-                        ])),
-                    SizedBox(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(k['nama'] as String,
+                                style: GoogleFonts.lato(
+                                    color: kTextDark,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700)),
+                            Text(k['jabatan'] as String,
+                                style: GoogleFonts.lato(
+                                    color: Colors.black45, fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
                         width: 52,
                         child: Text('${k['hadir']} hari',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.lato(
                                 color: kGreen,
                                 fontSize: 13,
-                                fontWeight: FontWeight.w800))),
-                    SizedBox(
+                                fontWeight: FontWeight.w800)),
+                      ),
+                      SizedBox(
                         width: 36,
                         child: Text('${k['alpha']}',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.lato(
-                                color: k['alpha'] > 0 ? kRed : Colors.black45,
+                                color: (k['alpha'] as int) > 0
+                                    ? kRed
+                                    : Colors.black45,
                                 fontSize: 13,
-                                fontWeight: FontWeight.w700))),
-                    SizedBox(
+                                fontWeight: FontWeight.w700)),
+                      ),
+                      SizedBox(
                         width: 36,
                         child: Text('${k['izin']}',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.lato(
-                                color: k['izin'] > 0 ? kOrange : Colors.black45,
+                                color: (k['izin'] as int) > 0
+                                    ? kOrange
+                                    : Colors.black45,
                                 fontSize: 13,
-                                fontWeight: FontWeight.w700))),
-                    SizedBox(
+                                fontWeight: FontWeight.w700)),
+                      ),
+                      SizedBox(
                         width: 36,
                         child: Text('${k['sakit']}',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.lato(
-                                color:
-                                    k['sakit'] > 0 ? kPurple : Colors.black45,
+                                color: (k['sakit'] as int) > 0
+                                    ? kPurple
+                                    : Colors.black45,
                                 fontSize: 13,
-                                fontWeight: FontWeight.w700))),
-                  ]),
+                                fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
                 ),
               )),
         ],
@@ -702,10 +828,9 @@ class _RekapScreenState extends State<RekapScreen>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [kBlue, kBlueDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+            colors: [kBlue, kBlueDark],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -717,26 +842,20 @@ class _RekapScreenState extends State<RekapScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _getPeriodeLabel(),
-            style: GoogleFonts.lato(
-                fontSize: 13, color: kWhiteDim, fontWeight: FontWeight.w700),
-          ),
+          Text(_getPeriodeLabel(),
+              style: GoogleFonts.lato(
+                  fontSize: 13, color: kWhiteDim, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          Text(
-            _fmtRp(_totalOmzet),
-            style: GoogleFonts.lato(
-                fontSize: 32, fontWeight: FontWeight.w900, color: kWhite),
-          ),
+          Text(_fmtRp(_totalOmzet),
+              style: GoogleFonts.lato(
+                  fontSize: 32, fontWeight: FontWeight.w900, color: kWhite)),
           const SizedBox(height: 6),
           Row(
             children: [
               Icon(Icons.receipt_rounded, size: 16, color: kWhiteDim),
               const SizedBox(width: 4),
-              Text(
-                '$_totalTransaksi transaksi',
-                style: GoogleFonts.lato(fontSize: 12, color: kWhiteDim),
-              ),
+              Text('$_totalTransaksi transaksi',
+                  style: GoogleFonts.lato(fontSize: 12, color: kWhiteDim)),
             ],
           ),
         ],
@@ -760,11 +879,9 @@ class _RekapScreenState extends State<RekapScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Info',
-            style: GoogleFonts.lato(
-                fontSize: 14, fontWeight: FontWeight.w800, color: kTextDark),
-          ),
+          Text('Info',
+              style: GoogleFonts.lato(
+                  fontSize: 14, fontWeight: FontWeight.w800, color: kTextDark)),
           const SizedBox(height: 8),
           Text(
             'Data pendapatan hanya dari transaksi yang shift-nya sudah diakhiri (closed). Gunakan filter di atas untuk melihat periode tertentu.',
