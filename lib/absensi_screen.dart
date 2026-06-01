@@ -80,7 +80,7 @@ class _AbsensiScreenState extends State<AbsensiScreen>
   bool _faceDetected = false;
   bool _locDetected = false;
   bool _locValid = false;
-  bool _absenDimanaSaja = false; // dikontrol dari Firestore oleh owner
+  bool _absenDimanaSaja = false;
   Position? _pos;
   double _dist = 0;
 
@@ -96,7 +96,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
 
     _faceNet.loadModel();
     _loadKaryawanData();
-    _loadNamaUser();
     _loadBebasLokasi();
 
     _scanAnim =
@@ -119,27 +118,6 @@ class _AbsensiScreenState extends State<AbsensiScreen>
     );
 
     _initCameraSafe();
-  }
-
-  // Ambil nama dari Firestore users/{uid} field 'nama'
-  Future<void> _loadNamaUser() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      if (doc.exists && mounted) {
-        final nama = doc.data()?['nama'] ?? '';
-        if ((nama as String).isNotEmpty) {
-          setState(() => _namaCtrl.text = nama);
-          debugPrint('✅ Nama user: $nama');
-        }
-      }
-    } catch (e) {
-      debugPrint('❌ Error ambil nama user: $e');
-    }
   }
 
   // Ambil setting bebasLokasi dari Firestore (diset oleh owner)
@@ -321,28 +299,39 @@ class _AbsensiScreenState extends State<AbsensiScreen>
 
         if (bestScore < 0.6 && matched != null && mounted) {
           final matchedUid = matched!['uid'] as String?;
-          setState(() {
-            _faceDetected = true;
-            _matchedKaryawanId = matchedUid;
-          });
-          // Ambil nama dari users/{uid} karena karyawan tidak punya field nama
-          if (matchedUid != null) {
+
+          // Ambil nama langsung dari data karyawan (namaKaryawan),
+          // fallback ke field 'nama', lalu query users/{uid} kalau masih kosong
+          String namaKaryawan =
+              (matched!['namaKaryawan'] ?? matched!['nama'] ?? '')
+                  .toString()
+                  .trim();
+
+          if (namaKaryawan.isEmpty && matchedUid != null) {
             try {
               final userDoc = await FirebaseFirestore.instance
                   .collection('users')
                   .doc(matchedUid)
                   .get();
-              if (userDoc.exists && mounted) {
-                final nama = userDoc.data()?['nama'] ?? '';
-                if ((nama as String).isNotEmpty) {
-                  setState(() => _namaCtrl.text = nama);
-                }
+              if (userDoc.exists) {
+                namaKaryawan =
+                    (userDoc.data()?['nama'] ?? '').toString().trim();
               }
             } catch (e) {
-              debugPrint('❌ Error ambil nama: $e');
+              debugPrint('❌ Error ambil nama fallback: $e');
             }
           }
-          debugPrint('✅ Wajah cocok: ${_namaCtrl.text} (score: $bestScore)');
+
+          if (mounted) {
+            setState(() {
+              _faceDetected = true;
+              _matchedKaryawanId = matchedUid;
+              if (namaKaryawan.isNotEmpty) _namaCtrl.text = namaKaryawan;
+            });
+          }
+
+          debugPrint(
+              '✅ Wajah cocok: $namaKaryawan (uid: $matchedUid, score: $bestScore)');
         } else if (mounted) {
           debugPrint(
               '❌ Wajah tidak cocok. Best score: $bestScore (threshold: 0.6)');
@@ -395,14 +384,12 @@ class _AbsensiScreenState extends State<AbsensiScreen>
 
   // ─── Lokasi ───────────────────────────────────────────────────────────────
   Future<void> _deteksiLokasi() async {
-    // Selalu deteksi lokasi untuk tampilkan peta, meskipun mode bebas lokasi
     if (_absenDimanaSaja) {
       setState(() {
         _locDetected = true;
         _locValid = true;
         _dist = 0;
       });
-      // Tetap ambil posisi untuk tampil di peta
     }
 
     final status = await Permission.location.request();
@@ -1327,3 +1314,15 @@ class _AbsensiScreenState extends State<AbsensiScreen>
                 fontSize: 10, fontWeight: FontWeight.w800, color: color)),
       );
 }
+
+Widget _badge(String text, Color color) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.13),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Text(text,
+          style: TextStyle(
+              fontSize: 10, fontWeight: FontWeight.w800, color: color)),
+    );

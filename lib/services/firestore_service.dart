@@ -8,15 +8,33 @@ class FirestoreService {
   Future<bool> saveEmbedding({
     required String uid,
     required List<double> embedding,
+    String? nama, // ← TAMBAHAN: simpan nama pemilik wajah
   }) async {
     try {
+      final Map<String, dynamic> data = {
+        'faceEmbedding': embedding,
+        'faceRegisteredAt': FieldValue.serverTimestamp(),
+      };
+
+      // Simpan nama ke karyawan/{uid} jika ada
+      if (nama != null && nama.isNotEmpty) {
+        data['namaKaryawan'] = nama;
+      }
+
       await _db.collection('karyawan').doc(uid).set(
-        {
-          'faceEmbedding': embedding,
-          'faceRegisteredAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true), // ✅ merge supaya tidak overwrite data lain
-      );
+            data,
+            SetOptions(merge: true),
+          );
+
+      // Sinkron nama ke users/{uid} juga supaya konsisten
+      if (nama != null && nama.isNotEmpty) {
+        await _db.collection('users').doc(uid).set(
+          {'nama': nama},
+          SetOptions(merge: true),
+        );
+      }
+
+      print('✅ saveEmbedding sukses — uid: $uid, nama: $nama');
       return true;
     } catch (e) {
       print('❌ Gagal simpan embedding: $e');
@@ -70,7 +88,7 @@ class FirestoreService {
   // ─── Simpan absensi ───────────────────────────────────────────────────────
   Future<bool> saveAbsensi({
     required String uid,
-    required String type, // 'masuk' atau 'pulang'
+    required String type,
     required String jam,
     double? lat,
     double? lng,
@@ -160,7 +178,6 @@ class FirestoreService {
   // ─── NOTIFICATION METHODS ──────────────────────────────────────────────────
   // ───────────────────────────────────────────────────────────────────────────
 
-  // ─── Buat notifikasi untuk semua karyawan ──────────────────────────────────
   Future<bool> createNotificationForAllEmployees({
     required String judul,
     required String deskripsi,
@@ -170,18 +187,16 @@ class FirestoreService {
     required String idPengumuman,
   }) async {
     try {
-      // Ambil semua karyawan
       final karyawanSnapshot = await _db.collection('karyawan').get();
-
-      // Buat batch untuk efisiensi
       final batch = _db.batch();
 
       for (var doc in karyawanSnapshot.docs) {
         final karyawanId = doc.id;
-
-        // Referensi collection notifikasi di bawah user karyawan
-        final notifRef =
-            _db.collection('karyawan').doc(karyawanId).collection('notifikasi').doc();
+        final notifRef = _db
+            .collection('karyawan')
+            .doc(karyawanId)
+            .collection('notifikasi')
+            .doc();
 
         batch.set(notifRef, {
           'judul': judul,
@@ -204,7 +219,6 @@ class FirestoreService {
     }
   }
 
-  // ─── Ambil notifikasi user dengan stream (real-time) ──────────────────────
   Stream<List<NotificationModel>> getNotificationsStream(String uid) {
     try {
       return _db
@@ -214,17 +228,16 @@ class FirestoreService {
           .orderBy('timestamp', descending: true)
           .snapshots()
           .map((snapshot) {
-            return snapshot.docs
-                .map((doc) => NotificationModel.fromMap(doc.data(), doc.id))
-                .toList();
-          });
+        return snapshot.docs
+            .map((doc) => NotificationModel.fromMap(doc.data(), doc.id))
+            .toList();
+      });
     } catch (e) {
       print('❌ Error listening notifikasi: $e');
       return Stream.value([]);
     }
   }
 
-  // ─── Ambil notifikasi user (satu kali) ─────────────────────────────────────
   Future<List<NotificationModel>> getNotifications(String uid) async {
     try {
       final snapshot = await _db
@@ -243,7 +256,6 @@ class FirestoreService {
     }
   }
 
-  // ─── Mark notifikasi sebagai sudah dibaca ──────────────────────────────────
   Future<bool> markNotificationAsRead(String uid, String notifId) async {
     try {
       await _db
@@ -259,7 +271,6 @@ class FirestoreService {
     }
   }
 
-  // ─── Hapus notifikasi ──────────────────────────────────────────────────────
   Future<bool> deleteNotification(String uid, String notifId) async {
     try {
       await _db
@@ -275,17 +286,17 @@ class FirestoreService {
     }
   }
 
-  // ─── Hapus semua notifikasi user ───────────────────────────────────────────
   Future<bool> deleteAllNotifications(String uid) async {
     try {
-      final snapshot =
-          await _db.collection('karyawan').doc(uid).collection('notifikasi').get();
+      final snapshot = await _db
+          .collection('karyawan')
+          .doc(uid)
+          .collection('notifikasi')
+          .get();
       final batch = _db.batch();
-
       for (var doc in snapshot.docs) {
         batch.delete(doc.reference);
       }
-
       await batch.commit();
       return true;
     } catch (e) {
@@ -294,9 +305,7 @@ class FirestoreService {
     }
   }
 
-  // ─── Helper untuk konversi enum ────────────────────────────────────────────
   String _notificationTypeToString(NotificationType type) {
     return type.toString().split('.').last;
   }
 }
-
