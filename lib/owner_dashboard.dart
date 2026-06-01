@@ -10,7 +10,8 @@ import 'profil_owner.dart';
 import 'rekap_owner.dart';
 import 'kirim_pengumuman.dart';
 import 'login.dart';
-import 'owner_absensi_hari_ini.dart';
+import 'rekap_screen.dart';
+import 'stok_karyawan_screen.dart';
 
 const kBlue = Color(0xFF1A5EBF);
 const kBlueBg = Color(0xFF4A90D9);
@@ -46,6 +47,11 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
   static const double _headerCollapsed = 60.0;
   static const double _collapseAt = 70.0;
 
+  // Data mingguan
+  List<double> _weeklyValues = [0, 0, 0, 0, 0, 0, 0];
+  int _weeklyTotal = 0;
+  bool _loadingWeekly = true;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +65,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
       () => setState(() => _scrollOffset = _scrollCtrl.offset),
     );
     _loadUserData();
+    _loadWeeklyData();
   }
 
   Future<void> _loadUserData() async {
@@ -131,6 +138,61 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     if (_userData != null)
       return (_userData!['role'] ?? 'owner').toString().toUpperCase();
     return 'OWNER';
+  }
+
+  Future<void> _loadWeeklyData() async {
+    setState(() => _loadingWeekly = true);
+    try {
+      // Ambil semua transaksi dengan isClosed == true
+      final snap = await FirebaseFirestore.instance
+          .collection('transaksi')
+          .where('isClosed', isEqualTo: true)
+          .get();
+
+      final now = DateTime.now();
+      // Hitung awal minggu (Senin) dan akhir minggu (Minggu)
+      final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+      final startOfWeekMidnight =
+          DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+      final endOfWeek = startOfWeek.add(const Duration(days: 7));
+      final endOfWeekMidnight =
+          DateTime(endOfWeek.year, endOfWeek.month, endOfWeek.day);
+
+      List<double> daily = List.filled(7, 0.0);
+      int total = 0;
+
+      for (var doc in snap.docs) {
+        final ts = doc['timestamp'] as Timestamp?;
+        if (ts == null) continue;
+        final tgl = ts.toDate();
+        // Filter manual berdasarkan rentang minggu
+        if (tgl.isAfter(startOfWeekMidnight) &&
+            tgl.isBefore(endOfWeekMidnight)) {
+          final dayIndex = tgl.weekday - 1; // Monday = 1 -> index 0
+          if (dayIndex >= 0 && dayIndex < 7) {
+            final harga = doc['harga'];
+            final nominal = harga is int
+                ? harga.toDouble()
+                : (harga is double ? harga : (harga as num).toDouble());
+            daily[dayIndex] += nominal;
+            total += nominal.toInt();
+          }
+        }
+      }
+      setState(() {
+        _weeklyValues = daily;
+        _weeklyTotal = total;
+        _loadingWeekly = false;
+      });
+    } catch (e) {
+      print('Error loading weekly data: $e');
+      setState(() {
+        _weeklyValues = [0, 0, 0, 0, 0, 0, 0];
+        _weeklyTotal = 0;
+        _loadingWeekly = false;
+      });
+      _showSnackbar('Gagal memuat data mingguan: $e', kRed);
+    }
   }
 
   @override
@@ -425,59 +487,202 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     return '${days[now.weekday - 1]} ${now.day} ${months[now.month - 1]} ${now.year}';
   }
 
+  // ==================== STAT CARDS ====================
   Widget _buildStatCards() {
     return Column(
       children: [
         Row(
           children: [
-            Expanded(
-                child: _statCard(
-                    emoji: '💰',
-                    value: 'Rp 3,4 jt',
-                    label: 'PENDAPATAN HARI INI',
-                    badge: '+5',
-                    badgeColor: kGreen)),
+            Expanded(child: _buildPendapatanHariIniCard()),
             const SizedBox(width: 12),
-            Expanded(
-                child: _statCard(
-                    icon: Icons.add,
-                    value: '40',
-                    label: 'TOTAL TRANSAKSI',
-                    badge: '+5',
-                    badgeColor: kGreen)),
+            Expanded(child: _buildTotalTransaksiCard()),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(
-                child: _statCard(
-                    emoji: '🤖',
-                    value: '11/13',
-                    label: 'KARYAWAN HADIR',
-                    badge: '2 ABSEN',
-                    badgeColor: kRed)),
+            Expanded(child: _buildJumlahKaryawanCard()),
             const SizedBox(width: 12),
-            Expanded(
-                child: _statCard(
-                    emoji: '📦',
-                    value: '5 item',
-                    label: 'STOK KRITIS',
-                    badge: '3 HABIS',
-                    badgeColor: kRed)),
+            Expanded(child: _buildStokKritisCard()),
           ],
         ),
       ],
     );
   }
 
-  Widget _statCard(
-      {String? emoji,
-      IconData? icon,
-      required String value,
-      required String label,
-      required String badge,
-      required Color badgeColor}) {
+  Widget _buildPendapatanHariIniCard() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('transaksi')
+          .where('isClosed', isEqualTo: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return _statCardSkeleton(
+            emoji: '💰',
+            value: '...',
+            label: 'PENDAPATAN HARI INI',
+            badge: '+0',
+            badgeColor: kGreen,
+          );
+        }
+        final now = DateTime.now();
+        final startHari = DateTime(now.year, now.month, now.day);
+        final endHari = startHari.add(const Duration(days: 1));
+        int total = 0;
+        for (var doc in snapshot.data!.docs) {
+          final timestamp = doc['timestamp'] as Timestamp?;
+          if (timestamp == null) continue;
+          final tgl = timestamp.toDate();
+          if (tgl.isAfter(startHari) && tgl.isBefore(endHari)) {
+            final harga = doc['harga'];
+            final int nominal;
+            if (harga is int) {
+              nominal = harga;
+            } else if (harga is double) {
+              nominal = harga.toInt();
+            } else if (harga is num) {
+              nominal = harga.toInt();
+            } else {
+              nominal = 0;
+            }
+            total += nominal;
+          }
+        }
+        final value = total >= 1000000
+            ? 'Rp ${(total / 1000000).toStringAsFixed(1)}jt'
+            : total >= 1000
+                ? 'Rp ${(total / 1000).toStringAsFixed(0)}rb'
+                : 'Rp $total';
+        return _statCard(
+          emoji: '💰',
+          value: value,
+          label: 'PENDAPATAN HARI INI',
+          badge: '+${(total / 1000).toStringAsFixed(0)}rb',
+          badgeColor: kGreen,
+          onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const RekapScreen(role: 'owner'))),
+        );
+      },
+    );
+  }
+
+  Widget _buildTotalTransaksiCard() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('transaksi')
+          .where('isClosed', isEqualTo: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return _statCardSkeleton(
+            icon: Icons.receipt,
+            value: '...',
+            label: 'TOTAL TRANSAKSI',
+            badge: '+0',
+            badgeColor: kGreen,
+          );
+        }
+        final now = DateTime.now();
+        final startHari = DateTime(now.year, now.month, now.day);
+        final endHari = startHari.add(const Duration(days: 1));
+        int count = 0;
+        for (var doc in snapshot.data!.docs) {
+          final timestamp = doc['timestamp'] as Timestamp?;
+          if (timestamp == null) continue;
+          final tgl = timestamp.toDate();
+          if (tgl.isAfter(startHari) && tgl.isBefore(endHari)) {
+            count++;
+          }
+        }
+        return _statCard(
+          icon: Icons.receipt,
+          value: '$count',
+          label: 'TOTAL TRANSAKSI',
+          badge: '+$count',
+          badgeColor: kGreen,
+          onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const RekapScreen(role: 'owner'))),
+        );
+      },
+    );
+  }
+
+  Widget _buildJumlahKaryawanCard() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'karyawan')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return _statCardSkeleton(
+            emoji: '👥',
+            value: '...',
+            label: 'KARYAWAN',
+            badge: '',
+            badgeColor: kGreen,
+          );
+        }
+        final total = snapshot.data!.docs.length;
+        return _statCard(
+          emoji: '👥',
+          value: '$total',
+          label: 'KARYAWAN',
+          badge: 'AKTIF',
+          badgeColor: kGreen,
+          onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const OwnerKaryawanScreen())),
+        );
+      },
+    );
+  }
+
+  Widget _buildStokKritisCard() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('barang').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return _statCardSkeleton(
+            emoji: '⚠️',
+            value: '...',
+            label: 'STOK KRITIS',
+            badge: 'CEK',
+            badgeColor: kRed,
+          );
+        }
+        int kritis = 0;
+        int habis = 0;
+        for (var doc in snapshot.data!.docs) {
+          final qty = doc['qty'] as int? ?? 0;
+          if (qty <= 5 && qty > 0) kritis++;
+          if (qty == 0) habis++;
+        }
+        return _statCard(
+          emoji: '⚠️',
+          value: '$kritis item',
+          label: 'STOK KRITIS',
+          badge: 'HABIS $habis',
+          badgeColor: kRed,
+          onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const StokKaryawanScreen())),
+        );
+      },
+    );
+  }
+
+  Widget _statCardSkeleton({
+    String? emoji,
+    IconData? icon,
+    required String value,
+    required String label,
+    required String badge,
+    required Color badgeColor,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -533,7 +738,82 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
+  Widget _statCard(
+      {String? emoji,
+      IconData? icon,
+      required String value,
+      required String label,
+      required String badge,
+      required Color badgeColor,
+      VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            color: kWhite,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3))
+            ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                emoji != null
+                    ? Text(emoji, style: const TextStyle(fontSize: 28))
+                    : Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                            color: kBlue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10)),
+                        child: Icon(icon, color: kBlue, size: 22)),
+                Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                        color: badgeColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Text(badge,
+                        style: GoogleFonts.lato(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: badgeColor))),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(value,
+                style: GoogleFonts.lato(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: kTextDark)),
+            const SizedBox(height: 4),
+            Text(label,
+                style: GoogleFonts.lato(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black38,
+                    letterSpacing: 0.5)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==================== SECTION PENDAPATAN MINGGU INI (REAL DATA) ====================
   Widget _buildChartSection() {
+    if (_loadingWeekly) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Column(
       children: [
         Row(
@@ -552,7 +832,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
               ],
             ),
             GestureDetector(
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const RekapScreen(role: 'owner')));
+              },
               child: Row(children: [
                 Text('DETAIL',
                     style: GoogleFonts.lato(
@@ -586,7 +871,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
                   style: GoogleFonts.lato(
                       fontSize: 11, color: kWhiteDim, letterSpacing: 1)),
               const SizedBox(height: 4),
-              Text('Rp 18,7 jt',
+              Text(
+                  _weeklyTotal >= 1000000
+                      ? 'Rp ${(_weeklyTotal / 1000000).toStringAsFixed(1)}jt'
+                      : _weeklyTotal >= 1000
+                          ? 'Rp ${(_weeklyTotal / 1000).toStringAsFixed(0)}rb'
+                          : 'Rp $_weeklyTotal',
                   style: GoogleFonts.lato(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
@@ -602,13 +892,49 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
                         fontWeight: FontWeight.w600))
               ]),
               const SizedBox(height: 20),
-              _buildBarChart(),
-              const SizedBox(height: 20),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                _chartLegend('☕', 'cafe', '9,2 jt'),
-                _chartLegend('🎮', 'gaming', '9,2 jt'),
-                _chartLegend('👤', 'lainnya', '9,2 jt')
-              ]),
+              SizedBox(
+                height: 100,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: List.generate(7, (i) {
+                    final double value = _weeklyValues[i];
+                    final double maxValue =
+                        _weeklyValues.reduce((a, b) => a > b ? a : b);
+                    final double height =
+                        maxValue == 0 ? 0 : (value / maxValue) * 75;
+                    final List<String> days = [
+                      'Sen',
+                      'Sel',
+                      'Rab',
+                      'Kam',
+                      'Jum',
+                      'Sab',
+                      'Min'
+                    ];
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              height: height,
+                              decoration: BoxDecoration(
+                                  color: kWhite.withOpacity(
+                                      value == maxValue ? 1.0 : 0.35),
+                                  borderRadius: BorderRadius.circular(6)),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(days[i],
+                                style: GoogleFonts.lato(
+                                    fontSize: 9, color: kWhiteDim)),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
             ],
           ),
         ),
@@ -616,57 +942,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  Widget _buildBarChart() {
-    final values = [0.4, 0.6, 0.75, 0.5, 0.9, 0.65, 0.8];
-    final days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
-    return SizedBox(
-      height: 100,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: List.generate(
-            values.length,
-            (i) => Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        AnimatedContainer(
-                          duration: Duration(milliseconds: 400 + i * 60),
-                          curve: Curves.easeOut,
-                          height: values[i] * 75,
-                          decoration: BoxDecoration(
-                              color: kWhite.withOpacity(i == 4 ? 1.0 : 0.35),
-                              borderRadius: BorderRadius.circular(6)),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(days[i],
-                            style: GoogleFonts.lato(
-                                fontSize: 9, color: kWhiteDim)),
-                      ],
-                    ),
-                  ),
-                )),
-      ),
-    );
-  }
-
-  Widget _chartLegend(String emoji, String label, String value) {
-    return Column(
-      children: [
-        Row(mainAxisSize: MainAxisSize.min, children: [
-          Text(emoji, style: const TextStyle(fontSize: 13)),
-          const SizedBox(width: 4),
-          Text(label, style: GoogleFonts.lato(fontSize: 11, color: kWhiteDim))
-        ]),
-        const SizedBox(height: 2),
-        Text(value,
-            style: GoogleFonts.lato(
-                fontSize: 13, fontWeight: FontWeight.w800, color: kWhite)),
-      ],
-    );
-  }
-
+  // ==================== BOTTOM NAV ====================
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(color: kWhite, boxShadow: [
