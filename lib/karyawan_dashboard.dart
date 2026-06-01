@@ -13,6 +13,8 @@ import 'rekap_screen.dart';
 import 'profil_karyawan.dart';
 import 'registrasi_wajah_screen.dart';
 import 'stok_karyawan_screen.dart';
+// 👇 TAMBAHKAN IMPORT UNTUK KIRIM PENGUMUMAN
+import 'kirim_pengumuman.dart'; // sesuaikan path jika berbeda
 
 // ── WARNA (disamakan dengan owner dashboard) ─────────────────────────────────
 const kBlue = Color(0xFF1A5EBF);
@@ -60,7 +62,7 @@ class KaryawanDashboardScreen extends StatefulWidget {
 class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
     with TickerProviderStateMixin {
   int _selectedNav = 0;
-  int _notifCount = 2;
+  int _notifCount = 2; // tidak digunakan untuk halaman announce, aman
 
   User? _currentUser;
   Map<String, dynamic>? _userData;
@@ -243,7 +245,8 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
             ],
           ),
           const KasirDataPage(kasirName: '', shift: ''),
-          const NotifikasiKaryawanScreen(),
+          // 👇 UBAH: dari NotifikasiKaryawanScreen menjadi KirimPengumumanScreen
+          const KirimPengumumanScreen(),
           const StokKaryawanScreen(),
           const RekapScreen(role: 'karyawan'),
         ],
@@ -826,6 +829,7 @@ class _KaryawanDashboardScreenState extends State<KaryawanDashboardScreen>
               _navItem(0, Icons.home_outlined, Icons.home, 'HOME'),
               _navItem(1, Icons.point_of_sale_outlined, Icons.point_of_sale,
                   'KASIR'),
+              // ANNOUNCE tetap label, tetapi sekarang menuju KirimPengumumanScreen
               _navItem(
                   2, Icons.chat_bubble_outline, Icons.chat_bubble, 'ANNOUNCE'),
               _navItem(3, Icons.menu_outlined, Icons.menu, 'STOK'),
