@@ -42,9 +42,7 @@ Map<String, Color> avatarColorFor(String name) {
 
 String initialsOf(String name) {
   final words = name.trim().split(RegExp(r'\s+'));
-  if (words.length >= 2) {
-    return '${words[0][0]}${words[1][0]}'.toUpperCase();
-  }
+  if (words.length >= 2) return '${words[0][0]}${words[1][0]}'.toUpperCase();
   return name.substring(0, name.length >= 2 ? 2 : name.length).toUpperCase();
 }
 
@@ -59,26 +57,17 @@ class StokItem {
   int qty;
   String unit;
   String category;
-  StokItem({
-    required this.id,
-    required this.name,
-    required this.qty,
-    required this.unit,
-    required this.category,
-  });
+  StokItem(
+      {required this.id,
+      required this.name,
+      required this.qty,
+      required this.unit,
+      required this.category});
   StokStatus get status {
     if (qty <= 0) return StokStatus.habis;
     if (qty <= 5) return StokStatus.hampirHabis;
     return StokStatus.aman;
   }
-
-  Map<String, dynamic> toMap() => {
-        'name': name,
-        'qty': qty,
-        'unit': unit,
-        'category': category,
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
 }
 
 class LogEntry {
@@ -93,33 +82,23 @@ class InitialsAvatar extends StatelessWidget {
   final String name;
   final double size;
   final double fontSize;
-  const InitialsAvatar({
-    super.key,
-    required this.name,
-    this.size = 44,
-    this.fontSize = 14,
-  });
+  const InitialsAvatar(
+      {super.key, required this.name, this.size = 44, this.fontSize = 14});
   @override
   Widget build(BuildContext context) {
     final colors = avatarColorFor(name);
     return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: colors['bg'],
-        borderRadius: BorderRadius.circular(size / 2),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        initialsOf(name),
-        style: TextStyle(
-          color: colors['text'],
-          fontSize: fontSize,
-          fontWeight: FontWeight.w600,
-          height: 1,
-        ),
-      ),
-    );
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+            color: colors['bg'], borderRadius: BorderRadius.circular(size / 2)),
+        alignment: Alignment.center,
+        child: Text(initialsOf(name),
+            style: TextStyle(
+                color: colors['text'],
+                fontSize: fontSize,
+                fontWeight: FontWeight.w600,
+                height: 1)));
   }
 }
 
@@ -127,63 +106,49 @@ class StatCard extends StatelessWidget {
   final String label, value;
   final Color numColor;
   final IconData icon;
-  const StatCard({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.numColor,
-    required this.icon,
-  });
+  const StatCard(
+      {super.key,
+      required this.label,
+      required this.value,
+      required this.numColor,
+      required this.icon});
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: kWhite,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: kWhite,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2))
+            ]),
+        child: Row(children: [
           Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: kBlueSoft,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: numColor, size: 20),
-          ),
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                  color: kBlueSoft, borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: numColor, size: 20)),
           const SizedBox(width: 12),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                value,
-                style: GoogleFonts.lato(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: numColor,
-                  height: 1,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: GoogleFonts.lato(fontSize: 11, color: Colors.black54),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(value,
+                    style: GoogleFonts.lato(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: numColor,
+                        height: 1)),
+                const SizedBox(height: 2),
+                Text(label,
+                    style:
+                        GoogleFonts.lato(fontSize: 11, color: Colors.black54))
+              ]),
+        ]));
   }
 }
 
@@ -191,12 +156,11 @@ class _StokCard extends StatefulWidget {
   final StokItem item;
   final Function(StokItem, int, int) onUbah;
   final VoidCallback onEdit, onDelete;
-  const _StokCard({
-    required this.item,
-    required this.onUbah,
-    required this.onEdit,
-    required this.onDelete,
-  });
+  const _StokCard(
+      {required this.item,
+      required this.onUbah,
+      required this.onEdit,
+      required this.onDelete});
   @override
   State<_StokCard> createState() => _StokCardState();
 }
@@ -234,193 +198,133 @@ class _StokCardState extends State<_StokCard> {
             ? const Color(0xFFFCD34D)
             : const Color(0xFFFCA5A5);
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: kWhite,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: borderColor,
-          width: st == StokStatus.aman ? 0.5 : 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              InitialsAvatar(name: item.name, size: 44, fontSize: 14),
-              const SizedBox(width: 10),
-              Expanded(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: kWhite,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: borderColor, width: st == StokStatus.aman ? 0.5 : 1.0),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2))
+            ]),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            InitialsAvatar(name: item.name, size: 44, fontSize: 14),
+            const SizedBox(width: 10),
+            Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.name,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(item.name,
                       style: GoogleFonts.lato(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: kTextDark,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: kTextDark)),
+                  const SizedBox(height: 4),
+                  Row(children: [
+                    Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
                             color: statusBg,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            statusText,
+                            borderRadius: BorderRadius.circular(20)),
+                        child: Text(statusText,
                             style: GoogleFonts.lato(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: statusColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          item.category,
-                          style: GoogleFonts.lato(
-                            fontSize: 11,
-                            color: Colors.black45,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${item.qty}',
-                    style: GoogleFonts.lato(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: statusColor))),
+                    const SizedBox(width: 6),
+                    Text(item.category,
+                        style: GoogleFonts.lato(
+                            fontSize: 11, color: Colors.black45)),
+                  ]),
+                ])),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text('${item.qty}',
+                  style: GoogleFonts.lato(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
                       color: statusColor,
-                      height: 1,
-                    ),
-                  ),
-                  Text(
-                    item.unit,
-                    style: GoogleFonts.lato(
-                      fontSize: 11,
-                      color: Colors.black45,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                      height: 1)),
+              Text(item.unit,
+                  style: GoogleFonts.lato(fontSize: 11, color: Colors.black45)),
+            ]),
+          ]),
           const SizedBox(height: 12),
           Container(height: 0.5, color: const Color(0xFFE2E8F0)),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              _ctrlBtn(
+          Row(children: [
+            _ctrlBtn(
                 icon: Icons.remove_rounded,
                 color: kRed,
                 bg: kRedLight,
                 onTap: () => widget.onUbah(
-                  item,
-                  -1,
-                  int.tryParse(_inputCtrl.text) ?? 1,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
+                    item, -1, int.tryParse(_inputCtrl.text) ?? 1)),
+            const SizedBox(width: 8),
+            Expanded(
                 child: Container(
-                  height: 38,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: kBluePale,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: kBlueSoft, width: 0.5),
-                  ),
-                  child: TextField(
-                    controller: _inputCtrl,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.lato(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: kTextDark,
-                    ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                      hintText: '1',
-                      hintStyle: TextStyle(color: Colors.black26),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              _ctrlBtn(
+                    height: 38,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                        color: kBluePale,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: kBlueSoft, width: 0.5)),
+                    child: TextField(
+                        controller: _inputCtrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.lato(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: kTextDark),
+                        decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                            hintText: '1',
+                            hintStyle: TextStyle(color: Colors.black26))))),
+            const SizedBox(width: 8),
+            _ctrlBtn(
                 icon: Icons.add_rounded,
                 color: kGreen,
                 bg: kGreenLight,
-                onTap: () => widget.onUbah(
-                  item,
-                  1,
-                  int.tryParse(_inputCtrl.text) ?? 1,
-                ),
-              ),
-              const SizedBox(width: 8),
-              _ctrlBtn(
+                onTap: () =>
+                    widget.onUbah(item, 1, int.tryParse(_inputCtrl.text) ?? 1)),
+            const SizedBox(width: 8),
+            _ctrlBtn(
                 icon: Icons.edit_outlined,
                 color: kBlue,
                 bg: kBlueSoft,
-                onTap: widget.onEdit,
-              ),
-              const SizedBox(width: 8),
-              _ctrlBtn(
+                onTap: widget.onEdit),
+            const SizedBox(width: 8),
+            _ctrlBtn(
                 icon: Icons.delete_outline_rounded,
                 color: kRed,
                 bg: kRedLight,
-                onTap: widget.onDelete,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+                onTap: widget.onDelete),
+          ]),
+        ]));
   }
 
-  Widget _ctrlBtn({
-    required IconData icon,
-    required Color color,
-    required Color bg,
-    required VoidCallback onTap,
-  }) {
+  Widget _ctrlBtn(
+      {required IconData icon,
+      required Color color,
+      required Color bg,
+      required VoidCallback onTap}) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: color, size: 18),
-      ),
-    );
+        onTap: onTap,
+        child: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+                color: bg, borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: color, size: 18)));
   }
 }
 
@@ -464,41 +368,27 @@ class _LogRow extends StatelessWidget {
         break;
     }
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: logBg,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+            color: logBg, borderRadius: BorderRadius.circular(10)),
+        child: Row(children: [
           Container(
-            width: 26,
-            height: 26,
-            decoration: BoxDecoration(
-              color: logIconBg,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(logIcon, color: logColor, size: 13),
-          ),
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                  color: logIconBg, borderRadius: BorderRadius.circular(8)),
+              child: Icon(logIcon, color: logColor, size: 13)),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              log.message,
-              style: GoogleFonts.lato(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: kTextDark,
-              ),
-            ),
-          ),
-          Text(
-            log.timeHour,
-            style: GoogleFonts.lato(fontSize: 10, color: Colors.black45),
-          ),
-        ],
-      ),
-    );
+              child: Text(log.message,
+                  style: GoogleFonts.lato(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: kTextDark))),
+          Text(log.timeHour,
+              style: GoogleFonts.lato(fontSize: 10, color: Colors.black45)),
+        ]));
   }
 }
 
@@ -506,36 +396,23 @@ class _SectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
   final Widget? trailing;
-  const _SectionHeader({
-    required this.icon,
-    required this.title,
-    this.trailing,
-  });
+  const _SectionHeader(
+      {required this.icon, required this.title, this.trailing});
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
+    return Row(children: [
+      Container(
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: kBlueSoft,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: kBlue, size: 15),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          title,
+              color: kBlueSoft, borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, color: kBlue, size: 15)),
+      const SizedBox(width: 8),
+      Text(title,
           style: GoogleFonts.lato(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: kBlueDark,
-          ),
-        ),
-        if (trailing != null) ...[const Spacer(), trailing!],
-      ],
-    );
+              fontSize: 13, fontWeight: FontWeight.w700, color: kBlueDark)),
+      if (trailing != null) ...[const Spacer(), trailing!],
+    ]);
   }
 }
 
@@ -582,146 +459,113 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: kWhite,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: kBlueSoft,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    isEdit ? Icons.edit_outlined : Icons.add_rounded,
-                    color: kBlue,
-                    size: 16,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  isEdit ? 'Edit Item' : 'Tambah Item Baru',
-                  style: GoogleFonts.lato(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: kTextDark,
-                  ),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.close_rounded,
-                        size: 16, color: Colors.black45),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _label('Nama Barang'),
-            const SizedBox(height: 6),
-            _input(
-              ctrl: _nameCtrl,
-              hint: 'cth. Beras Premium',
-              icon: Icons.label_outline_rounded,
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _label('Jumlah'),
-                      const SizedBox(height: 6),
-                      _input(
-                        ctrl: _qtyCtrl,
-                        hint: '0',
-                        icon: Icons.pin_outlined,
-                        isNumber: true,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _label('Satuan'),
-                    const SizedBox(height: 6),
-                    _unitPicker(),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            _label('Kategori'),
-            const SizedBox(height: 6),
-            _input(
-              ctrl: _catCtrl,
-              hint: 'cth. Bahan Pokok',
-              icon: Icons.category_outlined,
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text(
-                      'Batal',
-                      style: TextStyle(
-                        color: Colors.black45,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _onSave,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kBlue,
-                      foregroundColor: kWhite,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: Text(
-                      isEdit ? 'Simpan' : 'Tambahkan',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+        backgroundColor: kWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                            color: kBlueSoft,
+                            borderRadius: BorderRadius.circular(10)),
+                        child: Icon(
+                            isEdit ? Icons.edit_outlined : Icons.add_rounded,
+                            color: kBlue,
+                            size: 16)),
+                    const SizedBox(width: 10),
+                    Text(isEdit ? 'Edit Item' : 'Tambah Item Baru',
+                        style: GoogleFonts.lato(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: kTextDark)),
+                    const Spacer(),
+                    GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(8)),
+                            child: const Icon(Icons.close_rounded,
+                                size: 16, color: Colors.black45))),
+                  ]),
+                  const SizedBox(height: 20),
+                  _label('Nama Barang'),
+                  const SizedBox(height: 6),
+                  _input(
+                      ctrl: _nameCtrl,
+                      hint: 'cth. Beras Premium',
+                      icon: Icons.label_outline_rounded),
+                  const SizedBox(height: 14),
+                  Row(children: [
+                    Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                          _label('Jumlah'),
+                          const SizedBox(height: 6),
+                          _input(
+                              ctrl: _qtyCtrl,
+                              hint: '0',
+                              icon: Icons.pin_outlined,
+                              isNumber: true)
+                        ])),
+                    const SizedBox(width: 10),
+                    Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _label('Satuan'),
+                          const SizedBox(height: 6),
+                          _unitPicker()
+                        ]),
+                  ]),
+                  const SizedBox(height: 14),
+                  _label('Kategori'),
+                  const SizedBox(height: 6),
+                  _input(
+                      ctrl: _catCtrl,
+                      hint: 'cth. Bahan Pokok',
+                      icon: Icons.category_outlined),
+                  const SizedBox(height: 20),
+                  Row(children: [
+                    Expanded(
+                        child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                                side:
+                                    const BorderSide(color: Color(0xFFCBD5E1)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12)),
+                            child: const Text('Batal',
+                                style: TextStyle(
+                                    color: Colors.black45,
+                                    fontWeight: FontWeight.w500)))),
+                    const SizedBox(width: 10),
+                    Expanded(
+                        child: ElevatedButton(
+                            onPressed: _onSave,
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: kBlue,
+                                foregroundColor: kWhite,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12)),
+                            child: Text(isEdit ? 'Simpan' : 'Tambahkan',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600)))),
+                  ]),
+                ])));
   }
 
   void _onSave() {
@@ -736,102 +580,72 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       _showToast('Jumlah harus lebih dari 0', kRed);
       return;
     }
-    Navigator.pop(context, {
-      'name': name,
-      'qty': qty,
-      'unit': _selectedUnit,
-      'category': cat,
-    });
+    Navigator.pop(context,
+        {'name': name, 'qty': qty, 'unit': _selectedUnit, 'category': cat});
   }
 
-  Widget _label(String text) => Text(
-        text,
-        style: GoogleFonts.lato(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          color: Colors.black54,
-        ),
-      );
-  Widget _input({
-    required TextEditingController ctrl,
-    required String hint,
-    required IconData icon,
-    bool isNumber = false,
-  }) {
+  Widget _label(String text) => Text(text,
+      style: GoogleFonts.lato(
+          fontSize: 11, fontWeight: FontWeight.w500, color: Colors.black54));
+  Widget _input(
+      {required TextEditingController ctrl,
+      required String hint,
+      required IconData icon,
+      bool isNumber = false}) {
     return Container(
-      height: 42,
-      decoration: BoxDecoration(
-        color: kBluePale,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFCBD5E1), width: 0.5),
-      ),
-      child: TextField(
-        controller: ctrl,
-        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-        inputFormatters:
-            isNumber ? [FilteringTextInputFormatter.digitsOnly] : [],
-        style: GoogleFonts.lato(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: kTextDark,
-        ),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: GoogleFonts.lato(fontSize: 12, color: Colors.black26),
-          prefixIcon: Icon(icon, color: Colors.black45, size: 17),
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        ),
-      ),
-    );
+        height: 42,
+        decoration: BoxDecoration(
+            color: kBluePale,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFCBD5E1), width: 0.5)),
+        child: TextField(
+            controller: ctrl,
+            keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+            inputFormatters:
+                isNumber ? [FilteringTextInputFormatter.digitsOnly] : [],
+            style: GoogleFonts.lato(
+                fontSize: 13, fontWeight: FontWeight.w500, color: kTextDark),
+            decoration: InputDecoration(
+                hintText: hint,
+                hintStyle:
+                    GoogleFonts.lato(fontSize: 12, color: Colors.black26),
+                prefixIcon: Icon(icon, color: Colors.black45, size: 17),
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10))));
   }
 
   Widget _unitPicker() {
     return Container(
-      height: 42,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: kBluePale,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFCBD5E1), width: 0.5),
-      ),
-      child: DropdownButton<String>(
-        value: _selectedUnit,
-        dropdownColor: kWhite,
-        icon: const Icon(Icons.expand_more, color: Colors.black45, size: 18),
-        style: GoogleFonts.lato(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: kTextDark,
-        ),
-        underline: const SizedBox(),
-        items: _units
-            .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-            .toList(),
-        onChanged: (v) => setState(() => _selectedUnit = v!),
-      ),
-    );
+        height: 42,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+            color: kBluePale,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFCBD5E1), width: 0.5)),
+        child: DropdownButton<String>(
+            value: _selectedUnit,
+            dropdownColor: kWhite,
+            icon:
+                const Icon(Icons.expand_more, color: Colors.black45, size: 18),
+            style: GoogleFonts.lato(
+                fontSize: 13, fontWeight: FontWeight.w500, color: kTextDark),
+            underline: const SizedBox(),
+            items: _units
+                .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                .toList(),
+            onChanged: (v) => setState(() => _selectedUnit = v!)));
   }
 
   void _showToast(String msg, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          msg,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(msg,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w600)),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2)));
   }
 }
 
@@ -841,107 +655,70 @@ class _DeleteConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: kWhite,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: kRedLight,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.delete_outline_rounded,
-                color: kRed,
-                size: 28,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'Hapus Item?',
-              style: GoogleFonts.lato(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: kTextDark,
-              ),
-            ),
-            const SizedBox(height: 8),
-            RichText(
-              textAlign: TextAlign.center,
-              text: TextSpan(
-                style: GoogleFonts.lato(
-                  fontSize: 13,
-                  color: Colors.black54,
-                  height: 1.5,
-                ),
-                children: [
-                  const TextSpan(text: 'Item '),
-                  TextSpan(
-                    text: item.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: kTextDark,
-                    ),
-                  ),
-                  const TextSpan(
-                    text:
-                        ' akan dihapus permanen.\nTindakan ini tidak bisa dibatalkan.',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
+        backgroundColor: kWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                      color: kRedLight,
+                      borderRadius: BorderRadius.circular(16)),
+                  child: const Icon(Icons.delete_outline_rounded,
+                      color: kRed, size: 28)),
+              const SizedBox(height: 14),
+              Text('Hapus Item?',
+                  style: GoogleFonts.lato(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: kTextDark)),
+              const SizedBox(height: 8),
+              RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                      style: GoogleFonts.lato(
+                          fontSize: 13, color: Colors.black54, height: 1.5),
+                      children: [
+                        const TextSpan(text: 'Item '),
+                        TextSpan(
+                            text: item.name,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, color: kTextDark)),
+                        const TextSpan(
+                            text:
+                                ' akan dihapus permanen.\nTindakan ini tidak bisa dibatalkan.'),
+                      ])),
+              const SizedBox(height: 20),
+              Row(children: [
                 Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text(
-                      'Batal',
-                      style: TextStyle(
-                        color: Colors.black45,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
+                    child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 12)),
+                        child: const Text('Batal',
+                            style: TextStyle(
+                                color: Colors.black45,
+                                fontWeight: FontWeight.w500)))),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kRed,
-                      foregroundColor: kWhite,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text(
-                      'Hapus',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+                    child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: kRed,
+                            foregroundColor: kWhite,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 12)),
+                        child: const Text('Hapus',
+                            style: TextStyle(fontWeight: FontWeight.w600)))),
+              ]),
+            ])));
   }
 }
 
@@ -967,55 +744,13 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   User? _currentUser;
+  List<StokItem> _items = [];
+  bool _loading = true;
+  String? _error;
 
-  Stream<List<LogEntry>> get _logsStream {
-    return _firestore
-        .collection('stok_logs')
-        .orderBy('timestamp', descending: true)
-        .limit(10)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) {
-              final data = doc.data();
-              return LogEntry(
-                message: data['message'] ?? '',
-                type: _stringToLogType(data['type'] ?? 'tambah'),
-                time: (data['timestamp'] as Timestamp?)?.toDate() ??
-                    DateTime.now(),
-              );
-            }).toList());
-  }
-
-  LogType _stringToLogType(String str) {
-    switch (str) {
-      case 'tambah':
-        return LogType.tambah;
-      case 'kurang':
-        return LogType.kurang;
-      case 'hapus':
-        return LogType.hapus;
-      case 'baru':
-        return LogType.baru;
-      case 'edit':
-        return LogType.edit;
-      default:
-        return LogType.tambah;
-    }
-  }
-
-  String _logTypeToString(LogType type) {
-    switch (type) {
-      case LogType.tambah:
-        return 'tambah';
-      case LogType.kurang:
-        return 'kurang';
-      case LogType.hapus:
-        return 'hapus';
-      case LogType.baru:
-        return 'baru';
-      case LogType.edit:
-        return 'edit';
-    }
-  }
+  // Untuk log
+  List<LogEntry> _logs = [];
+  bool _loadingLogs = true;
 
   @override
   void initState() {
@@ -1025,6 +760,8 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
         setState(() => _searchQuery = _searchCtrl.text.toLowerCase().trim()));
     _scrollCtrl
         .addListener(() => setState(() => _scrollOffset = _scrollCtrl.offset));
+    _loadData();
+    _loadLogs();
   }
 
   @override
@@ -1034,19 +771,78 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
     super.dispose();
   }
 
-  Future<void> _ubahQty(StokItem item, int delta, int jumlah) async {
+  Future<void> _loadData() async {
+    setState(() => _loading = true);
+    try {
+      final snap = await _firestore.collection('stok').get();
+      final items = snap.docs.map((doc) {
+        final data = doc.data();
+        return StokItem(
+          id: doc.id,
+          name: data['name'] ?? '',
+          qty: (data['qty'] as int?) ?? 0,
+          unit: data['unit'] ?? 'pcs',
+          category: data['category'] ?? 'Umum',
+        );
+      }).toList();
+      setState(() {
+        _items = items;
+        _loading = false;
+        _error = null;
+      });
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _error = e.toString();
+      });
+    }
+  }
+
+  Future<void> _loadLogs() async {
+    setState(() => _loadingLogs = true);
+    try {
+      final snap = await _firestore
+          .collection('stok_logs')
+          .orderBy('timestamp', descending: true)
+          .limit(10)
+          .get();
+      final logs = snap.docs.map((doc) {
+        final data = doc.data();
+        return LogEntry(
+          message: data['message'] ?? '',
+          type: _stringToLogType(data['type'] ?? 'tambah'),
+          time: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        );
+      }).toList();
+      setState(() {
+        _logs = logs;
+        _loadingLogs = false;
+      });
+    } catch (e) {
+      setState(() => _loadingLogs = false);
+    }
+  }
+
+  Future<void> _refresh() async {
+    await _loadData();
+    await _loadLogs();
+  }
+
+  void _ubahQty(StokItem item, int delta, int jumlah) async {
     final newQty = (item.qty + delta * jumlah).clamp(0, 99999);
     if (newQty == item.qty) return;
     try {
       await _firestore.collection('stok').doc(item.id).update({'qty': newQty});
       final diff = (newQty - item.qty).abs();
-      final type = delta > 0 ? LogType.tambah : LogType.kurang;
       await _addLog(
         message:
             '${item.name}: ${delta > 0 ? '+' : '-'}$diff ${item.unit} (sisa $newQty)',
-        type: type,
+        type: delta > 0 ? LogType.tambah : LogType.kurang,
         itemId: item.id,
       );
+      setState(() {
+        item.qty = newQty;
+      });
       _showToast(
           'Stok ${item.name} ${delta > 0 ? 'bertambah' : 'berkurang'} $diff',
           delta > 0 ? kGreen : kOrange);
@@ -1068,13 +864,21 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      await _addLog(
-        message:
-            'Item baru: ${result['name']} (${result['qty']} ${result['unit']})',
-        type: LogType.baru,
-        itemId: docRef.id,
+      final newItem = StokItem(
+        id: docRef.id,
+        name: result['name'],
+        qty: result['qty'],
+        unit: result['unit'],
+        category: result['category'],
       );
+      setState(() => _items.add(newItem));
+      await _addLog(
+          message:
+              'Item baru: ${result['name']} (${result['qty']} ${result['unit']})',
+          type: LogType.baru,
+          itemId: docRef.id);
       _showToast('${result['name']} berhasil ditambahkan', kGreen);
+      await _loadLogs(); // refresh log setelah tambah
     } catch (e) {
       _showToast('Gagal menambah item: $e', kRed);
     }
@@ -1092,12 +896,18 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
         'category': result['category'],
         'updatedAt': FieldValue.serverTimestamp(),
       });
+      setState(() {
+        item.name = result['name'];
+        item.qty = result['qty'];
+        item.unit = result['unit'];
+        item.category = result['category'];
+      });
       await _addLog(
-        message: '${result['name']} diperbarui',
-        type: LogType.edit,
-        itemId: item.id,
-      );
+          message: '${result['name']} diperbarui',
+          type: LogType.edit,
+          itemId: item.id);
       _showToast('${result['name']} berhasil diperbarui', kOrange);
+      await _loadLogs(); // refresh log setelah edit
     } catch (e) {
       _showToast('Gagal mengedit item: $e', kRed);
     }
@@ -1109,22 +919,20 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
     if (confirm != true) return;
     try {
       await _firestore.collection('stok').doc(item.id).delete();
+      setState(() => _items.removeWhere((i) => i.id == item.id));
       await _addLog(
-        message: '${item.name} dihapus dari inventaris',
-        type: LogType.hapus,
-        itemId: item.id,
-      );
+          message: '${item.name} dihapus dari inventaris',
+          type: LogType.hapus,
+          itemId: item.id);
       _showToast('${item.name} dihapus', kRed);
+      await _loadLogs(); // refresh log setelah hapus
     } catch (e) {
       _showToast('Gagal menghapus item: $e', kRed);
     }
   }
 
-  Future<void> _addLog({
-    required String message,
-    required LogType type,
-    String? itemId,
-  }) async {
+  Future<void> _addLog(
+      {required String message, required LogType type, String? itemId}) async {
     await _firestore.collection('stok_logs').add({
       'message': message,
       'type': _logTypeToString(type),
@@ -1135,300 +943,89 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
     });
   }
 
+  String _logTypeToString(LogType type) {
+    switch (type) {
+      case LogType.tambah:
+        return 'tambah';
+      case LogType.kurang:
+        return 'kurang';
+      case LogType.hapus:
+        return 'hapus';
+      case LogType.baru:
+        return 'baru';
+      case LogType.edit:
+        return 'edit';
+    }
+  }
+
+  LogType _stringToLogType(String str) {
+    switch (str) {
+      case 'tambah':
+        return LogType.tambah;
+      case 'kurang':
+        return LogType.kurang;
+      case 'hapus':
+        return LogType.hapus;
+      case 'baru':
+        return LogType.baru;
+      case 'edit':
+        return LogType.edit;
+      default:
+        return LogType.tambah;
+    }
+  }
+
   void _showToast(String msg, Color color) {
     ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          msg,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(msg,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w600)),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBgLight,
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              controller: _scrollCtrl,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  StreamBuilder<QuerySnapshot>(
-                    stream: _firestore.collection('stok').snapshots(),
-                    builder: (context, snapshot) {
-                      int totalItem = 0;
-                      int stokAman = 0;
-                      int hampirHabis = 0;
-                      int stokHabis = 0;
-                      if (snapshot.hasData) {
-                        for (var doc in snapshot.data!.docs) {
-                          final qty = (doc.data()
-                                  as Map<String, dynamic>)['qty'] as int? ??
-                              0;
-                          totalItem++;
-                          if (qty <= 0)
-                            stokHabis++;
-                          else if (qty <= 5)
-                            hampirHabis++;
-                          else
-                            stokAman++;
-                        }
-                      }
-                      return GridView.count(
-                        crossAxisCount: 2,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 2.2,
-                        children: [
-                          StatCard(
-                            label: 'Total Item',
-                            value: '$totalItem',
-                            numColor: kBlue,
-                            icon: Icons.inventory_2_rounded,
-                          ),
-                          StatCard(
-                            label: 'Stok Aman',
-                            value: '$stokAman',
-                            numColor: kGreen,
-                            icon: Icons.check_circle_rounded,
-                          ),
-                          StatCard(
-                            label: 'Menipis',
-                            value: '$hampirHabis',
-                            numColor: kOrange,
-                            icon: Icons.warning_rounded,
-                          ),
-                          StatCard(
-                            label: 'Stok Habis',
-                            value: '$stokHabis',
-                            numColor: kRed,
-                            icon: Icons.cancel_rounded,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  _SectionHeader(
-                      icon: Icons.search_rounded, title: 'Cari Barang'),
-                  const SizedBox(height: 10),
-                  Container(
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: kWhite,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: kBlueSoft, width: 0.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _searchCtrl,
-                      style: GoogleFonts.lato(fontSize: 13, color: kTextDark),
-                      decoration: InputDecoration(
-                        hintText: 'Cari nama, kategori, satuan...',
-                        hintStyle: GoogleFonts.lato(
-                            fontSize: 13, color: Colors.black45),
-                        prefixIcon: const Icon(Icons.search_rounded,
-                            color: Colors.black45, size: 18),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? GestureDetector(
-                                onTap: () => _searchCtrl.clear(),
-                                child: const Icon(Icons.close_rounded,
-                                    color: Colors.black45, size: 18))
-                            : null,
-                        border: InputBorder.none,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: _firestore.collection('stok').snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                            child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: CircularProgressIndicator(),
-                        ));
-                      }
-                      if (snapshot.hasError) {
-                        return Center(
-                            child: Text('Error: ${snapshot.error}',
-                                style: const TextStyle(color: kRed)));
-                      }
-                      final docs = snapshot.data!.docs;
-                      List<StokItem> items = docs.map((doc) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        return StokItem(
-                          id: doc.id,
-                          name: data['name'] ?? '',
-                          qty: data['qty'] as int? ?? 0,
-                          unit: data['unit'] ?? 'pcs',
-                          category: data['category'] ?? 'Umum',
-                        );
-                      }).toList();
-
-                      if (_searchQuery.isNotEmpty) {
-                        items = items
-                            .where((item) =>
-                                item.name
-                                    .toLowerCase()
-                                    .contains(_searchQuery) ||
-                                item.category
-                                    .toLowerCase()
-                                    .contains(_searchQuery) ||
-                                item.unit.toLowerCase().contains(_searchQuery))
-                            .toList();
-                      }
-
-                      if (items.isEmpty) {
-                        return Container(
-                          padding: const EdgeInsets.all(36),
-                          decoration: BoxDecoration(
-                            color: kWhite,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: kBlueSoft, width: 0.5),
-                          ),
-                          child: Center(
-                            child: Column(
-                              children: [
-                                Icon(
-                                  _searchQuery.isNotEmpty
-                                      ? Icons.search_off_rounded
-                                      : Icons.inventory_2_outlined,
-                                  size: 52,
-                                  color: Colors.black38,
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  _searchQuery.isNotEmpty
-                                      ? 'Tidak ditemukan: "$_searchQuery"'
-                                      : 'Belum ada data',
-                                  style: GoogleFonts.lato(
-                                      fontSize: 13, color: Colors.black54),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _searchQuery.isNotEmpty
-                                      ? 'Coba kata kunci lain'
-                                      : 'Tap tombol + untuk menambah item',
-                                  style: GoogleFonts.lato(
-                                      fontSize: 11, color: Colors.black38),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              '${items.length} item${_searchQuery.isNotEmpty ? ' ditemukan' : ''}',
-                              style: GoogleFonts.lato(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: kBlue),
-                            ),
-                          ),
-                          ...items.map((item) => _StokCard(
-                                item: item,
-                                onUbah: _ubahQty,
-                                onEdit: () => _editItem(item),
-                                onDelete: () => _deleteItem(item),
-                              )),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  _SectionHeader(
-                      icon: Icons.history_rounded, title: 'Aktivitas Terkini'),
-                  const SizedBox(height: 10),
-                  StreamBuilder<List<LogEntry>>(
-                    stream: _logsStream,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                            child: Padding(
-                          padding: EdgeInsets.all(16),
-                          child: CircularProgressIndicator(),
-                        ));
-                      }
-                      final logs = snapshot.data ?? [];
-                      return Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: kWhite,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: kBlueSoft, width: 0.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: logs.isEmpty
-                            ? const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: Text('Belum ada aktivitas',
-                                      style: TextStyle(
-                                          color: Colors.black38, fontSize: 12)),
-                                ),
-                              )
-                            : Column(
-                                children: logs
-                                    .take(5)
-                                    .map((l) => _LogRow(log: l))
-                                    .toList(),
-                              ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 80),
-                ],
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: CustomScrollView(
+          controller: _scrollCtrl,
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              expandedHeight: _headerHeight,
+              backgroundColor: kBlue,
+              flexibleSpace: FlexibleSpaceBar(
+                background: _buildHeaderBackground(),
               ),
             ),
-          ),
-        ],
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _buildStats(),
+                  const SizedBox(height: 20),
+                  _buildSearchBar(),
+                  const SizedBox(height: 20),
+                  _buildStokList(),
+                  const SizedBox(height: 24),
+                  _buildLogSection(),
+                  const SizedBox(height: 80),
+                ]),
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _tambahItem,
         backgroundColor: kBlue,
         foregroundColor: kWhite,
-        elevation: 2,
         icon: const Icon(Icons.add_rounded),
         label: Text('Tambah Item',
             style: GoogleFonts.lato(fontWeight: FontWeight.w600, fontSize: 13)),
@@ -1436,7 +1033,7 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeaderBackground() {
     final p = _collapseProgress;
     final double eSize = 24 - (24 - 14) * p;
     final double xSize = 40 - (40 - 22) * p;
@@ -1471,21 +1068,36 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
             letterSpacing: 3,
             fontWeight: FontWeight.w400));
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      height: _headerHeight,
-      width: double.infinity,
+    return Container(
       decoration: const BoxDecoration(
-          gradient: LinearGradient(colors: [Color(0xFF4A90D9), kBlue]),
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20))),
-      padding: EdgeInsets.fromLTRB(20, padTop, 20, padBot),
-      child: p < 0.5
-          ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Row(
-                children: [
+          gradient: LinearGradient(colors: [Color(0xFF4A90D9), kBlue])),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(20, padTop, 20, padBot),
+          child: p < 0.5
+              ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Row(children: [
+                    logoWidget,
+                    const SizedBox(width: 6),
+                    Opacity(opacity: subOpacity, child: subWidget),
+                    const Spacer(),
+                    Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                            color: kWhite.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20)),
+                        child: Text('STOK',
+                            style: GoogleFonts.lato(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                                color: kWhite))),
+                  ]),
+                ])
+              : Row(children: [
                   logoWidget,
-                  const SizedBox(width: 6),
-                  Opacity(opacity: subOpacity, child: subWidget),
+                  const SizedBox(width: 8),
+                  subWidget,
                   const Spacer(),
                   Container(
                       padding: const EdgeInsets.symmetric(
@@ -1498,28 +1110,192 @@ class _StokKaryawanScreenState extends State<StokKaryawanScreen> {
                               fontSize: 9,
                               fontWeight: FontWeight.w900,
                               color: kWhite))),
-                ],
+                ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStats() {
+    int totalItem = _items.length;
+    int stokAman = _items.where((i) => i.status == StokStatus.aman).length;
+    int hampirHabis =
+        _items.where((i) => i.status == StokStatus.hampirHabis).length;
+    int stokHabis = _items.where((i) => i.status == StokStatus.habis).length;
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 2.2,
+      children: [
+        StatCard(
+            label: 'Total Item',
+            value: '$totalItem',
+            numColor: kBlue,
+            icon: Icons.inventory_2_rounded),
+        StatCard(
+            label: 'Stok Aman',
+            value: '$stokAman',
+            numColor: kGreen,
+            icon: Icons.check_circle_rounded),
+        StatCard(
+            label: 'Menipis',
+            value: '$hampirHabis',
+            numColor: kOrange,
+            icon: Icons.warning_rounded),
+        StatCard(
+            label: 'Stok Habis',
+            value: '$stokHabis',
+            numColor: kRed,
+            icon: Icons.cancel_rounded),
+      ],
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      height: 46,
+      decoration: BoxDecoration(
+          color: kWhite,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: kBlueSoft, width: 0.5),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2))
+          ]),
+      child: TextField(
+        controller: _searchCtrl,
+        style: GoogleFonts.lato(fontSize: 13, color: kTextDark),
+        decoration: InputDecoration(
+          hintText: 'Cari nama, kategori, satuan...',
+          hintStyle: GoogleFonts.lato(fontSize: 13, color: Colors.black45),
+          prefixIcon:
+              const Icon(Icons.search_rounded, color: Colors.black45, size: 18),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? GestureDetector(
+                  onTap: () => _searchCtrl.clear(),
+                  child: const Icon(Icons.close_rounded,
+                      color: Colors.black45, size: 18))
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStokList() {
+    List<StokItem> filtered = _items;
+    if (_searchQuery.isNotEmpty) {
+      filtered = _items
+          .where((item) =>
+              item.name.toLowerCase().contains(_searchQuery) ||
+              item.category.toLowerCase().contains(_searchQuery) ||
+              item.unit.toLowerCase().contains(_searchQuery))
+          .toList();
+    }
+
+    if (_loading) {
+      return const Center(
+          child: Padding(
+              padding: EdgeInsets.all(32), child: CircularProgressIndicator()));
+    }
+    if (_error != null) {
+      return Center(
+          child: Text('Error: $_error', style: const TextStyle(color: kRed)));
+    }
+    if (filtered.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(36),
+        decoration: BoxDecoration(
+            color: kWhite,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: kBlueSoft, width: 0.5)),
+        child: Center(
+          child: Column(children: [
+            Icon(
+                _searchQuery.isNotEmpty
+                    ? Icons.search_off_rounded
+                    : Icons.inventory_2_outlined,
+                size: 52,
+                color: Colors.black38),
+            const SizedBox(height: 12),
+            Text(
+                _searchQuery.isNotEmpty
+                    ? 'Tidak ditemukan: "$_searchQuery"'
+                    : 'Belum ada data',
+                style: GoogleFonts.lato(fontSize: 13, color: Colors.black54)),
+            const SizedBox(height: 4),
+            Text(
+                _searchQuery.isNotEmpty
+                    ? 'Coba kata kunci lain'
+                    : 'Tap tombol + untuk menambah item',
+                style: GoogleFonts.lato(fontSize: 11, color: Colors.black38)),
+          ]),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+              '${filtered.length} item${_searchQuery.isNotEmpty ? ' ditemukan' : ''}',
+              style: GoogleFonts.lato(
+                  fontSize: 11, fontWeight: FontWeight.w600, color: kBlue)),
+        ),
+        ...filtered.map((item) => _StokCard(
+              item: item,
+              onUbah: _ubahQty,
+              onEdit: () => _editItem(item),
+              onDelete: () => _deleteItem(item),
+            )),
+      ],
+    );
+  }
+
+  Widget _buildLogSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(icon: Icons.history_rounded, title: 'Aktivitas Terkini'),
+        const SizedBox(height: 10),
+        _loadingLogs
+            ? const Center(
+                child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: CircularProgressIndicator()))
+            : Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: kWhite,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: kBlueSoft, width: 0.5),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2))
+                  ],
+                ),
+                child: _logs.isEmpty
+                    ? const Center(
+                        child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Text('Belum ada aktivitas',
+                                style: TextStyle(
+                                    color: Colors.black38, fontSize: 12))))
+                    : Column(
+                        children:
+                            _logs.take(5).map((l) => _LogRow(log: l)).toList()),
               ),
-            ])
-          : Row(
-              children: [
-                logoWidget,
-                const SizedBox(width: 8),
-                subWidget,
-                const Spacer(),
-                Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                        color: kWhite.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20)),
-                    child: Text('STOK',
-                        style: GoogleFonts.lato(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            color: kWhite))),
-              ],
-            ),
+      ],
     );
   }
 }
