@@ -165,7 +165,7 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
       builder: (ctx) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color.fromARGB(255, 87, 102, 139),
         child: Container(
           width: double.infinity,
           constraints: BoxConstraints(
@@ -428,27 +428,50 @@ class _NotifikasiOwnerScreenState extends State<NotifikasiOwnerScreen>
   }
 
   Future<bool?> _confirmDialog(String title, String content, Color color) {
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(title,
-            style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: color)),
-        content: Text(content,
-            style: GoogleFonts.lato(fontSize: 13, color: _noTextDark)),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text('Batal',
-                  style: GoogleFonts.lato(color: Colors.black45))),
-          ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: color),
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Ya', style: GoogleFonts.lato(color: _noWhite))),
-        ],
+  return showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: _noBgLight,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
       ),
-    );
-  }
+      title: Text(
+        title,
+        style: GoogleFonts.lato(
+          fontWeight: FontWeight.w900,
+          color: color,
+        ),
+      ),
+      content: Text(
+        content,
+        style: GoogleFonts.lato(
+          fontSize: 13,
+          color: _noTextDark,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text(
+            'Batal',
+            style: GoogleFonts.lato(color: Colors.black45),
+          ),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+          ),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(
+            'Ya',
+            style: GoogleFonts.lato(color: _noWhite),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   void _showSnack(String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(

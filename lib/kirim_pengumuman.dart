@@ -17,6 +17,7 @@ const kTextDark = Color(0xFF1A237E);
 const kGreen = Color(0xFF4CAF50);
 const kRed = Color(0xFFE53935);
 const kBgLight = Color(0xFFF0F4FF);
+const _noBgLight = Color(0xFFF0F4FF);
 
 class KirimPengumumanScreen extends StatefulWidget {
   const KirimPengumumanScreen({super.key});
@@ -198,6 +199,7 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: _noBgLight, // Added background color
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Hapus Pengumuman?',
@@ -241,6 +243,7 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: _noBgLight, // Added background color
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Hapus Semua Pengumuman?',
@@ -765,45 +768,53 @@ class _KirimPengumumanScreenState extends State<KirimPengumumanScreen>
     );
   }
 
-  Widget _buildNotificationTypeDropdown() {
-    const notifTypes = [
-      ('Pengumuman Umum', NotificationType.pengumuman),
-      ('Jadwal', NotificationType.jadwal),
-      ('Absensi', NotificationType.absensi),
-      ('Lainnya', NotificationType.lainnya),
-    ];
+ Widget _buildNotificationTypeDropdown() {
+  const notifTypes = [
+    ('Pengumuman Umum', NotificationType.pengumuman),
+    ('Jadwal', NotificationType.jadwal),
+    ('Absensi', NotificationType.absensi),
+    ('Lainnya', NotificationType.lainnya),
+  ];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black12, width: 1.2),
-        borderRadius: BorderRadius.circular(12),
-        color: kWhite,
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14),
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.grey.shade300, width: 1.2),
+      borderRadius: BorderRadius.circular(12),
+      color: kBgLight, // Changed from kWhite to kBgLight
+    ),
+    child: DropdownButton<NotificationType>(
+      value: _selectedNotifType,
+      isExpanded: true,
+      underline: const SizedBox(),
+      icon: const Icon(Icons.expand_more, color: kBlue),
+      dropdownColor: kWhite, // Added dropdown background color
+      style: GoogleFonts.lato(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: kTextDark, // Text color
       ),
-      child: DropdownButton<NotificationType>(
-        value: _selectedNotifType,
-        isExpanded: true,
-        underline: const SizedBox(),
-        icon: const Icon(Icons.expand_more, color: kBlue),
-        style: GoogleFonts.lato(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: kTextDark,
-        ),
-        onChanged: (NotificationType? newValue) {
-          if (newValue != null) {
-            setState(() => _selectedNotifType = newValue);
-          }
-        },
-        items: notifTypes.map((item) {
-          return DropdownMenuItem<NotificationType>(
-            value: item.$2,
-            child: Text(item.$1),
-          );
-        }).toList(),
-      ),
-    );
-  }
+      onChanged: (NotificationType? newValue) {
+        if (newValue != null) {
+          setState(() => _selectedNotifType = newValue);
+        }
+      },
+      items: notifTypes.map((item) {
+        return DropdownMenuItem<NotificationType>(
+          value: item.$2,
+          child: Text(
+            item.$1,
+            style: GoogleFonts.lato(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: kTextDark,
+            ),
+          ),
+        );
+      }).toList(),
+    ),
+  );
+}
 
   Widget _sendBtn() {
     return ElevatedButton.icon(

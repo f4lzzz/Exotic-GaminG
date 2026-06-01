@@ -15,6 +15,7 @@ const kRed = Color(0xFFE53935);
 const kOrange = Color(0xFFFF9800);
 const kPurple = Color(0xFF7C4DFF);
 const kBgLight = Color(0xFFF0F4FF);
+const _noBgLight = Color(0xFFF0F4FF);
 
 // ─── MODEL ───────────────────────────────────────────────────────────────────
 enum KategoriMenu { makanan, minuman, reguler, suiteroom }
@@ -1351,6 +1352,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) => AlertDialog(
+          backgroundColor: _noBgLight,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -1471,6 +1473,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlg) => AlertDialog(
+          backgroundColor: _noBgLight,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -1568,6 +1571,7 @@ class _OwnerMenuScreenState extends State<OwnerMenuScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: _noBgLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Hapus Menu',

@@ -644,35 +644,38 @@ class _KirimPengumumanKaryawanScreenState
   }
 
   Widget _buildNotificationTypeDropdown() {
-    const notifTypes = [
-      ('Pengumuman Umum', NotificationType.pengumuman),
-      ('Jadwal', NotificationType.jadwal),
-      ('Absensi', NotificationType.absensi),
-      ('Lainnya', NotificationType.lainnya)
-    ];
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-          border: Border.all(color: Colors.black12, width: 1.2),
-          borderRadius: BorderRadius.circular(12),
-          color: kWhite),
-      child: DropdownButton<NotificationType>(
-        value: _selectedNotifType,
-        isExpanded: true,
-        underline: const SizedBox(),
-        icon: const Icon(Icons.expand_more, color: kBlue),
-        style: GoogleFonts.lato(
-            fontSize: 13, fontWeight: FontWeight.w600, color: kTextDark),
-        onChanged: (NotificationType? newValue) {
-          if (newValue != null) setState(() => _selectedNotifType = newValue);
-        },
-        items: notifTypes
-            .map((item) => DropdownMenuItem<NotificationType>(
-                value: item.$2, child: Text(item.$1)))
-            .toList(),
-      ),
-    );
-  }
+  const notifTypes = [
+    ('Pengumuman Umum', NotificationType.pengumuman),
+    ('Jadwal', NotificationType.jadwal),
+    ('Absensi', NotificationType.absensi),
+    ('Lainnya', NotificationType.lainnya)
+  ];
+  
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14),
+    decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300, width: 1.2),
+        borderRadius: BorderRadius.circular(12),
+        color: kBgLight),
+    child: DropdownButton<NotificationType>(
+      value: _selectedNotifType,
+      isExpanded: true,
+      underline: const SizedBox(),
+      icon: const Icon(Icons.arrow_drop_down, color: kBlue, size: 24),
+      dropdownColor: kWhite,
+      style: GoogleFonts.lato(
+          fontSize: 13, fontWeight: FontWeight.w600, color: kTextDark),
+      onChanged: (NotificationType? newValue) {
+        if (newValue != null) setState(() => _selectedNotifType = newValue);
+      },
+      items: notifTypes
+          .map((item) => DropdownMenuItem<NotificationType>(
+              value: item.$2,
+              child: Text(item.$1)))
+          .toList(),
+    ),
+  );
+}
 
   Widget _sendBtn() {
     return ElevatedButton.icon(
