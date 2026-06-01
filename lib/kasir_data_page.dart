@@ -14,6 +14,7 @@ const kGreen = Color(0xFF4CAF50);
 const kRed = Color(0xFFE53935);
 const kOrange = Color(0xFFFF9800);
 const kBgLight = Color(0xFFF0F4FF);
+const _noBgLight = Color(0xFFF0F4FF);
 
 class KasirDataPage extends StatefulWidget {
   final String kasirName;
@@ -122,16 +123,25 @@ class _KasirDataPageState extends State<KasirDataPage>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: _noBgLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Akhiri Shift?',
-            style: GoogleFonts.lato(fontWeight: FontWeight.w900)),
-        content:
-            Text('${transactions.docs.length} transaksi. Lanjutkan closing?'),
+            style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kTextDark)),
+        content: Text('${transactions.docs.length} transaksi. Lanjutkan closing?',
+            style: GoogleFonts.lato(fontSize: 13, color: kTextDark)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false), child: Text('Batal')),
+              onPressed: () => Navigator.pop(ctx, false), 
+              child: Text('Batal',
+                  style: GoogleFonts.lato(color: Colors.black45))),
           ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kRed,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Ya, Akhiri Shift')),
+              child: Text('Ya, Akhiri Shift',
+                  style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite))),
         ],
       ),
     );
@@ -209,15 +219,25 @@ class _KasirDataPageState extends State<KasirDataPage>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: _noBgLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Hapus Transaksi?',
-            style: GoogleFonts.lato(fontWeight: FontWeight.w900)),
-        content: Text('Yakin hapus "$namaMenu"?'),
+            style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kRed)),
+        content: Text('Yakin hapus "$namaMenu"?',
+            style: GoogleFonts.lato(fontSize: 13, color: kTextDark)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false), child: Text('Batal')),
+              onPressed: () => Navigator.pop(ctx, false), 
+              child: Text('Batal',
+                  style: GoogleFonts.lato(color: Colors.black45))),
           ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kRed,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Ya, Hapus')),
+              child: Text('Ya, Hapus',
+                  style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite))),
         ],
       ),
     );

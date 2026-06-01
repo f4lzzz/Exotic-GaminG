@@ -15,6 +15,7 @@ const kTextDark = Color(0xFF1A237E);
 const kGreen = Color(0xFF4CAF50);
 const kRed = Color(0xFFE53935);
 const kBgLight = Color(0xFFF0F4FF);
+const _noBgLight = Color(0xFFF0F4FF);
 
 class KirimPengumumanKaryawanScreen extends StatefulWidget {
   const KirimPengumumanKaryawanScreen({super.key});
@@ -189,6 +190,7 @@ class _KirimPengumumanKaryawanScreenState
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: _noBgLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Hapus Pengumuman?',
             style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kRed)),
@@ -200,9 +202,13 @@ class _KirimPengumumanKaryawanScreenState
               child: Text('Batal',
                   style: GoogleFonts.lato(color: Colors.black45))),
           ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: kRed),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kRed,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Hapus', style: GoogleFonts.lato(color: kWhite))),
+              child: Text('Hapus', 
+                  style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite))),
         ],
       ),
     );
@@ -224,6 +230,7 @@ class _KirimPengumumanKaryawanScreenState
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: _noBgLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Hapus Semua Pengumuman?',
             style: GoogleFonts.lato(fontWeight: FontWeight.w900, color: kRed)),
@@ -235,9 +242,13 @@ class _KirimPengumumanKaryawanScreenState
               child: Text('Batal',
                   style: GoogleFonts.lato(color: Colors.black45))),
           ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: kRed),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kRed,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Hapus', style: GoogleFonts.lato(color: kWhite))),
+              child: Text('Hapus Semua', 
+                  style: GoogleFonts.lato(fontWeight: FontWeight.w800, color: kWhite))),
         ],
       ),
     );
@@ -644,38 +655,40 @@ class _KirimPengumumanKaryawanScreenState
   }
 
   Widget _buildNotificationTypeDropdown() {
-  const notifTypes = [
-    ('Pengumuman Umum', NotificationType.pengumuman),
-    ('Jadwal', NotificationType.jadwal),
-    ('Absensi', NotificationType.absensi),
-    ('Lainnya', NotificationType.lainnya)
-  ];
-  
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 14),
-    decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300, width: 1.2),
-        borderRadius: BorderRadius.circular(12),
-        color: kBgLight),
-    child: DropdownButton<NotificationType>(
-      value: _selectedNotifType,
-      isExpanded: true,
-      underline: const SizedBox(),
-      icon: const Icon(Icons.arrow_drop_down, color: kBlue, size: 24),
-      dropdownColor: kWhite,
-      style: GoogleFonts.lato(
-          fontSize: 13, fontWeight: FontWeight.w600, color: kTextDark),
-      onChanged: (NotificationType? newValue) {
-        if (newValue != null) setState(() => _selectedNotifType = newValue);
-      },
-      items: notifTypes
-          .map((item) => DropdownMenuItem<NotificationType>(
-              value: item.$2,
-              child: Text(item.$1)))
-          .toList(),
-    ),
-  );
-}
+    const notifTypes = [
+      ('Pengumuman Umum', NotificationType.pengumuman),
+      ('Jadwal', NotificationType.jadwal),
+      ('Absensi', NotificationType.absensi),
+      ('Lainnya', NotificationType.lainnya)
+    ];
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300, width: 1.2),
+          borderRadius: BorderRadius.circular(12),
+          color: _noBgLight), // Changed to _noBgLight
+      child: DropdownButton<NotificationType>(
+        value: _selectedNotifType,
+        isExpanded: true,
+        underline: const SizedBox(),
+        icon: const Icon(Icons.arrow_drop_down, color: kBlue, size: 24),
+        dropdownColor: kWhite,
+        style: GoogleFonts.lato(
+            fontSize: 13, fontWeight: FontWeight.w600, color: kTextDark),
+        onChanged: (NotificationType? newValue) {
+          if (newValue != null) setState(() => _selectedNotifType = newValue);
+        },
+        items: notifTypes
+            .map((item) => DropdownMenuItem<NotificationType>(
+                value: item.$2,
+                child: Text(item.$1,
+                    style: GoogleFonts.lato(
+                        fontSize: 13, fontWeight: FontWeight.w600, color: kTextDark))))
+            .toList(),
+      ),
+    );
+  }
 
   Widget _sendBtn() {
     return ElevatedButton.icon(
