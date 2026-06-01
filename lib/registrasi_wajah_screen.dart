@@ -32,6 +32,9 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
   final FaceNetService _faceNet = FaceNetService();
   final FirestoreService _firestore = FirestoreService();
 
+  // ─── Tambah controller nama ───────────────────────────────────
+  final TextEditingController _namaCtrl = TextEditingController();
+
   // ─── State ───────────────────────────────────────────────────
   bool _isInitialized = false;
   bool _isProcessing = false;
@@ -53,6 +56,12 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
   @override
   void initState() {
     super.initState();
+
+    // Isi nama awal jika sudah ada dari parameter
+    if (widget.namaKaryawan != null && widget.namaKaryawan!.isNotEmpty) {
+      _namaCtrl.text = widget.namaKaryawan!;
+    }
+
     _animCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -75,7 +84,6 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
         front,
         ResolutionPreset.high,
         enableAudio: false,
-        // FIX: Format NV21 eksplisit, konsisten dengan absensi
         imageFormatGroup: ImageFormatGroup.nv21,
       );
       await _camCtrl!.initialize();
@@ -111,7 +119,6 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
     _isProcessing = false;
   }
 
-  // FIX: Konsisten dengan _convertFrameToInputImage di absensi_screen.dart
   InputImage? _buildInputImage(CameraImage image) {
     try {
       final camera = _camCtrl!.description;
@@ -123,7 +130,6 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
       final format = InputImageFormatValue.fromRawValue(image.format.raw);
       if (format == null) return null;
 
-      // Pakai plane[0] saja (konsisten dengan absensi_screen.dart)
       final plane = image.planes[0];
       return InputImage.fromBytes(
         bytes: plane.bytes,
@@ -140,7 +146,24 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
   }
 
   Future<void> _registerFace() async {
+    // Validasi nama wajib diisi
+    final nama = _namaCtrl.text.trim();
+    if (nama.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('⚠️ Nama pemilik wajah wajib diisi!',
+              style: TextStyle(fontWeight: FontWeight.w700)),
+          backgroundColor: Colors.orange.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
     if (!_faceDetected || _faces.length != 1) return;
+
     setState(() {
       _isSaving = true;
       _statusMessage = 'Memproses wajah...';
@@ -149,7 +172,7 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
     try {
       // Ambil snapshot dari kamera
       await _camCtrl!.stopImageStream();
-      await Future.delayed(const Duration(milliseconds: 300)); // FIX: beri jeda
+      await Future.delayed(const Duration(milliseconds: 300));
       final xFile = await _camCtrl!.takePicture();
       final bytes = await xFile.readAsBytes();
 
@@ -157,7 +180,7 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
       final fullImage = img.decodeImage(Uint8List.fromList(bytes));
       if (fullImage == null) throw Exception('Gagal decode gambar');
 
-      // FIX: Deteksi ulang wajah dari foto (bukan dari stream frame)
+      // Deteksi ulang wajah dari foto
       final inputImg2 = InputImage.fromFilePath(xFile.path);
       final freshFaces = await _faceDetector.processImage(inputImg2);
       if (freshFaces.isEmpty) throw Exception('Wajah tidak terdeteksi di foto');
@@ -170,7 +193,6 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
       final embedding = _faceNet.generateEmbedding(croppedFace);
       if (embedding == null) throw Exception('Gagal generate embedding');
 
-      // Debug: cek embedding
       debugPrint('✅ Embedding size: ${embedding.length}');
       debugPrint('📊 Sample values: ${embedding.take(5).toList()}');
 
@@ -178,15 +200,17 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
       final uid = widget.uid ?? FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) throw Exception('User tidak ditemukan');
 
+      // Simpan embedding + nama sekaligus
       final success = await _firestore.saveEmbedding(
         uid: uid,
         embedding: embedding,
+        nama: nama, // ← kirim nama ke Firestore
       );
 
       if (!mounted) return;
 
       if (success) {
-        _showSuccessDialog();
+        _showSuccessDialog(nama);
       } else {
         throw Exception('Gagal menyimpan ke database');
       }
@@ -196,7 +220,6 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
         _statusMessage = 'Error: $e';
         _isSaving = false;
       });
-      // FIX: restart stream setelah error
       await Future.delayed(const Duration(milliseconds: 500));
       if (mounted && _camCtrl != null) {
         _camCtrl!.startImageStream(_onFrame);
@@ -204,7 +227,7 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
     }
   }
 
-  void _showSuccessDialog() {
+  void _showSuccessDialog(String nama) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -234,7 +257,7 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Wajah ${widget.namaKaryawan ?? "kamu"} sudah tersimpan dan siap digunakan untuk absensi.',
+              'Wajah $nama sudah tersimpan dan siap digunakan untuk absensi.',
               style: const TextStyle(fontSize: 14, color: Colors.grey),
               textAlign: TextAlign.center,
             ),
@@ -266,6 +289,7 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
 
   @override
   void dispose() {
+    _namaCtrl.dispose(); // ← dispose nama controller
     _animCtrl.dispose();
     _camCtrl?.dispose();
     _faceDetector.close();
@@ -364,7 +388,47 @@ class _RegistrasiWajahScreenState extends State<RegistrasiWajahScreen>
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
+
+            // ─── Input Nama Pemilik Wajah ─────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: TextField(
+                controller: _namaCtrl,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: Color(0xFF1A2A4A),
+                ),
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: 'Nama Pemilik Wajah',
+                  hintText: 'Masukkan nama lengkap',
+                  labelStyle: const TextStyle(
+                    color: _kBlue,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  prefixIcon: const Icon(Icons.person_rounded, color: _kBlue),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: _kBlue, width: 2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide:
+                        BorderSide(color: _kBlue.withOpacity(0.2), width: 1),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
 
             // ─── Tombol Daftar ───────────────────────────────
             Padding(
