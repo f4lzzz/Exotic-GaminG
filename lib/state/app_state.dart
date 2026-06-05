@@ -50,13 +50,19 @@ class AppState extends ChangeNotifier {
 
   // ───────────────── ROOM ─────────────────
 
-  final List<RoomModel> _rooms = List.generate(
-    11,
-    (i) => RoomModel(
-      id: 'room_${i + 1}',
-      namaRoom: 'Room ${i + 1}',
-    ),
-  );
+  final List<RoomModel> _rooms = [
+  RoomModel(id: 'room_1', namaRoom: 'Room Suite 1'),
+  RoomModel(id: 'room_2', namaRoom: 'Room Suite 2'),
+  RoomModel(id: 'room_3', namaRoom: 'Room Suite 3'),
+  RoomModel(id: 'room_4', namaRoom: 'Room Suite 4'),
+  RoomModel(id: 'room_5', namaRoom: 'Room Suite 5'),
+  RoomModel(id: 'room_6', namaRoom: 'Room Suite 6'),
+  RoomModel(id: 'room_7', namaRoom: 'Room Suite 7'),
+  RoomModel(id: 'room_8', namaRoom: 'Room Suite 8'),
+  RoomModel(id: 'room_9', namaRoom: 'Room Suite 9'),
+  RoomModel(id: 'room_10',namaRoom: 'Room Suite 10'),
+  RoomModel(id: 'room_11',namaRoom: 'Room suite vip'),
+];
 
   List<RoomModel> get rooms =>
       List.unmodifiable(_rooms);
